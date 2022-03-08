@@ -1,0 +1,11 @@
+package constants
+
+const (
+    Major   string = "1"
+    Minor          = "0"
+    Version        = Major + "." + Minor + "." + "{{ .Revision }}"
+    ApplicationTag = "finvar-v" + Version + ".{{ .Revision }}-{{ .Hash }}-{{ .Branch }}"
+)
+
+var WorkingMode string
+var WorkingModeValue int

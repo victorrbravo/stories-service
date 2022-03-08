@@ -1,0 +1,38 @@
+{
+  "Model": "User",
+  "Attrs": [
+    {
+      "Name": "ID",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Key": true
+    },
+    {
+      "Name": "FirstName",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true
+    },
+    {
+      "Name": "LastName",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true
+    },
+    {
+      "Name": "Email",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Searchable": true
+    },
+    {
+      "Name": "AccountType",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Searchable": true
+    }
+  ]
+}
+
