@@ -6,6 +6,8 @@ import (
 	"stories/web"
 )
 
+//go:generate go run ../generators/queries/main.go
+//go:generate go run ../generators/models/main.go
 func main() {
 	var server web.Server
 	var err error

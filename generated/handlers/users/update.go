@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 	"stories/generated/models"
+	"stories/users"
 	"strconv"
 
 	"stories/database"
@@ -34,9 +35,9 @@ func (handler UpdateHandler) GetQuery() database.IQuery {
 }
 
 // Edit ProfileSettings
-func (handler UpdateHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (handler UpdateHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request, user users.User) {
 	var err error
-	var element *models.User
+	var element *models.TaUser
 	var id string
 	values := request.URL.Query()
 	id = values.Get("id")
@@ -50,7 +51,7 @@ func (handler UpdateHandler) ServeHTTP(writer http.ResponseWriter, request *http
 		return
 	}
 	valueInt, _ := strconv.Atoi(id)
-	element, err = models.GetUserByID(handler.GetQuery(), types.NewInt(valueInt))
+	element, err = models.GetTaUserByPkUser(handler.GetQuery(), types.NewInt(valueInt))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusNotFound, err.Error()))
@@ -59,11 +60,13 @@ func (handler UpdateHandler) ServeHTTP(writer http.ResponseWriter, request *http
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
 		return
 	}
+	var pass types.String
 	err = element.Update(
 		handler.GetQuery(),
 		element.FirstName,
 		element.LastName,
 		handler.Email,
+		pass,
 		handler.AccountType,
 	)
 	if err != nil {

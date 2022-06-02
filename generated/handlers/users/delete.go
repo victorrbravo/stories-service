@@ -10,6 +10,7 @@ import (
 	"stories/handlers_utils"
 	"stories/helpers"
 	"stories/types"
+	"stories/users"
 	"strconv"
 )
 
@@ -28,9 +29,9 @@ func (handler DeleteHandler) GetQuery() database.IQuery {
 }
 
 // Delete follow with given id
-func (handler DeleteHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (handler DeleteHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request, user users.User) {
 	var err error
-	var element *models.User
+	var element *models.TaUser
 	var query database.IQuery
 	var id string
 	var intId int
@@ -41,7 +42,7 @@ func (handler DeleteHandler) ServeHTTP(writer http.ResponseWriter, request *http
 	id = values.Get("id")
 	intId, err = strconv.Atoi(id)
 	log.Println("ID: ", intId)
-	element, err = models.GetUserByID(query, types.NewInt(intId))
+	element, err = models.GetTaUserByPkUser(query, types.NewInt(intId))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusNotFound, err.Error()))

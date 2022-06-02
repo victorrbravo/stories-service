@@ -7,7 +7,14 @@ import (
 	"stories/constants"
 	"stories/database"
 	"stories/generated/handlers/users"
+	"stories/generated/models"
+	"stories/handlers/auth"
 	"stories/handlers_utils"
+)
+
+const (
+	Authentication = "/auth"
+	Users          = "/users"
 )
 
 type Server struct {
@@ -15,10 +22,13 @@ type Server struct {
 
 func CreateRouter(newQuery database.IQuery) handlers_utils.Router {
 	var router = handlers_utils.NewRouter()
-	router.AddNoAuthenticated("/users", "/", handlers.GetAllHandler{Query: newQuery}, http.MethodGet, newQuery)
-	router.AddNoAuthenticated("/users", "/", handlers.CreateHandler{Query: newQuery}, http.MethodPost, newQuery)
-	router.AddNoAuthenticated("/users", "/", handlers.DeleteHandler{Query: newQuery}, http.MethodDelete, newQuery)
-	router.AddNoAuthenticated("/users", "/", handlers.UpdateHandler{Query: newQuery}, http.MethodPut, newQuery)
+	newUser := models.TaUser{}
+	router.AddNoAuthenticated(Authentication, "/login", auth.UserLoginHandler{Query: newQuery, User: newUser}, http.MethodPost, newQuery)
+
+	router.AddAuthenticated(Users, "/", handlers.GetAllHandler{Query: newQuery}, http.MethodGet, newQuery)
+	router.AddAuthenticated(Users, "/", handlers.CreateHandler{Query: newQuery}, http.MethodPost, newQuery)
+	router.AddAuthenticated(Users, "/", handlers.DeleteHandler{Query: newQuery}, http.MethodDelete, newQuery)
+	router.AddAuthenticated(Users, "/", handlers.UpdateHandler{Query: newQuery}, http.MethodPut, newQuery)
 	return router
 }
 

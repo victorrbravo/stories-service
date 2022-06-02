@@ -10,6 +10,7 @@ import (
 	"stories/handlers_utils"
 	"stories/helpers"
 	"stories/types"
+	"stories/users"
 )
 
 type CreateHandler struct {
@@ -38,15 +39,16 @@ func (handler CreateHandler) IsEnabled() bool {
 }
 
 // Create a new currency
-func (handler CreateHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (handler CreateHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request, user users.User) {
 	var err error
-	var user *models.User
 	err = handlers_utils.GetParameters(&handler, request)
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, err.Error()))
 		return
 	}
-	user, err = models.CreateUser(handler.GetQuery(), handler.FirstName, handler.LastName, handler.Email, handler.AccountType)
+	user, err = models.CreateTaUser(handler.GetQuery(), handler.FirstName, handler.LastName, handler.Email,
+		types.NewString("pass"),
+		handler.AccountType)
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
 		return

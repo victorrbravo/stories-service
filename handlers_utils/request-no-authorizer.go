@@ -24,12 +24,16 @@ type RequestNoAuthorizer struct {
 
 // NewRequestAuthorizer creates new authorizer with the given the next handler that should handle
 // the request
-func NewRequestNoAuthorizer(next NoAuthorizedHTTPHandler) RequestNoAuthorizer {
-	return RequestNoAuthorizer{next: next}
+func NewRequestNoAuthorizer(next NoAuthorizedHTTPHandler, query database.IQuery) RequestNoAuthorizer {
+	return RequestNoAuthorizer{next: next, query: query}
 }
 
 func (handler RequestNoAuthorizer) GetQuery() database.IQuery {
-	return nil
+	return handler.query
+}
+
+func (handler *RequestNoAuthorizer) SetQuery(query database.IQuery) {
+	handler.query = query
 }
 
 func (handler RequestNoAuthorizer) IsEnabled() bool {

@@ -91,11 +91,11 @@ func (router Router) Add(root string, endpoint string, handler NoAuthorizedHTTPH
 }
 
 func (router Router) AddNoAuthenticated(root string, endpoint string, handler NoAuthorizedHTTPHandler, method string, q database.IQuery) {
-	router.Add(root, endpoint, NewRequestNoAuthorizer(handler), method, q)
+	router.Add(root, endpoint, NewRequestNoAuthorizer(handler, q), method, q)
 }
 
 func (router Router) AddAuthenticated(root string, endpoint string, handler AuthorizedHTTPHandler, method string, q database.IQuery) {
-	router.Add(root, endpoint, NewRequestAuthorizer(handler), method, q)
+	router.Add(root, endpoint, NewRequestAuthorizer(handler, q), method, q)
 }
 
 func (router Router) parseUrl(currentUrl *url.URL, method string) (Route, error) {

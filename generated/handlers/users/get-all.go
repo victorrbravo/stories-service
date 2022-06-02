@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"stories/generated/models"
+	"stories/users"
 
 	"stories/database"
 	"stories/handlers_utils"
@@ -29,11 +30,11 @@ func (handler GetAllHandler) GetQuery() database.IQuery {
 }
 
 // Get all suggestions for you
-func (handler GetAllHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (handler GetAllHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request, user users.User) {
 	var err error
-	var users []models.User
+	var users []models.TaUser
 	log.Println("GETQUERY.....handler.query", handler.GetQuery())
-	users, err = models.GetAllUsers(handler.GetQuery())
+	users, err = models.GetAllTaUsers(handler.GetQuery())
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
 		return

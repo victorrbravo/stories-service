@@ -12,6 +12,10 @@ type Query struct {
 	config   *DatabaseConfig
 }
 
+func (repo *Query) SetSqlDB(db *sql.DB) {
+	repo.db = db
+}
+
 func (repo *Query) Initialize(newConfig *DatabaseConfig) bool {
 	if repo.config != nil {
 		return false

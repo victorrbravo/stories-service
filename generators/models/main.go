@@ -44,6 +44,7 @@ type attr struct {
 	Searchable bool
 	Discrete   bool
 	KeyForMany bool
+	Getter     bool
 }
 
 type generatorContext struct {

@@ -12,13 +12,13 @@ func TestModelUser(t *testing.T) {
 	var config = database.DatabaseConfig{Host: "localhost", Name: "panel", Port: 5432, User: "vbravo",
 		Password: "vbravo"}
 	var query database.PostgresQuery
-	var users []models.User
+	var users []models.TaUser
 	query.Initialize(&config)
 	err := query.Connect()
 	t.Log("Connect err", err)
 	newQuery := query.NewQuery()
 	t.Log("Get All Users")
-	users, err = models.GetAllUsers(newQuery)
+	users, err = models.GetAllTaUsers(newQuery)
 	if err != nil {
 		t.Logf("Error GetAllUsers %v", err)
 		return
@@ -26,17 +26,36 @@ func TestModelUser(t *testing.T) {
 	t.Logf("Users: %v", users)
 }
 
+func TestModelAddUser(t *testing.T) {
+	var config = database.DatabaseConfig{Host: "localhost", Name: "panel", Port: 5432, User: "vbravo",
+		Password: "vbravo"}
+	var query database.PostgresQuery
+	var user *models.TaUser
+	query.Initialize(&config)
+	err := query.Connect()
+	t.Log("Connect err", err)
+	newQuery := query.NewQuery()
+	t.Log("Get Add User")
+	user, err = models.CreateTaUser(newQuery, types.NewString("Marcelo"), types.NewString("Bravo"),
+		types.NewString("victor2@email.com"), types.NewString("pass"), types.NewString("Admin"))
+	if err != nil {
+		t.Logf("Error GetAllUsers %v", err)
+		return
+	}
+	t.Logf("Users: %v", user)
+}
+
 func TestModelUserByID(t *testing.T) {
 	var config = database.DatabaseConfig{Host: "localhost", Name: "panel", Port: 5432, User: "vbravo",
 		Password: "vbravo"}
 	var query database.PostgresQuery
-	var user *models.User
+	var user *models.TaUser
 	query.Initialize(&config)
 	err := query.Connect()
 	t.Log("Connect err", err)
 	newQuery := query.NewQuery()
 	t.Log("Get User By ID")
-	user, err = models.GetUserByID(newQuery, types.NewInt(2))
+	user, err = models.GetTaUserByPkUser(newQuery, types.NewInt(1))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			t.Logf("Error No Rows GetUserByID %v", err)
@@ -45,5 +64,5 @@ func TestModelUserByID(t *testing.T) {
 		t.Errorf("Error f %v", err)
 		return
 	}
-	t.Logf("User: %v", user)
+	t.Logf("User : %v", user)
 }

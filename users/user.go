@@ -17,10 +17,8 @@ const (
 
 // User a generic user interface to implement all types of users in the context of COMPA
 type User interface {
-	GetID() types.UUID
 	GetEmail() string
-	GetFullName() string
-	GetSessionCount() int
+	GetPassword() string
 }
 
 // DummyUser is a no-op user
@@ -60,9 +58,3 @@ func (DummyUser) GetFullName() string {
 func (DummyUser) GetSessionCount() int {
 	return 0
 }
-
-// AllExceptSelf is a special user which means all other users except the asking the question
-var AllExceptSelf User = &DummyUser{}
-
-// All means that, i.e. all the users
-var All User = &DummyUser{}

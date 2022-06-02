@@ -39,6 +39,7 @@ type IQuery interface {
 	Connect() error
 	Initialize(newConfig *DatabaseConfig) bool
 	GetDatabase() *Connection
+	SetSqlDB(db *sql.DB)
 }
 
 type RowInterface interface {

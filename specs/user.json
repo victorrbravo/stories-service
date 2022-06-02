@@ -1,8 +1,8 @@
 {
-  "Model": "User",
+  "Model": "TaUser",
   "Attrs": [
     {
-      "Name": "ID",
+      "Name": "PkUser",
       "Type": "types.Int",
       "Scannable": true,
       "Key": true
@@ -24,7 +24,16 @@
       "Type": "types.String",
       "Scannable": true,
       "Nullable": true,
-      "Searchable": true
+      "Searchable": true,
+      "Getter": true
+    },
+    {
+      "Name": "Password",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Searchable": true,
+      "Getter": true
     },
     {
       "Name": "AccountType",

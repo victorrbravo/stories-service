@@ -2,8 +2,12 @@ package handlers_utils
 
 import (
 	"errors"
+	"github.com/dgrijalva/jwt-go"
+	"log"
 	"net/http"
 	"stories/database"
+	"stories/generated/models"
+	"stories/types"
 	"strings"
 
 	"stories/constants"
@@ -29,8 +33,8 @@ type RequestAuthorizer struct {
 
 // NewRequestAuthorizer creates new authorizer with the given the next handler that should handle
 // the request
-func NewRequestAuthorizer(next AuthorizedHTTPHandler) RequestAuthorizer {
-	return RequestAuthorizer{next: next}
+func NewRequestAuthorizer(next AuthorizedHTTPHandler, query database.IQuery) RequestAuthorizer {
+	return RequestAuthorizer{next: next, query: query}
 }
 
 func getToken(header http.Header) (crypto.Token, error) {
@@ -46,7 +50,10 @@ func getToken(header http.Header) (crypto.Token, error) {
 }
 
 func (handler RequestAuthorizer) GetQuery() database.IQuery {
-	return nil
+	return handler.query
+}
+func (handler *RequestAuthorizer) SetQuery(query database.IQuery) {
+	handler.query = query
 }
 
 // Check if endpoint is enabled
@@ -54,18 +61,56 @@ func (handler RequestAuthorizer) IsEnabled() bool {
 	return constants.WorkingModeValueNormal == 0
 }
 
+func getAuthorizationField(request *http.Request) (string, error) {
+	value := request.Header.Get("Authorization")
+	log.Printf("value |%s|", value)
+	// And now use the token string
+	return value, nil
+}
+func getJWTToken(request *http.Request) (string, error) {
+	var err error
+	var email string
+	var code string
+	var jwtToken jwt.MapClaims
+	code, err = getAuthorizationField(request)
+	if err != nil {
+		return code, err
+	}
+	jwtToken, err = helpers.TokenValid(strings.TrimSuffix(code, "\\r\\n"))
+	log.Println("token valid err", err)
+	if err != nil {
+		return "", err
+	}
+	if _, ok := jwtToken["email"]; !ok {
+		return "", err
+	}
+	email = jwtToken["email"].(string)
+	log.Println("getJWTToken email", email)
+	return email, nil
+}
+
 func (handler RequestAuthorizer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	var next AuthorizedHTTPHandler
 	next = handler.next
-	var user users.User
+	var user interface{}
+	var email string
 	var err error
-
-	user, err = users.DummyUser{}, nil
+	query := handler.GetQuery()
+	email, err = getJWTToken(request)
+	log.Println("ServeHTTP getJWTToken email ", email, " err", err, "query", query)
+	if err != nil {
+		RespondWithError(writer, helpers.NewHttpError(http.StatusForbidden, constants.YouHaveNoAccessToResource))
+	}
+	user, err = models.TaUser{}.GetTaUserByEmail(query, types.NewString(email))
+	log.Println("models.TaUser{}.GetTaUserByEmail checking err", err)
 	if err != nil {
 		RespondWithError(writer, helpers.NewHttpError(http.StatusForbidden, constants.YouHaveNoAccessToResource))
 	} else if user != nil {
 		if next.IsEnabled() {
-			next.ServeHTTP(writer, request, user)
+			taUser := user.(*models.TaUser)
+			log.Println("models.TaUser{}.GetTaUserByEmail checking taUser", taUser)
+
+			next.ServeHTTP(writer, request, taUser)
 		} else {
 			RespondWithError(writer, helpers.NewHttpError(http.StatusMethodNotAllowed, constants.ThisEndpointIsDisabled))
 		}

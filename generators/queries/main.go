@@ -96,8 +96,8 @@ func (handler *queryHandler) HandleFile(file os.FileInfo) error {
 }
 
 func main() {
-	var sourcePath = "data-model/queries"
-	var targetPath = "generated/queries"
+	var sourcePath = "../data-model/queries"
+	var targetPath = "../generated/queries"
 	var err error
 	var parser = template.New("")
 	var handler = &queryHandler{

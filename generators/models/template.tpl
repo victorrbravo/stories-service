@@ -19,37 +19,37 @@ import (
  * Generated queries (these can be used perfectly instead of writing them by hand
  */
 const (
-    {{ .Model }}CreateQuery = "INSERT INTO {{ .Schema }}\"{{ .TableName.ToSnakeCases }}\" ({{- range $index, $attr := onlyNonKeys .Attrs }}{{- if $index }}, {{- end }}{{ checkUpdateOrDelete $attr.FieldName $attr.Name }}{{- end }}) VALUES ({{- range $index, $attr := onlyNonKeys .Attrs }}{{- if $index }}, {{ end }}${{ add $index 1 }}{{- end }}) RETURNING ({{- range $index, $attr := onlyKeys .Attrs }}{{- if $index }}, {{- end }}{{ checkUpdateOrDelete $attr.FieldName $attr.Name }}{{- end }})"
+    {{ .Model }}CreateQuery = "INSERT INTO {{ .Schema }}\"{{ .TableName.ToSnakeCase }}\" ({{- range $index, $attr := onlyNonKeys .Attrs }}{{- if $index }}, {{- end }}{{ checkUpdateOrDelete $attr.FieldName $attr.Name }}{{- end }}) VALUES ({{- range $index, $attr := onlyNonKeys .Attrs }}{{- if $index }}, {{ end }}${{ add $index 1 }}{{- end }}) RETURNING ({{- range $index, $attr := onlyKeys .Attrs }}{{- if $index }}, {{- end }}{{ checkUpdateOrDelete $attr.FieldName $attr.Name }}{{- end }})"
     {{- if checkIsNotEmpty .OrderBy }}
-    All{{ .Model }}Query = "SELECT {{- range $index, $attr := .Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name }} {{- end }} FROM {{ .Schema }}\"{{ .TableName.ToSnakeCases }}\" ORDER BY \"{{ .OrderBy.ToSnakeCase }}\" {{ .Order }}"
+    All{{ .Model }}Query = "SELECT {{- range $index, $attr := .Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name }} {{- end }} FROM {{ .Schema }}\"{{ .TableName.ToSnakeCase }}\" ORDER BY \"{{ .OrderBy.ToSnakeCase }}\" {{ .Order }}"
     {{- else }}
-    All{{ .Model }}Query = "SELECT {{- range $index, $attr := .Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name }} {{- end }} FROM {{ .Schema }}\"{{ .TableName.ToSnakeCases }}\""
+    All{{ .Model }}Query = "SELECT {{- range $index, $attr := .Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name }} {{- end }} FROM {{ .Schema }}\"{{ .TableName.ToSnakeCase }}\""
     {{- end }}
     {{- range .Attrs }}
     {{- if .Key }}
-    {{ $.Model }}By{{ .Name }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ (checkForSelect .FieldName .Name) }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCases }}\" WHERE {{ checkUpdateOrDelete  .FieldName .Name }} = $1"
+    {{ $.Model }}By{{ .Name }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ (checkForSelect .FieldName .Name) }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" WHERE {{ checkUpdateOrDelete  .FieldName .Name }} = $1"
     {{- end }}
     {{- end }}
     {{- range .Attrs }}
     {{- if .KeyForMany }}
-    {{ $.Model }}By{{ .Name }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ (checkForSelect .FieldName .Name) }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCases }}\" WHERE {{ checkUpdateOrDelete  .FieldName .Name }} = $1"
+    {{ $.Model }}By{{ .Name }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ (checkForSelect .FieldName .Name) }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" WHERE {{ checkUpdateOrDelete  .FieldName .Name }} = $1"
     {{- end }}
     {{- end }}
     {{- range .Attrs }}
     {{- if .Searchable }}
-    {{ $.Model }}By{{ .Name }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCases }}\" WHERE {{ checkUpdateOrDelete  .FieldName .Name }} = $1"
+    {{ $.Model }}By{{ .Name }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" WHERE {{ checkUpdateOrDelete  .FieldName .Name }} = $1"
     {{- end }}
     {{- end }}
     {{- range .Attrs }}
     {{- if .Discrete }}
-    Get{{ $.Model }}CategoriesFrom{{ .Name }}Query = "SELECT {{ checkForSelect .FieldName .Name }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCases }}\" GROUP BY {{ checkForSelect .FieldName .Name }}"
-    Search{{ $.Model }}CategoriesFrom{{ .Name }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCases }}\" WHERE {{ checkUpdateOrDelete  .FieldName .Name }} IN ($1)"
+    Get{{ $.Model }}CategoriesFrom{{ .Name }}Query = "SELECT {{ checkForSelect .FieldName .Name }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" GROUP BY {{ checkForSelect .FieldName .Name }}"
+    Search{{ $.Model }}CategoriesFrom{{ .Name }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" WHERE {{ checkUpdateOrDelete  .FieldName .Name }} IN ($1)"
     {{- end }}
     {{- end }}
-    {{ .Model }}UpdateQuery = "UPDATE {{ .Schema }}\"{{ .TableName.ToSnakeCases }}\" SET {{- range $index, $attr := onlyNonKeys .Attrs }} {{- if $index }},{{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = COALESCE(${{ add $index 1 }}, {{ checkUpdateOrDelete $attr.FieldName $attr.Name }}) {{- end }} WHERE {{- $count := len (onlyNonKeys .Attrs) -}} {{ range $index, $attr := onlyKeys .Attrs }} {{- if $index }}AND{{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = ${{ add $index $count 1 }} {{- end }}"
-    {{ .Model }}DeleteQuery = "DELETE FROM {{ .Schema }}\"{{ .TableName.ToSnakeCases }}\" WHERE {{- range $index, $attr := onlyKeys .Attrs }} {{- if $index }}AND{{- end }} \"{{ $attr.Name.ToSnakeCase  }}\" = ${{ add $index 1 }} {{- end }}"
+    {{ .Model }}UpdateQuery = "UPDATE {{ .Schema }}\"{{ .TableName.ToSnakeCase }}\" SET {{- range $index, $attr := onlyNonKeys .Attrs }} {{- if $index }},{{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = COALESCE(${{ add $index 1 }}, {{ checkUpdateOrDelete $attr.FieldName $attr.Name }}) {{- end }} WHERE {{- $count := len (onlyNonKeys .Attrs) -}} {{ range $index, $attr := onlyKeys .Attrs }} {{- if $index }}AND{{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = ${{ add $index $count 1 }} {{- end }}"
+    {{ .Model }}DeleteQuery = "DELETE FROM {{ .Schema }}\"{{ .TableName.ToSnakeCase }}\" WHERE {{- range $index, $attr := onlyKeys .Attrs }} {{- if $index }}AND{{- end }} \"{{ $attr.Name.ToSnakeCase  }}\" = ${{ add $index 1 }} {{- end }}"
     {{- if .Searcher }}
-    {{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCases }}\" WHERE {{- $count := 0 -}} {{ range $index, $attr := .Searcher }} {{- if $index }} AND {{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = ${{ add $index $count 1 }} {{- end }}"
+    {{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" WHERE {{- $count := 0 -}} {{ range $index, $attr := .Searcher }} {{- if $index }} AND {{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = ${{ add $index $count 1 }} {{- end }}"
     {{- end }}
 )
 
@@ -196,9 +196,8 @@ func Get{{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}An
 
 {{ range .Attrs }}
 {{- if .Searchable }}
-func Get{{ $.Model }}By{{- .Name -}}(query database.IQuery, value {{ .Type }}) (*{{ $.Model }}, error) {
+func ({{ $receiver }} {{$.Model}}) Get{{ $.Model }}By{{- .Name -}}(query database.IQuery, value {{ .Type }}) (interface{}, error) {
 	var err error
-	var {{ $receiver }} {{ $.Model }}
 	err = query.QueryOne({{ $.Model }}By{{ .Name }}Query, &{{ $receiver }}, value)
 	if err != nil {
 		return  nil, err
@@ -254,7 +253,17 @@ func Search{{ $.Model }}CategoriesFrom{{- .Name -}}(query database.IQuery, value
 	return page, nil
 }
 {{- end }}
+{{- if .Getter }}
+
+
+func ({{ $receiver }} {{ $.Model }}) Get{{- .Name -}}() string {
+	return types.AsString({{ $receiver }}.{{- .Name -}})
+}
+
 {{- end }}
+
+{{- end }}
+
 
 func ({{ $receiver }} *{{.Model}}) Delete(query database.IQuery) error {
 	var err error
@@ -269,6 +278,7 @@ func ({{ $receiver }} *{{.Model}}) Delete(query database.IQuery) error {
 	}
 	return nil
 }
+
 
 func GetAll{{ .Model.Plural }}(query database.IQuery) ([]{{ .Model }}, error) {
 	var err error
