@@ -9,8 +9,8 @@ import (
 
 type ModelUser interface {
 	GetTaUserByEmail(database.IQuery, types.String) (interface{}, error)
-	GetEmail() string
-	GetPassword() string
+	GetEmail() types.String
+	GetPassword() types.String
 }
 
 type GetUserInfoHandler struct{}

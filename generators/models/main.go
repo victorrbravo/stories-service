@@ -45,6 +45,7 @@ type attr struct {
 	Discrete   bool
 	KeyForMany bool
 	Getter     bool
+	Title      CustomString
 }
 
 type generatorContext struct {

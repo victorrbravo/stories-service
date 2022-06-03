@@ -255,10 +255,18 @@ func Search{{ $.Model }}CategoriesFrom{{- .Name -}}(query database.IQuery, value
 {{- end }}
 {{- if .Getter }}
 
+{{- if .Title }}
 
-func ({{ $receiver }} {{ $.Model }}) Get{{- .Name -}}() string {
-	return types.AsString({{ $receiver }}.{{- .Name -}})
+
+func ({{ $receiver }} {{ $.Model }}) Get{{- .Title -}}() {{ .Type }} {
+	return {{ $receiver }}.{{- .Name -}}
 }
+{{- else }}
+
+func ({{ $receiver }} {{ $.Model }}) Get{{- .Name -}}() {{ .Type }} {
+	return {{ $receiver }}.{{- .Name -}}
+}
+{{- end }}
 
 {{- end }}
 

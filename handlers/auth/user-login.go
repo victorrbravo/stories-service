@@ -84,7 +84,7 @@ func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *h
 	fmt.Printf("Compare handler.Password |%s|\n", handler.Password)
 	passcrypt, _ := bcrypt.GenerateFromPassword([]byte(types.AsString(handler.Password)), 0)
 	fmt.Printf("pass bcrypt |%s|\n", string(passcrypt))
-	err = crypto.ComparePasswords([]byte(pass), types.AsString(handler.Password))
+	err = crypto.ComparePasswords([]byte(types.AsString(pass)), types.AsString(handler.Password))
 	fmt.Println("crypto crypto.ComparePasswords err", err)
 	if err != nil {
 		handlers_utils.RespondWithError(

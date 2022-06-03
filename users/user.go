@@ -17,8 +17,10 @@ const (
 
 // User a generic user interface to implement all types of users in the context of COMPA
 type User interface {
-	GetEmail() string
-	GetPassword() string
+	GetID() types.Int
+	GetFullName() types.String
+	GetEmail() types.String
+	GetPassword() types.String
 }
 
 // DummyUser is a no-op user
@@ -35,8 +37,8 @@ func (dummyUser DummyUser) GetPeriodStartedAt() time.Time {
 }
 
 // GetEmail returns the email of a user
-func (DummyUser) GetEmail() string {
-	return ""
+func (DummyUser) GetEmail() types.String {
+	return types.String{}
 }
 
 // GetUserName returns the user name of a user

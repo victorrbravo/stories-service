@@ -2,11 +2,9 @@ package users
 
 import (
 	"net/http"
-	"stories/handlers_utils"
 	"stories/handlers/auth"
+	"stories/handlers_utils"
 )
-
-
 
 type GetGraph struct{}
 

@@ -150,14 +150,18 @@ func (taUser TaUser) GetTaUserByAccountType(query database.IQuery, value types.S
 
 
 
-func (taUser TaUser) GetEmail() string {
-	return types.AsString(taUser.Email)
-}
+func (taUser TaUser) GetID() types.Int {
+	return taUser.PkUser}
 
 
-func (taUser TaUser) GetPassword() string {
-	return types.AsString(taUser.Password)
-}
+func (taUser TaUser) GetFullName() types.String {
+	return taUser.FirstName}
+
+func (taUser TaUser) GetEmail() types.String {
+	return taUser.Email}
+
+func (taUser TaUser) GetPassword() types.String {
+	return taUser.Password}
 
 
 func (taUser *TaUser) Delete(query database.IQuery) error {

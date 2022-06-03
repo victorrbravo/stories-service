@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"stories/auth"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
@@ -32,7 +31,6 @@ func (handler VerifyEmailHandler) IsEnabled() bool {
 // You must add a parameter to Query String (URL) in this format: ?code=<CODE_SENT>
 func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	var err error
-	var user auth.User
 	//var email string
 	var code string
 	var jwtToken jwt.MapClaims
@@ -67,5 +65,5 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
 		return
 	}
-	handlers_utils.SendJSONResponse(writer, user, http.StatusOK)
+	handlers_utils.SendJSONResponse(writer, nil, http.StatusOK)
 }

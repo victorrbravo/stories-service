@@ -25,6 +25,9 @@ func TestModelUser(t *testing.T) {
 	}
 	t.Logf("Users: %v", users)
 }
+func TestUserGraph(t *testing.T) {
+
+}
 
 func TestModelAddUser(t *testing.T) {
 	var config = database.DatabaseConfig{Host: "localhost", Name: "panel", Port: 5432, User: "vbravo",

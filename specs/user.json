@@ -5,13 +5,17 @@
       "Name": "PkUser",
       "Type": "types.Int",
       "Scannable": true,
-      "Key": true
+      "Key": true,
+      "Getter": true,
+      "Title": "ID"
     },
     {
       "Name": "FirstName",
       "Type": "types.String",
       "Scannable": true,
-      "Nullable": true
+      "Nullable": true,
+      "Getter": true,
+      "Title": "FullName"
     },
     {
       "Name": "LastName",
