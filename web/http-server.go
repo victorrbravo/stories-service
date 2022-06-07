@@ -9,12 +9,14 @@ import (
 	"stories/generated/handlers/users"
 	"stories/generated/models"
 	"stories/handlers/auth"
+	"stories/handlers/social"
 	"stories/handlers_utils"
 )
 
 const (
 	Authentication = "/auth"
 	Users          = "/users"
+	Social         = "/social"
 )
 
 type Server struct {
@@ -25,6 +27,7 @@ func CreateRouter(newQuery database.IQuery) handlers_utils.Router {
 	newUser := models.TaUser{}
 	router.AddNoAuthenticated(Authentication, "/login", auth.UserLoginHandler{Query: newQuery, User: newUser}, http.MethodPost, newQuery)
 
+	router.AddAuthenticated(Social, "/add-step/{nameId}", social.AddStepHandler{Query: newQuery}, http.MethodPost, newQuery)
 	router.AddAuthenticated(Users, "/", handlers.GetAllHandler{Query: newQuery}, http.MethodGet, newQuery)
 	router.AddAuthenticated(Users, "/", handlers.CreateHandler{Query: newQuery}, http.MethodPost, newQuery)
 	router.AddAuthenticated(Users, "/", handlers.DeleteHandler{Query: newQuery}, http.MethodDelete, newQuery)

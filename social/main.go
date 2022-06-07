@@ -20,26 +20,26 @@ const (
 INSERT INTO "{{.EntityName}}" ("{{.Keyfield}}")
 VALUES ($1)
 ON CONFLICT ("{{.Keyfield}}")
-DO UPDATE SET "social" = jsonb_set("{{.EntityName}}"."social", '{likes}',
-"{{.EntityName}}"."social" -> 'likes' || $2, false)::jsonb
-RETURNING "social" ->> 'likes'
+DO UPDATE SET "flow" = jsonb_set("{{.EntityName}}"."flow", '{likes}',
+"{{.EntityName}}"."flow" -> 'likes' || $2, false)::jsonb
+RETURNING "flow" ->> 'likes'
 `
 	SocialAddComment = `
-	INSERT INTO "{{.EntityName}}" ("{{.Keyfield}}", "social")
+	INSERT INTO "{{.EntityName}}" ("{{.Keyfield}}", "flow")
 VALUES ($1, jsonb_set('{"likes": [],"dislikes": [],"shares": [],"tags": [],"comments": []}'::jsonb, '{comments}', '{"likes": [],"dislikes": [],"shares": [],"tags": [],"comments": []}'::jsonb -> 'comments' || $2, false)::jsonb)
 ON CONFLICT ("{{.Keyfield}}")
-DO UPDATE SET "social" = jsonb_set("{{.EntityName}}"."social", '{comments}',
-"{{.EntityName}}"."social" -> 'comments' || $2, false)::jsonb
-RETURNING "social" ->> 'comments'
+DO UPDATE SET "flow" = jsonb_set("{{.EntityName}}"."flow", '{comments}',
+"{{.EntityName}}"."flow" -> 'comments' || $2, false)::jsonb
+RETURNING "flow" ->> 'comments'
 `
 	SocialGetSocialLikes = `
-SELECT "social" ->> 'likes'
+SELECT "flow" ->> 'likes'
 FROM "{{.EntityName}}"
 WHERE "{{.Keyfield}}" = $1
 `
 
 	SocialGetSocial = `
-SELECT "social"::varchar
+SELECT "flow"::varchar
 FROM "{{.EntityName}}"
 WHERE "{{.Keyfield}}" = $1
 `
@@ -74,12 +74,12 @@ type Comment struct {
 	Date      types.DateTime `json:"date"`
 }
 type Tag struct {
-	UserID  types.UUID `json:"user_id"`
-	Keyword string     `json:"keyword"`
+	UserID  types.Int `json:"user_id"`
+	Keyword string    `json:"keyword"`
 }
 
 type Like struct {
-	UserID types.UUID     `json:"user_id"`
+	UserID types.Int      `json:"user_id"`
 	Date   types.DateTime `json:"date"`
 }
 
@@ -89,21 +89,22 @@ type DisLike struct {
 }
 
 type Share struct {
-	UserID types.UUID     `json:"user_id"`
+	UserID types.Int      `json:"user_id"`
 	Date   types.DateTime `json:"date"`
 }
 
-func (obj *Social) AddComment(value types.UUID, text string, user users.User, query database.IQuery) (Comment, error) {
+func (obj *Social) AddComment(value types.String, text string, user users.User, query database.IQuery) (Comment, error) {
 	var err error
 	var result scanners.String
 	var data []byte
-	comment := Comment{user.GetEmail(), user.GetFullName(), text, types.Now()}
+	comment := Comment{types.AsString(user.GetEmail()), types.AsString(user.GetFullName()), text, types.Now()}
 	data, err = json.Marshal(comment)
 	if err != nil {
 		return comment, err
 	}
 	strquery, _ := obj.useTemplate(SocialAddComment)
 	err = query.QueryOne(strquery, &result, value, data)
+	log.Println("comment result", result)
 	return comment, err
 }
 
@@ -122,7 +123,7 @@ func (obj Social) useTemplate(strquery string) (string, error) {
 	return buffer.String(), err
 
 }
-func (obj Social) ExistsLikeForThisUser(value types.UUID, user users.User, query database.IQuery) error {
+func (obj Social) ExistsLikeForThisUser(value types.Int, user users.User, query database.IQuery) error {
 	var likes types.String
 	var sameUser bool
 	var err error
@@ -149,7 +150,7 @@ func MarshalLikes(value types.String) (likes []Like, err error) {
 	return likes, nil
 }
 
-func (obj Social) AddLike(value types.UUID, user users.User, query database.IQuery) (types.String, error) {
+func (obj Social) AddLike(value types.Int, user users.User, query database.IQuery) (types.String, error) {
 	var err error
 	var result scanners.String
 	var data []byte
@@ -164,7 +165,7 @@ func (obj Social) AddLike(value types.UUID, user users.User, query database.IQue
 	return result.Value, err
 }
 
-func (obj Social) GetLikes(value types.UUID, query database.IQuery) (types.String, error) {
+func (obj Social) GetLikes(value types.Int, query database.IQuery) (types.String, error) {
 	var scanner scanners.String
 	var err error
 	strquery, err := obj.useTemplate(SocialGetSocialLikes)

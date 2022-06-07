@@ -47,7 +47,7 @@ create table "ta_story"
 create table "ta_flow"
 (
     "pk_flow"  serial primary key,
-    "name"     varchar not null,
+    "name"     varchar not null unique,
     "flow"     jsonb DEFAULT '{}'::jsonb,
     "fk_story" int REFERENCES "ta_story" ("pk_story")
 );

@@ -66,6 +66,7 @@ func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *h
 
 	object, err = handler.User.GetTaUserByEmail(handler.GetQuery(), handler.Email)
 
+	fmt.Println("serverhttp err", err)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			handlers_utils.RespondWithError(
@@ -83,7 +84,8 @@ func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *h
 	fmt.Printf("Compare pass |%s|\n", pass)
 	fmt.Printf("Compare handler.Password |%s|\n", handler.Password)
 	passcrypt, _ := bcrypt.GenerateFromPassword([]byte(types.AsString(handler.Password)), 0)
-	fmt.Printf("pass bcrypt |%s|\n", string(passcrypt))
+	fmt.Printf(
+		"pass bcrypt |%s|\n", string(passcrypt))
 	err = crypto.ComparePasswords([]byte(types.AsString(pass)), types.AsString(handler.Password))
 	fmt.Println("crypto crypto.ComparePasswords err", err)
 	if err != nil {
