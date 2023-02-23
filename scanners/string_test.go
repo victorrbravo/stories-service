@@ -1,0 +1,28 @@
+package scanners
+
+import (
+	"testing"
+
+	"stories/database"
+	"stories/types"
+)
+
+func TestString_ScanRow(t *testing.T) {
+	var query database.IQuery
+	var scanner String
+	var err error
+	err = query.QueryOne("SELECT 'string value'", &scanner)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if types.AsString(scanner.Value) != "string value" {
+		t.Fatalf("cannot scan a simple string value from the database")
+	}
+	err = query.QueryOne("SELECT NULL", &scanner)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !types.IsNil(scanner.Value) {
+		t.Fatalf("failed to scan `NULL' as a `types.String'")
+	}
+}

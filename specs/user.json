@@ -1,0 +1,51 @@
+{
+  "Model": "TaUser",
+  "Attrs": [
+    {
+      "Name": "PkUser",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Key": true,
+      "Getter": true,
+      "Title": "ID"
+    },
+    {
+      "Name": "FirstName",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "FullName"
+    },
+    {
+      "Name": "LastName",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true
+    },
+    {
+      "Name": "Email",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Searchable": true,
+      "Getter": true
+    },
+    {
+      "Name": "Password",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Searchable": false,
+      "Getter": true
+    },
+    {
+      "Name": "AccountType",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Searchable": true
+    }
+  ]
+}
+
