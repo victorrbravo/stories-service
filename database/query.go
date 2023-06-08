@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+
 	"stories/types"
 )
 
@@ -30,7 +31,7 @@ func (*Query) Connect() error {
 
 func (repo *Query) GetDatabase() *Connection {
 	ctx.do(func() {
-		var err = repo.Connect()
+		err := repo.Connect()
 		if err != nil {
 			panic(err)
 		}

@@ -26,7 +26,7 @@ func TestGender(t *testing.T) {
 		{name: "[7]: Empty String", value: string(`""`), spectedError: true},
 		{name: "[9]: Other String", value: []byte("X"), spectedError: true},
 
-		//FAIL ON EMPTY BYTE AND EMPTY STRING
+		// FAIL ON EMPTY BYTE AND EMPTY STRING
 
 		//{name: "[6]: Empty Byte", value: []byte(""), spectedError: true},
 		//{name: "[8]: Empty String", value: "", spectedError: true},
@@ -34,10 +34,9 @@ func TestGender(t *testing.T) {
 	}
 
 	for _, tt := range stringTests {
-
 		t.Run(tt.name, func(t *testing.T) {
-			var str = new(types.Gender)
-			var err = str.Scan(tt.value)
+			str := new(types.Gender)
+			err := str.Scan(tt.value)
 			// Error quest
 			if err != nil {
 				if !tt.spectedError {
@@ -57,7 +56,7 @@ func TestGender(t *testing.T) {
 				return
 			}
 
-			var vl = value
+			vl := value
 			if vl != tt.spectedValue {
 				t.Errorf("Error value not valid | Name: %s, spected %v, value: %v \n", tt.name, tt.spectedValue, vl)
 				return
@@ -81,7 +80,6 @@ func TestMarshallGender(t *testing.T) {
 
 	// using tt.name from the case to use it as the `t.Run` test name
 	for _, tt := range stringTests {
-
 		t.Run(tt.name, func(t *testing.T) {
 			value, err := tt.value.MarshalJSON()
 			if err != nil {
@@ -92,10 +90,8 @@ func TestMarshallGender(t *testing.T) {
 
 					t.Errorf("Error value not valid | Name: %s, spected %v, value: %v \n", tt.name, tt.spected, value)
 				}
-
 			}
 			if string(value) != string(tt.spected) {
-
 				return
 			}
 		})
@@ -122,10 +118,9 @@ func TestUnmarshalJSONGender(t *testing.T) {
 	// using tt.name from the case to use it as the `t.Run` test name
 
 	for _, tt := range stringTests {
-
 		t.Run(tt.name, func(t *testing.T) {
-			var parseElement = new(types.Bool)
-			var err = parseElement.UnmarshalJSON([]byte(tt.value))
+			parseElement := new(types.Bool)
+			err := parseElement.UnmarshalJSON([]byte(tt.value))
 			// Error quest
 			if err != nil {
 				if !tt.spectedError {

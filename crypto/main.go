@@ -8,7 +8,7 @@ import (
 )
 
 func random(size int) ([]byte, error) {
-	var bytes = make([]byte, size)
+	bytes := make([]byte, size)
 	var err error
 	// recv random bytes
 	_, err = rand.Read(bytes)
@@ -21,7 +21,7 @@ func random(size int) ([]byte, error) {
 
 // RandomHash generates a sha256 random hash
 func RandomHash() ([]byte, error) {
-	var sha = sha256.New()
+	sha := sha256.New()
 	var err error
 	var rnd []byte
 	// get something random, or not

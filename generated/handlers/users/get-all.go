@@ -1,9 +1,13 @@
 package handlers
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"stories/generated/models"
+	"stories/pkg/workflow/common"
 	"stories/users"
 
 	"stories/database"
@@ -32,12 +36,23 @@ func (handler GetAllHandler) GetQuery() database.IQuery {
 // Get all suggestions for you
 func (handler GetAllHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request, user users.User) {
 	var err error
-	var users []models.TaUser
+	//var users []models.TaUser
+	var flows []models.TaFlow
 	log.Println("GETQUERY.....handler.query", handler.GetQuery())
-	users, err = models.GetAllTaUsers(handler.GetQuery())
+	_, err = models.GetAllTaUsers(handler.GetQuery())
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
 		return
 	}
-	handlers_utils.SendJSONResponse(writer, users, http.StatusOK)
+	flows, err = models.GetAllTaFlows(handler.GetQuery())
+	wf, err := common.CreateExample(context.Background(), "TouristPlace")
+	fmt.Println("CreateExample err", err)
+	data, err := json.Marshal(wf)
+	fmt.Println("CreateExample wf", string(data))
+	if err != nil {
+		fmt.Println("error flows")
+		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+	handlers_utils.SendJSONResponse(writer, flows, http.StatusOK)
 }

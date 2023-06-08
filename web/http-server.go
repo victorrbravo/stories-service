@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
 	"stories/constants"
 	"stories/database"
 	"stories/generated/handlers/users"
@@ -19,17 +20,16 @@ const (
 	Social         = "/social"
 )
 
-type Server struct {
-}
+type Server struct{}
 
 func CreateRouter(newQuery database.IQuery) handlers_utils.Router {
-	var router = handlers_utils.NewRouter()
+	router := handlers_utils.NewRouter()
 	newUser := models.TaUser{}
 	router.AddNoAuthenticated(Authentication, "/login", auth.UserLoginHandler{Query: newQuery, User: newUser}, http.MethodPost, newQuery)
 
 	router.AddAuthenticated(Social, "/add-step/{nameId}", social.AddStepHandler{Query: newQuery}, http.MethodPost, newQuery)
 	router.AddAuthenticated(Users, "/", handlers.GetAllHandler{Query: newQuery}, http.MethodGet, newQuery)
-	router.AddAuthenticated(Users, "/", handlers.CreateHandler{Query: newQuery}, http.MethodPost, newQuery)
+	//	router.AddAuthenticated(Users, "/", handlers.CreateHandler{Query: newQuery}, http.MethodPost, newQuery)
 	router.AddAuthenticated(Users, "/", handlers.DeleteHandler{Query: newQuery}, http.MethodDelete, newQuery)
 	router.AddAuthenticated(Users, "/", handlers.UpdateHandler{Query: newQuery}, http.MethodPut, newQuery)
 	return router
@@ -38,6 +38,7 @@ func CreateRouter(newQuery database.IQuery) handlers_utils.Router {
 func NewServer() (Server, error) {
 	return Server{}, nil
 }
+
 func (server Server) Listen(host string, port int, swaggerDir string, newQuery database.IQuery) {
 	var err error
 	router := CreateRouter(newQuery)

@@ -44,7 +44,7 @@ func (boolean *Bool) Scan(src interface{}) error {
 
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (boolean *Bool) UnmarshalJSON(src []byte) error {
-	var valueValue = string(src)
+	valueValue := string(src)
 	if valueValue != constants.JSONNil {
 		var err error
 		err = json.Unmarshal(src, &boolean.value)

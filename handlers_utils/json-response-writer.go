@@ -16,7 +16,7 @@ func SendJSONResponse(writer http.ResponseWriter, object interface{}, status int
 	if err != nil {
 		RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
 	} else {
-		var header = writer.Header()
+		header := writer.Header()
 		// Set the correct content type
 		header.Set("Content-Type", "application/json; charset=utf-8")
 		// Finally start writing the response

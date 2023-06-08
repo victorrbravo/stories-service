@@ -35,7 +35,7 @@ func Generate(handler FileListHandler) error {
 	if err == nil && info.IsDir() == false {
 		log.Fatalf("error `%s' is not a directory", handler.GetTargetPath())
 	} else if err != nil {
-		err = os.Mkdir(handler.GetTargetPath(), os.ModeDir|0700)
+		err = os.Mkdir(handler.GetTargetPath(), os.ModeDir|0o700)
 		if err != nil {
 			return err
 		}
@@ -65,6 +65,7 @@ func GetSourceFiles(handler FileListHandler) ([]os.FileInfo, error) {
 	}
 	return files, nil
 }
+
 func GenerateFile(file os.FileInfo, handler FileListHandler) error {
 	var err error
 	var info os.FileInfo
@@ -72,7 +73,7 @@ func GenerateFile(file os.FileInfo, handler FileListHandler) error {
 	if err == nil && info.IsDir() == false {
 		log.Fatalf("error `%s' is not a directory", handler.GetTargetPath())
 	} else if err != nil {
-		err = os.Mkdir(handler.GetTargetPath(), os.ModeDir|0700)
+		err = os.Mkdir(handler.GetTargetPath(), os.ModeDir|0o700)
 		if err != nil {
 			return err
 		}
@@ -85,7 +86,7 @@ func GenerateFile(file os.FileInfo, handler FileListHandler) error {
 }
 
 func StripExtension(input string) string {
-	var length = strings.LastIndexByte(input, '.')
+	length := strings.LastIndexByte(input, '.')
 	return input[:length]
 }
 
@@ -94,7 +95,7 @@ func GetTypeName(name string) (string, error) {
 	if len(name) <= 4 {
 		return "", fmt.Errorf("invalid input string %s", name)
 	}
-	var items = strings.Split(StripExtension(name), "-")
+	items := strings.Split(StripExtension(name), "-")
 	for _, item := range items {
 		result += strings.ToUpper(item[0:1]) + item[1:]
 	}
@@ -134,7 +135,7 @@ func GetContent(dir string, name string) (string, error) {
 	}
 	// One extra byte or else, there's no content actually
 	if len(data) >= 4 {
-		var bom = binary.BigEndian.Uint32(data[:4])
+		bom := binary.BigEndian.Uint32(data[:4])
 		if bom&0xffffff00 == 0xefbbbf00 {
 			return string(data[3:]), nil
 		}

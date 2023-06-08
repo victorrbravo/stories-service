@@ -1,0 +1,38 @@
+{
+    "name": "User's status",
+    "variable": "sql.UserFields",
+    "token": "status",
+     "needs": [],
+    "tasks": [
+        {
+            "name": "new",
+          "time_field": "update_at",
+          "info_field": "role",
+            "token_link": "[]",
+            "links": [
+              {
+                    "to": "active",
+                    "query": "status='active'"
+              },
+              {
+                "link": "inactive",
+                "query": "status='inactive'"
+              }
+            ],
+            "pattern": "",
+            "needs": []
+        },
+        {
+            "name": "active",
+          "time_field": "update_at",
+          "info_field": "role",
+            "token_link": "[]",
+          "links": [
+                {
+                    "to": "end",
+                    "query": "pass"
+                }
+              ]
+        }
+    ] 
+}

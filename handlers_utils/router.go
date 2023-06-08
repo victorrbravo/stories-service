@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"stories/database"
 	"strings"
+
+	"stories/database"
 
 	"stories/helpers"
 )
@@ -24,8 +25,8 @@ type Router struct {
 var notFoundError = helpers.NewHttpError(http.StatusNotFound, "not found")
 
 func NewRouter() Router {
-	var router = Router{rootNode: &RouteNode{}}
-	// Setup the main thing
+	router := Router{rootNode: &RouteNode{}}
+	// Setup the cmd thing
 	http.Handle("/", router)
 	return router
 }
@@ -87,7 +88,6 @@ func (router Router) Add(root string, endpoint string, handler NoAuthorizedHTTPH
 	}
 	// Set handler
 	node.handler = handler
-
 }
 
 func (router Router) AddNoAuthenticated(root string, endpoint string, handler NoAuthorizedHTTPHandler, method string, q database.IQuery) {

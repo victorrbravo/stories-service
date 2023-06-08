@@ -24,8 +24,8 @@ func NewToken(hash []byte) Token {
 
 // Equals compares two tokens for equality and returns true if they're found equal
 func (token Token) Equals(other Token) bool {
-	var hash1 = token.hash
-	var hash2 = other.hash
+	hash1 := token.hash
+	hash2 := other.hash
 	if hash1 == nil || hash2 == nil {
 		log.Println("some token has a `nil' hash")
 		return false

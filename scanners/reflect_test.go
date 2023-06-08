@@ -8,17 +8,21 @@ import (
 	"stories/types"
 )
 
-const str = "string"
-const flt = 0.5
-const typesString = "another string"
+const (
+	str         = "string"
+	flt         = 0.5
+	typesString = "another string"
+)
 
-var uuid = types.NewUUIDMust("cca25c3f-445d-4837-bdf7-8f3a86ade4f2")
-var reflectSqlString string = fmt.Sprintf(
-	"SELECT '%v' as \"Uuid\", '%s' as \"String\", %.1f AS \"Float\", '%s' AS \"TypesString\", null AS \"NullString\"",
-	uuid,
-	str,
-	flt,
-	typesString,
+var (
+	uuid                    = types.NewUUIDMust("cca25c3f-445d-4837-bdf7-8f3a86ade4f2")
+	reflectSqlString string = fmt.Sprintf(
+		"SELECT '%v' as \"Uuid\", '%s' as \"String\", %.1f AS \"Float\", '%s' AS \"TypesString\", null AS \"NullString\"",
+		uuid,
+		str,
+		flt,
+		typesString,
+	)
 )
 
 type testType struct {
@@ -32,7 +36,7 @@ type testType struct {
 func TestReflect_ScanRow(t *testing.T) {
 	var query database.IQuery
 	var scanner Reflect
-	var value = testType{}
+	value := testType{}
 	var err error
 	scanner = NewReflectScanner(&value)
 	query = database.NewQuery()

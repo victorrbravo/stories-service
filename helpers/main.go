@@ -67,7 +67,7 @@ func ConvertJsonToDbArray(values []string) string {
 }
 
 func ConvertDbToJsonArray(value string) []string {
-	var str = value
+	str := value
 	var values []string
 	str = strings.TrimLeft(str, "{")
 	str = strings.TrimRight(str, "}")
@@ -78,7 +78,7 @@ func ConvertDbToJsonArray(value string) []string {
 }
 
 func ConvertDbToJson(value string) string {
-	var str = value
+	str := value
 	str = strings.Replace(str, "{", "[", -1)
 	str = strings.Replace(str, "}", "]", -1)
 	return str
@@ -112,7 +112,7 @@ func CreateJWTToken(email string) (*TokenDetails, error) {
 	td.AccessUuid = uuid.NewV4().String()
 	td.RtExpires = time.Now().Add(time.Minute * 24 * 7).Unix()
 	td.RefreshUuid = td.AccessUuid + "++" + email
-	//Creating Access Token
+	// Creating Access Token
 	value := os.Getenv(constants.JWTAccessEnvironmentOSName)
 	if len(value) == 0 {
 		_ = os.Setenv(constants.JWTAccessEnvironmentOSName, constants.DefaultJWT) // this should be in an env file
@@ -127,7 +127,7 @@ func CreateJWTToken(email string) (*TokenDetails, error) {
 	if err != nil {
 		return td, err
 	}
-	//Creating Refresh Token
+	// Creating Refresh Token
 	_ = os.Setenv(constants.JWTRefreshEnvironmentOSName, constants.DefaultRefreshJWT) // this should be in an env file
 	rtClaims := jwt.MapClaims{}
 	rtClaims["refresh_uuid"] = td.RefreshUuid
@@ -148,7 +148,7 @@ func CreateInvitationJWTToken(email string) (*TokenDetails, error) {
 	td.AccessUuid = uuid.NewV4().String()
 	td.RtExpires = time.Now().Add(time.Minute * 60 * 24 * 365 * 2).Unix()
 	td.RefreshUuid = td.AccessUuid + "++" + email
-	//Creating Access Token
+	// Creating Access Token
 	value := os.Getenv(constants.JWTAccessEnvironmentOSName)
 	if len(value) == 0 {
 		_ = os.Setenv(constants.JWTAccessEnvironmentOSName, constants.DefaultJWT) // this should be in an env file
@@ -163,7 +163,7 @@ func CreateInvitationJWTToken(email string) (*TokenDetails, error) {
 	if err != nil {
 		return td, err
 	}
-	//Creating Refresh Token
+	// Creating Refresh Token
 	_ = os.Setenv(constants.JWTRefreshEnvironmentOSName, constants.DefaultRefreshJWT) // this should be in an env file
 	rtClaims := jwt.MapClaims{}
 	rtClaims["refresh_uuid"] = td.RefreshUuid
@@ -212,7 +212,7 @@ func DateEqual(date1, date2 time.Time) bool {
 
 func GenerateCode() string {
 	var code string
-	var sha = sha256.New()
+	sha := sha256.New()
 	code = StringWithCharset(rand.Intn(64), charset)
 	_, _ = io.WriteString(sha, code)
 	return hex.EncodeToString(sha.Sum(nil))

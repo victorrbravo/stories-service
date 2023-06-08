@@ -102,8 +102,8 @@ func TestUnmarshalJSONCoordinates(t *testing.T) {
 	for _, tt := range stringTests {
 		// using tt.name from the case to use it as the `t.Run` test name
 		t.Run(tt.name, func(t *testing.T) {
-			var parseElement = new(types.Coordinates)
-			var err = parseElement.UnmarshalJSON([]byte(tt.value))
+			parseElement := new(types.Coordinates)
+			err := parseElement.UnmarshalJSON([]byte(tt.value))
 			// Error quest
 			if err != nil {
 				if !tt.spectedError {

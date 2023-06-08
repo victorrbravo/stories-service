@@ -1,0 +1,36 @@
+{
+  "Model": "TaFlow",
+  "Attrs": [
+    {
+      "Name": "PkFlow",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Key": true,
+      "Getter": true,
+      "Title": "ID"
+    },
+    {
+      "Name": "Name",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "Name"
+    },
+    {
+      "Name": "Flow",
+      "Type": "[]byte",
+      "Scannable": true,
+      "Nullable": true
+    },
+    {
+      "Name": "FkStory",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Searchable": true,
+      "Getter": true
+    }
+  ]
+}
+

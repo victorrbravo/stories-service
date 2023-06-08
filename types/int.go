@@ -48,7 +48,7 @@ func (integer *Int) Scan(src interface{}) error {
 }
 
 func (integer *Int) UnmarshalJSON(src []byte) error {
-	var strValue = string(src)
+	strValue := string(src)
 	if strValue != constants.JSONNil {
 		var value int
 		var err error

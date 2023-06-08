@@ -3,8 +3,10 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"github.com/lib/pq"
 	"log"
+
+	"github.com/lib/pq"
+
 	"stories/constants"
 )
 
@@ -23,7 +25,7 @@ func (repo *PostgresQuery) Initialize(newConfig *DatabaseConfig) bool {
 }
 
 func parsePostgresError(value *pq.Error) error {
-	var uid = generateUid()
+	uid := generateUid()
 	log.Printf("database error %s-%X %s\n%s", value.Code, uid, value.Message, value.Detail)
 	log.Println(value.InternalQuery)
 	if len(value.Hint) > 0 {
@@ -42,7 +44,7 @@ func parsePostgresError(value *pq.Error) error {
 
 func (repo *PostgresQuery) Connect() error {
 	var err error
-	var dsn = fmt.Sprintf(DSN, repo.config.User, repo.config.Password, repo.config.Host, repo.config.Port, repo.config.Name)
+	dsn := fmt.Sprintf(DSN, repo.config.User, repo.config.Password, repo.config.Host, repo.config.Port, repo.config.Name)
 	repo.db, err = sql.Open("postgres", dsn)
 	if err != nil {
 		panic(err)
@@ -59,7 +61,7 @@ func (repo *PostgresQuery) Connect() error {
 
 func (repo *PostgresQuery) GetDatabase() *Connection {
 	ctx.do(func() {
-		var err = repo.Connect()
+		err := repo.Connect()
 		if err != nil {
 			panic(err)
 		}
@@ -82,6 +84,6 @@ func (repo *PostgresQuery) NewTransaction() (*Transaction, error) {
 }
 
 func (repo *PostgresQuery) NewQuery() IQuery {
-	var connection = repo.GetDatabase()
+	connection := repo.GetDatabase()
 	return &Query{db: connection.db, instance: repo.instance, config: repo.config}
 }

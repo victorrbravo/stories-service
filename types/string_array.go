@@ -85,7 +85,7 @@ func (stringArray *StringArray) fromString(value string) error {
 
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (stringArray *StringArray) UnmarshalJSON(src []byte) error {
-	var strValue = string(src)
+	strValue := string(src)
 	var array []string
 	if strValue != constants.JSONNil {
 		var err error

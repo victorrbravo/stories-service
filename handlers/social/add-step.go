@@ -1,9 +1,9 @@
 package social
 
 import (
-	"fmt"
 	"log"
 	"net/http"
+
 	"stories/database"
 	"stories/handlers_utils"
 	"stories/helpers"
@@ -13,13 +13,16 @@ import (
 )
 
 type AddStepHandler struct {
-	Comment types.String `json:"comment"`
-	Query   database.IQuery
+	Name      types.String    `json:"name"`
+	TokenLink types.String    `json:"token_link"`
+	Pattern   types.String    `json:"pattern"`
+	Query     database.IQuery `json:"query,omitempty"`
 }
 
 func (handler AddStepHandler) GetQuery() database.IQuery {
 	return handler.Query
 }
+
 func (handler AddStepHandler) IsValid() error {
 	return nil
 }
@@ -34,21 +37,23 @@ func (handler AddStepHandler) ServeHTTP(writer http.ResponseWriter, request *htt
 	var err error
 	var strId string
 	var obj social.Social
-	var comment social.Comment
+	var task social.Task
 	obj.EntityName = "ta_flow"
 	obj.Keyfield = "name"
 	log.Println("GetPathParameters name request.RequestURI", request.RequestURI)
 	strId, err = handlers_utils.GetPathParameter("nameId", request)
 	log.Println("*strId |", strId, "|")
 	err = handlers_utils.GetParameters(&handler, request)
+	log.Println("*GetParameters err |", err, "|")
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, err.Error()))
 		return
 	}
-	comment, err = obj.AddComment(types.NewString(strId), fmt.Sprintf("%s", handler.Comment), user, handler.GetQuery())
+	task, err = obj.AddTask(strId, types.AsString(handler.Name), types.AsString(handler.TokenLink),
+		types.AsString(handler.Pattern), user, handler.GetQuery())
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, err.Error()))
 		return
 	}
-	handlers_utils.SendJSONResponse(writer, comment, http.StatusOK)
+	handlers_utils.SendJSONResponse(writer, task, http.StatusOK)
 }

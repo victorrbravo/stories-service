@@ -20,7 +20,7 @@ const (
 )
 
 func (date DateTime) format(format string) string {
-	var native = time.Time(date)
+	native := time.Time(date)
 	if native.IsZero() {
 		return ""
 	}
@@ -29,25 +29,25 @@ func (date DateTime) format(format string) string {
 
 // Format Verbose
 func (date DateTime) FormatVerbose() string {
-	var native = time.Time(date)
+	native := time.Time(date)
 	return native.Format(time.RFC850)
 }
 
 // Round wrapper around the native function
 func (date DateTime) Round(duration time.Duration) DateTime {
-	var native = time.Time(date)
+	native := time.Time(date)
 	return DateTime(native.Round(duration))
 }
 
 // IsZero wrapper around the native function
 func (date DateTime) IsZero() bool {
-	var native = time.Time(date)
+	native := time.Time(date)
 	return native.IsZero()
 }
 
 // Value implements the sql.Valuer interface
 func (date DateTime) Value() (driver.Value, error) {
-	var native = time.Time(date)
+	native := time.Time(date)
 	if native.IsZero() {
 		return nil, nil
 	}
@@ -84,6 +84,7 @@ func (date DateTime) ValidForTimeZone() error {
 	}
 	return nil
 }
+
 func (date *DateTime) AdjustToCurrentTimeZone() error {
 	var ServerTZ *time.Location
 	var newDate time.Time
@@ -116,7 +117,7 @@ func (date *DateTime) Scan(value interface{}) error {
 
 // MarshalJSON implements the json.Marshaler interface
 func (date DateTime) MarshalJSON() ([]byte, error) {
-	var native = time.Time(date)
+	native := time.Time(date)
 	if native.IsZero() {
 		return json.Marshal(nil)
 	}
@@ -140,25 +141,25 @@ func (date *DateTime) UnmarshalJSON(data []byte) error {
 
 // Before wrapper around the native function
 func (date DateTime) Before(other DateTime) bool {
-	var native = time.Time(date)
+	native := time.Time(date)
 	return native.Before(time.Time(other))
 }
 
 // After wrapper around the native function
 func (date DateTime) After(other DateTime) bool {
-	var native = time.Time(date)
+	native := time.Time(date)
 	return native.After(time.Time(other))
 }
 
 // Add wrapper around the native function
 func (date DateTime) Add(duration time.Duration) DateTime {
-	var native = time.Time(date)
+	native := time.Time(date)
 	return DateTime(native.Add(duration))
 }
 
 // Sub wrapper around the native function
 func (date DateTime) Sub(what DateTime) time.Duration {
-	var native = time.Time(date)
+	native := time.Time(date)
 	return native.Sub(time.Time(what))
 }
 

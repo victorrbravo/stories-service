@@ -1,4 +1,6 @@
 package models
+
+
 import (
 	"database/sql"
 	"stories/database"
@@ -13,7 +15,6 @@ const (
     AllTaUserQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\" FROM \"ta_user\""
     TaUserByPkUserQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\" FROM \"ta_user\" WHERE \"pk_user\" = $1"
     TaUserByEmailQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\" FROM \"ta_user\" WHERE \"email\" = $1"
-    TaUserByPasswordQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\" FROM \"ta_user\" WHERE \"password\" = $1"
     TaUserByAccountTypeQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\" FROM \"ta_user\" WHERE \"account_type\" = $1"
     TaUserUpdateQuery = "UPDATE \"ta_user\" SET \"first_name\" = COALESCE($1, \"first_name\"), \"last_name\" = COALESCE($2, \"last_name\"), \"email\" = COALESCE($3, \"email\"), \"password\" = COALESCE($4, \"password\"), \"account_type\" = COALESCE($5, \"account_type\") WHERE \"pk_user\" = $6"
     TaUserDeleteQuery = "DELETE FROM \"ta_user\" WHERE \"pk_user\" = $1"
@@ -125,14 +126,6 @@ func GetTaUserByPkUser(query database.IQuery, value types.Int) (*TaUser, error) 
 func (taUser TaUser) GetTaUserByEmail(query database.IQuery, value types.String) (interface{}, error) {
 	var err error
 	err = query.QueryOne(TaUserByEmailQuery, &taUser, value)
-	if err != nil {
-		return  nil, err
-	}
-	return &taUser, nil
-}
-func (taUser TaUser) GetTaUserByPassword(query database.IQuery, value types.String) (interface{}, error) {
-	var err error
-	err = query.QueryOne(TaUserByPasswordQuery, &taUser, value)
 	if err != nil {
 		return  nil, err
 	}

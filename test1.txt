@@ -1,4 +1,0 @@
-
-linea1 en commit 1
-linea2 en commit 2
-linea3 en commit 3

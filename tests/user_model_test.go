@@ -2,15 +2,21 @@ package tests
 
 import (
 	"database/sql"
-	"stories/types"
 	"testing"
+
+	"stories/types"
 )
-import "stories/database"
-import "stories/generated/models"
+
+import (
+	"stories/database"
+	"stories/generated/models"
+)
 
 func TestModelUser(t *testing.T) {
-	var config = database.DatabaseConfig{Host: "localhost", Name: "panel", Port: 5432, User: "vbravo",
-		Password: "vbravo"}
+	config := database.DatabaseConfig{
+		Host: "localhost", Name: "panel", Port: 5432, User: "vbravo",
+		Password: "vbravo",
+	}
 	var query database.PostgresQuery
 	var users []models.TaUser
 	query.Initialize(&config)
@@ -25,13 +31,15 @@ func TestModelUser(t *testing.T) {
 	}
 	t.Logf("Users: %v", users)
 }
-func TestUserGraph(t *testing.T) {
 
+func TestUserGraph(t *testing.T) {
 }
 
 func TestModelAddUser(t *testing.T) {
-	var config = database.DatabaseConfig{Host: "localhost", Name: "panel", Port: 5432, User: "vbravo",
-		Password: "vbravo"}
+	config := database.DatabaseConfig{
+		Host: "localhost", Name: "panel", Port: 5432, User: "vbravo",
+		Password: "vbravo",
+	}
 	var query database.PostgresQuery
 	var user *models.TaUser
 	query.Initialize(&config)
@@ -49,8 +57,10 @@ func TestModelAddUser(t *testing.T) {
 }
 
 func TestModelUserByID(t *testing.T) {
-	var config = database.DatabaseConfig{Host: "localhost", Name: "panel", Port: 5432, User: "vbravo",
-		Password: "vbravo"}
+	config := database.DatabaseConfig{
+		Host: "localhost", Name: "panel", Port: 5432, User: "vbravo",
+		Password: "vbravo",
+	}
 	var query database.PostgresQuery
 	var user *models.TaUser
 	query.Initialize(&config)

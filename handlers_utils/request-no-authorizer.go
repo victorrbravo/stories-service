@@ -2,6 +2,7 @@ package handlers_utils
 
 import (
 	"net/http"
+
 	"stories/constants"
 	"stories/database"
 	"stories/helpers"
@@ -50,5 +51,4 @@ func (handler RequestNoAuthorizer) ServeHTTP(writer http.ResponseWriter, request
 	} else {
 		RespondWithError(writer, helpers.NewHttpError(http.StatusMethodNotAllowed, constants.ThisEndpointIsDisabled))
 	}
-
 }

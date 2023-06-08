@@ -4,9 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
+
+	"golang.org/x/crypto/bcrypt"
+
 	"stories/constants"
 	"stories/crypto"
 	"stories/database"
@@ -40,6 +42,7 @@ func (handler UserLoginHandler) IsValid() error {
 func (handler UserLoginHandler) IsEnabled() bool {
 	return true
 }
+
 func (handler *UserLoginHandler) SetQuery(query database.IQuery) {
 	handler.Query = query
 }
@@ -96,7 +99,7 @@ func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *h
 
 		return
 	}
-	//token, err = user.CreateSession(handler.query)
+	// token, err = user.CreateSession(handler.query)
 	var tokenDetails *helpers.TokenDetails
 	tokenDetails, err = helpers.CreateJWTToken(types.AsString(handler.Email))
 	if err != nil {
@@ -104,9 +107,9 @@ func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *h
 		return
 	}
 	log.Println("tokenDetails.AccessToken", tokenDetails.AccessToken)
-	//token.SessionCount = user.GetSessionCount()
+	// token.SessionCount = user.GetSessionCount()
 	// Update auth token
-	//user.SetAuthToken(token.Token)
+	// user.SetAuthToken(token.Token)
 	// Send the response to the client
 	handlers_utils.SendJSONResponse(writer, tokenDetails.AccessToken, http.StatusOK)
 }

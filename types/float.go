@@ -25,7 +25,7 @@ func (value Float) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (value *Float) UnmarshalJSON(src []byte) error {
-	var valueValue = string(src)
+	valueValue := string(src)
 	var number float64
 	if valueValue != constants.JSONNil {
 		var err error

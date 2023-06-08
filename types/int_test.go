@@ -25,8 +25,8 @@ func TestScanInt(t *testing.T) {
 	for _, tt := range stringTests {
 		// using tt.name from the case to use it as the `t.Run` test name
 		t.Run(tt.name, func(t *testing.T) {
-			var str = new(types.Int)
-			var err = str.Scan(tt.value)
+			str := new(types.Int)
+			err := str.Scan(tt.value)
 			// Error quest
 			if err != nil {
 				if !tt.spectedError {
@@ -46,16 +46,13 @@ func TestScanInt(t *testing.T) {
 				return
 			}
 
-			var vl = value
+			vl := value
 			if vl != tt.spectedValue {
 				t.Errorf("Error value not valid | Name: %s, spected %v, value: %v \n", tt.name, tt.spectedValue, vl)
 				return
 			}
-
 		})
-
 	}
-
 }
 
 func TestMarshallInt(t *testing.T) {
@@ -83,9 +80,7 @@ func TestMarshallInt(t *testing.T) {
 				return
 			}
 		})
-
 	}
-
 }
 
 func TestUnmarshalJSONInt(t *testing.T) {
@@ -111,8 +106,8 @@ func TestUnmarshalJSONInt(t *testing.T) {
 	for _, tt := range stringTests {
 		// using tt.name from the case to use it as the `t.Run` test name
 		t.Run(tt.name, func(t *testing.T) {
-			var parseElement = new(types.Int)
-			var err = parseElement.UnmarshalJSON([]byte(tt.value))
+			parseElement := new(types.Int)
+			err := parseElement.UnmarshalJSON([]byte(tt.value))
 			// Error quest
 			if err != nil {
 				if !tt.spectedError {
@@ -134,7 +129,5 @@ func TestUnmarshalJSONInt(t *testing.T) {
 				t.Errorf("Error value not valid | Name: %s, spected %v, value: %v \n", tt.name, tt.spected, value)
 			}
 		})
-
 	}
-
 }

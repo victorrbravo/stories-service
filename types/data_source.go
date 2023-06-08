@@ -3,8 +3,9 @@ package types
 import (
 	"database/sql/driver"
 	"errors"
-	"stories/constants"
 	"fmt"
+
+	"stories/constants"
 )
 
 // Organizaation Extended Filter
@@ -32,7 +33,6 @@ func (mt DataSource) IsValid() error {
 	case DataSourceFinvar, DataSourceSEC, DataSourceCIAWorldFactbook, DataSourceQuandlSharadar, DataSourceWorldBank, DataSourceIMF, DataSourceBBC, DataSourceWorldTradeOrganization,
 		DataSourceCNBC, DataSourceFinancialTimes, DataSourceWallStreetJounral, DataSourceCNN, DataSourceFortune, DataSourceWallStreetJournal:
 		return nil
-
 	}
 	return errors.New(fmt.Sprintf(constants.FieldMustBeType, "DataSource", "Finvar, SEC, CIAWorldFactbook, QuandlSharadar, WorldBank, IMF, BBC, WorldTradeOrganization,CNBC, FinancialTimes, WallStreetJounral, CNN, Fortune, WallStreetJournal"))
 }
@@ -43,6 +43,7 @@ func (lt DataSource) isNil() bool {
 	}
 	return false
 }
+
 func (lt DataSource) Value() (driver.Value, error) {
 	if len(string(lt)) == 0 {
 		return nil, nil

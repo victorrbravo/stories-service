@@ -7,15 +7,36 @@ import (
 	"errors"
 	"html/template"
 	"log"
+	"strings"
+
 	"stories/constants"
 	"stories/database"
 	"stories/scanners"
 	"stories/types"
 	"stories/users"
-	"strings"
 )
 
 const (
+	SocialAddTask = `
+	INSERT INTO "{{.EntityName}}" ("{{.Keyfield}}", "flow")
+VALUES ($1, jsonb_set('{"name": "","variable": "","needs": [],"token": "","tasks": []}'::jsonb, '{tasks}', '{"name": "","variable": "","needs": [],"token": "","tasks": []}'::jsonb -> 'tasks' || $2, false)::jsonb)
+ON CONFLICT ("{{.Keyfield}}")
+DO UPDATE SET "flow" = jsonb_set("{{.EntityName}}"."flow", '{tasks}',
+"{{.EntityName}}"."flow" -> 'tasks' || $2, false)::jsonb
+RETURNING "flow" ->> 'tasks'
+`
+
+	SocialRemoveTask = `
+with tt as (SELECT
+jsonb_agg(j) FILTER (WHERE j->>'name'!='$2') AS new_tasks
+FROM ta_flow t, jsonb_array_elements(flow->'tasks') j WHERE pk_flow = $1
+GROUP BY t.flow) update ta_flow  
+set flow=jsonb_set(flow, '{tasks}', tt.new_tasks::jsonb, false)::jsonb from tt;
+`
+
+	SocialCountTask = `
+select jsonb_array_length((flow->>'tasks')::jsonb) from ta_flow;
+`
 	SocialAddLike = `
 INSERT INTO "{{.EntityName}}" ("{{.Keyfield}}")
 VALUES ($1)
@@ -44,6 +65,7 @@ FROM "{{.EntityName}}"
 WHERE "{{.Keyfield}}" = $1
 `
 )
+
 const SocialSchema string = `
 {
 	"likes": [],
@@ -53,6 +75,27 @@ const SocialSchema string = `
 	"comments": []	
 }
 `
+
+type Link struct {
+	To    string `json:"to"`
+	Query string `json:"query"`
+}
+
+type Task struct {
+	Name      string   `json:"name"`
+	TokenLink string   `json:"token_link"`
+	Pattern   string   `json:"pattern"`
+	Links     []Link   `json:"links"`
+	Needs     []string `json:"needs"`
+}
+
+type Workflow struct {
+	Name     string   `json:"name"`
+	Variable string   `json:"variable"`
+	Token    string   `json:"token"`
+	Needs    []string `json:"needs"`
+	Tasks    []Task   `json:"tasks"`
+}
 
 type Social struct {
 	EntityName string `json:"entity_name"`
@@ -93,6 +136,42 @@ type Share struct {
 	Date   types.DateTime `json:"date"`
 }
 
+func (obj *Social) AddTask(strId string, name string, tokenLink string, pattern string, user users.User, query database.IQuery) (Task, error) {
+	var err error
+	var result scanners.String
+	var data []byte
+	task := Task{name, tokenLink, pattern, []Link{}, []string{}}
+	data, err = json.Marshal(task)
+	if err != nil {
+		return task, err
+	}
+	strQuery, _ := obj.useTemplate(SocialAddTask)
+	log.Println("task strId", strId)
+	log.Println("task strQuery |", strQuery, "|")
+
+	err = query.QueryOne(strQuery, &result, strId, data)
+	log.Println("task result", result)
+	return task, err
+}
+
+func (obj *Social) RemoveTask(strId string, name string, tokenLink string, pattern string, user users.User, query database.IQuery) (Task, error) {
+	var err error
+	var result scanners.String
+	var data []byte
+	task := Task{name, tokenLink, pattern, []Link{}, []string{}}
+	data, err = json.Marshal(task)
+	if err != nil {
+		return task, err
+	}
+	strQuery, _ := obj.useTemplate(SocialAddTask)
+	log.Println("task strId", strId)
+	log.Println("task strQuery |", strQuery, "|")
+
+	err = query.QueryOne(strQuery, &result, strId, data)
+	log.Println("task result", result)
+	return task, err
+}
+
 func (obj *Social) AddComment(value types.String, text string, user users.User, query database.IQuery) (Comment, error) {
 	var err error
 	var result scanners.String
@@ -118,11 +197,11 @@ func (obj Social) useTemplate(strquery string) (string, error) {
 	var err error
 	var tpl *template.Template
 	tpl = template.New("sql_query")
-	tpl, err = tpl.Parse(strquery)
+	tpl, _ = tpl.Parse(strquery)
 	err = tpl.Execute(&buffer, obj)
 	return buffer.String(), err
-
 }
+
 func (obj Social) ExistsLikeForThisUser(value types.Int, user users.User, query database.IQuery) error {
 	var likes types.String
 	var sameUser bool

@@ -13,7 +13,7 @@ import (
 type Date time.Time
 
 func (date Date) format(format string) string {
-	var native = time.Time(date)
+	native := time.Time(date)
 	if native.IsZero() {
 		return ""
 	}
@@ -26,7 +26,7 @@ func (date Date) toString() string {
 
 // Value implements the sql.Valuer interface
 func (date Date) Value() (driver.Value, error) {
-	var native = time.Time(date)
+	native := time.Time(date)
 	if native.IsZero() {
 		return nil, nil
 	}
@@ -73,12 +73,12 @@ func (date *Date) UnmarshalJSON(data []byte) error {
 
 // After wrapper around the native `After()'
 func (date Date) After(other Date) bool {
-	var native = time.Time(date)
+	native := time.Time(date)
 	return native.After(time.Time(other))
 }
 
 // IsZero wrapper around the native `IsZero()'
 func (date Date) IsZero() bool {
-	var native = time.Time(date)
+	native := time.Time(date)
 	return native.IsZero()
 }

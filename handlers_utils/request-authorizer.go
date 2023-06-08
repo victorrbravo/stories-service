@@ -2,13 +2,15 @@ package handlers_utils
 
 import (
 	"errors"
-	"github.com/dgrijalva/jwt-go"
 	"log"
 	"net/http"
+	"strings"
+
+	"github.com/dgrijalva/jwt-go"
+
 	"stories/database"
 	"stories/generated/models"
 	"stories/types"
-	"strings"
 
 	"stories/constants"
 	"stories/crypto"
@@ -52,6 +54,7 @@ func getToken(header http.Header) (crypto.Token, error) {
 func (handler RequestAuthorizer) GetQuery() database.IQuery {
 	return handler.query
 }
+
 func (handler *RequestAuthorizer) SetQuery(query database.IQuery) {
 	handler.query = query
 }
@@ -67,6 +70,7 @@ func getAuthorizationField(request *http.Request) (string, error) {
 	// And now use the token string
 	return value, nil
 }
+
 func getJWTToken(request *http.Request) (string, error) {
 	var err error
 	var email string

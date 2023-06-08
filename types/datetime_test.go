@@ -10,8 +10,8 @@ import (
 var iso8601 = "2006-01-02T15:04:05.999Z07:00"
 
 func TestScanDateTime(t *testing.T) {
-	var init = time.Now()
-	var year, err = time.Parse("2006-01-02", "2020-05-15")
+	init := time.Now()
+	year, err := time.Parse("2006-01-02", "2020-05-15")
 	if err != nil {
 		t.Error("DateTime-Scan: Parse init error")
 		return
@@ -34,8 +34,8 @@ func TestScanDateTime(t *testing.T) {
 	for _, tt := range stringTests {
 		// using tt.name from the case to use it as the `t.Run` test name
 		t.Run(tt.name, func(t *testing.T) {
-			var str = new(types.DateTime)
-			var err = str.Scan(tt.value)
+			str := new(types.DateTime)
+			err := str.Scan(tt.value)
 			// Error quest
 			if err != nil {
 				if !tt.spectedError {
@@ -54,7 +54,7 @@ func TestScanDateTime(t *testing.T) {
 				return
 			}
 
-			var vl = value
+			vl := value
 			if vl != tt.spectedValue {
 				t.Errorf("Error value not valid | Name: %s, spected %v, value: %v \n", tt.name, tt.spectedValue, vl)
 				return
@@ -64,8 +64,8 @@ func TestScanDateTime(t *testing.T) {
 }
 
 func TestMarshallDateTime(t *testing.T) {
-	var init = time.Now()
-	var year, err = time.Parse("2006-01-02", "2020-05-15")
+	init := time.Now()
+	year, err := time.Parse("2006-01-02", "2020-05-15")
 	if err != nil {
 		t.Error("DateTime-Marshall: Parse init error")
 		return
@@ -98,8 +98,8 @@ func TestMarshallDateTime(t *testing.T) {
 }
 
 func TestUnmarshalJSONDateTime(t *testing.T) {
-	var init = time.Now()
-	var year, err = time.Parse("2006-01-02", "2020-05-15")
+	init := time.Now()
+	year, err := time.Parse("2006-01-02", "2020-05-15")
 	if err != nil {
 		t.Error("DateTime-Marshall: Parse init error")
 		return
@@ -123,8 +123,8 @@ func TestUnmarshalJSONDateTime(t *testing.T) {
 	for _, tt := range stringTests {
 		// using tt.name from the case to use it as the `t.Run` test name
 		t.Run(tt.name, func(t *testing.T) {
-			var parseElement = new(types.DateTime)
-			var err = parseElement.UnmarshalJSON([]byte(tt.value))
+			parseElement := new(types.DateTime)
+			err := parseElement.UnmarshalJSON([]byte(tt.value))
 			// Error quest
 			if err != nil {
 				if !tt.spectedError {

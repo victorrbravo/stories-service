@@ -1,9 +1,10 @@
 package database
 
 import (
+	"testing"
+
 	"stories/generated/queries"
 	"stories/types"
-	"testing"
 )
 
 type User struct {
@@ -25,9 +26,10 @@ func (user *User) ScanRow(rows RowInterface) (interface{}, error) {
 }
 
 func TestDatabaseConnect(t *testing.T) {
-
-	var config = DatabaseConfig{Host: "localhost", Name: "panel", Port: 5432, User: "vbravo",
-		Password: "vbravo"}
+	config := DatabaseConfig{
+		Host: "localhost", Name: "panel", Port: 5432, User: "vbravo",
+		Password: "vbravo",
+	}
 	var query PostgresQuery
 	query.Initialize(&config)
 	err := query.Connect()
@@ -37,5 +39,4 @@ func TestDatabaseConnect(t *testing.T) {
 	newQuery := query.NewQuery()
 	newQuery.QueryMany(queries.GetUsers, &user)
 	t.Logf("User: Nombre: %s Apellido: %s", user.FirstName, user.LastName)
-
 }

@@ -4,23 +4,27 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 	"log"
-	"stories/constants"
-	"stories/types"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/lib/pq"
+	_ "github.com/lib/pq"
+
+	"stories/constants"
+	"stories/types"
 )
 
-const DSN = "user=%s password=%s host=%s port=%d dbname=%s sslmode=disable"
-const SetEncodingQuery = "SET CLIENT_ENCODING TO 'UTF8'"
+const (
+	DSN              = "user=%s password=%s host=%s port=%d dbname=%s sslmode=disable"
+	SetEncodingQuery = "SET CLIENT_ENCODING TO 'UTF8'"
+)
 
 var (
 	NegativeOffsetErr = errors.New(constants.NegativeOffsetInPagedQuery)
+	PageEmptyErr      = errors.New(constants.EmptyPageInPagedQuery)
 )
-var PageEmptyErr = errors.New(constants.EmptyPageInPagedQuery)
 
 // IQuery interface will help using a `Query' and a `Transaction' seamlessly
 type IQuery interface {
@@ -69,7 +73,7 @@ func (synced *once) do(fn func()) {
 	if atomic.LoadUint32(&synced.done) == 1 {
 		return
 	}
-	var mutex = synced.mutex
+	mutex := synced.mutex
 	// get the lock when it's free
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -89,7 +93,7 @@ func closeRows(rows *sql.Rows) {
 }
 
 func generateUid() int64 {
-	var now = time.Now()
+	now := time.Now()
 	return now.Unix()
 }
 

@@ -3,6 +3,7 @@ package types
 import (
 	"database/sql/driver"
 	"encoding/json"
+
 	twinj "github.com/twinj/uuid"
 
 	"stories/constants"

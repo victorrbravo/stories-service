@@ -8,8 +8,8 @@ import (
 )
 
 func TestScanDate(t *testing.T) {
-	var init = time.Now()
-	var year, err = time.Parse("2006-01-02", "2020-05-15")
+	init := time.Now()
+	year, err := time.Parse("2006-01-02", "2020-05-15")
 	if err != nil {
 		t.Error("Date-Scan: Parse init error")
 		return
@@ -32,8 +32,8 @@ func TestScanDate(t *testing.T) {
 	for _, tt := range stringTests {
 		// using tt.name from the case to use it as the `t.Run` test name
 		t.Run(tt.name, func(t *testing.T) {
-			var str = new(types.Date)
-			var err = str.Scan(tt.value)
+			str := new(types.Date)
+			err := str.Scan(tt.value)
 			// Error quest
 			if err != nil {
 				if !tt.spectedError {
@@ -52,7 +52,7 @@ func TestScanDate(t *testing.T) {
 				return
 			}
 
-			var vl = value
+			vl := value
 			if vl != tt.spectedValue {
 				t.Errorf("Error value not valid | Name: %s, spected %v, value: %v \n", tt.name, tt.spectedValue, vl)
 				return
@@ -62,8 +62,8 @@ func TestScanDate(t *testing.T) {
 }
 
 func TestMarshallDate(t *testing.T) {
-	var init = time.Now()
-	var year, err = time.Parse("2006-01-02", "2020-05-15")
+	init := time.Now()
+	year, err := time.Parse("2006-01-02", "2020-05-15")
 	if err != nil {
 		t.Error("Date-Marshall: Parse init error")
 		return
@@ -96,8 +96,8 @@ func TestMarshallDate(t *testing.T) {
 }
 
 func TestUnmarshalJSONDate(t *testing.T) {
-	var init = time.Now()
-	var year, err = time.Parse("2006-01-02", "2020-05-15")
+	init := time.Now()
+	year, err := time.Parse("2006-01-02", "2020-05-15")
 	if err != nil {
 		t.Error("Date-Marshall: Parse init error")
 		return
@@ -121,8 +121,8 @@ func TestUnmarshalJSONDate(t *testing.T) {
 	for _, tt := range stringTests {
 		// using tt.name from the case to use it as the `t.Run` test name
 		t.Run(tt.name, func(t *testing.T) {
-			var parseElement = new(types.Date)
-			var err = parseElement.UnmarshalJSON([]byte(tt.value))
+			parseElement := new(types.Date)
+			err := parseElement.UnmarshalJSON([]byte(tt.value))
 			// Error quest
 			if err != nil {
 				if !tt.spectedError {

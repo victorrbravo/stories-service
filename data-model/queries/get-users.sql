@@ -1,9 +1,1 @@
-SELECT "id",
-       "first_name",
-       "last_name",
-       "email",
-       "account_type",
-       "password",
-       "created_at",
-       "activated"
-FROM "users"
+SELECT first_name, last_name FROM ta_user

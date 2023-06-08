@@ -3,8 +3,9 @@ package types
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"stories/constants"
 	"fmt"
+
+	"stories/constants"
 )
 
 type ProductType string

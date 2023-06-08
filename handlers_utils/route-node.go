@@ -98,7 +98,6 @@ func (node *RouteNode) AddFragment(name string) (*RouteNode, error) {
 			last.next = newRouteNode(name)
 			return last.next, nil
 		} else {
-
 			// Otherwise, just return the existing node
 			return found, nil
 		}

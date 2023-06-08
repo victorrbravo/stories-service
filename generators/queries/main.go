@@ -5,9 +5,10 @@ import (
 	"os"
 	"path"
 	"regexp"
-	"stories/generators"
 	"strings"
 	"text/template"
+
+	"stories/generators"
 )
 
 const Template string = `
@@ -54,9 +55,9 @@ func (handler *queryHandler) Prepare() {
 
 func (handler *queryHandler) Write() error {
 	var file *os.File
-	var tpl = handler.template
+	tpl := handler.template
 	var err error
-	file, err = os.Create(path.Join(handler.GetTargetPath(), "main.go"))
+	file, err = os.Create(path.Join(handler.GetTargetPath(), "cmd.go"))
 	if err != nil {
 		return err
 	}
@@ -69,8 +70,8 @@ func (handler *queryHandler) Write() error {
 
 func (handler *queryHandler) HandleFile(file os.FileInfo) error {
 	// Just to avoid ugly syntax
-	var multipleSpacesRegex = handler.multipleSpacesRegex
-	var operatorSpacesRegex = handler.operatorSpacesRegex
+	multipleSpacesRegex := handler.multipleSpacesRegex
+	operatorSpacesRegex := handler.operatorSpacesRegex
 	// Declare local stuff
 	var err error
 	var sql string
@@ -96,11 +97,11 @@ func (handler *queryHandler) HandleFile(file os.FileInfo) error {
 }
 
 func main() {
-	var sourcePath = "../data-model/queries"
-	var targetPath = "../generated/queries"
+	sourcePath := "../../data-model/queries"
+	targetPath := "../../generated/queries"
 	var err error
-	var parser = template.New("")
-	var handler = &queryHandler{
+	parser := template.New("")
+	handler := &queryHandler{
 		sourcePath:          sourcePath,
 		targetPath:          targetPath,
 		template:            template.Must(parser.Parse(Template)),

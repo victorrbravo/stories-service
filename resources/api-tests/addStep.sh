@@ -9,8 +9,9 @@ echo "$auth"
 AUTH=$auth
 comment=$1
 #params='{"comment": "'$comment'"}'
-params='{"comment":"'$comment'"}'
+params='{"name":"'$comment'","token_link":"","pattern":"or"}'
 echo $params
-data=$(curl -X POST http://localhost:8080/social/add-step?name=a1 -H "Content-Type:application/json" --data $params -H $AUTH)
+data=$(curl -X POST http://localhost:8080/social/add-step/a1 -H "Content-Type:application/json" --data $params -H $AUTH)
+
 echo $data | jq .
 

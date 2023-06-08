@@ -14,8 +14,7 @@ import (
 	"stories/helpers"
 )
 
-type VerifyEmailHandler struct {
-}
+type VerifyEmailHandler struct{}
 
 func (handler VerifyEmailHandler) IsValid() error {
 	return nil
@@ -31,7 +30,7 @@ func (handler VerifyEmailHandler) IsEnabled() bool {
 // You must add a parameter to Query String (URL) in this format: ?code=<CODE_SENT>
 func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	var err error
-	//var email string
+	// var email string
 	var code string
 	var jwtToken jwt.MapClaims
 	var query url.Values
@@ -51,8 +50,8 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 		return
 	}
 	_ = jwtToken["email"].(string)
-	//email = jwtToken["email"].(string)
-	//user, err = auth.GetUserByEmail(email)
+	// email = jwtToken["email"].(string)
+	// user, err = auth.GetUserByEmail(email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusUnauthorized, constants.UserNotFoundOrPasswordMismatch))

@@ -64,15 +64,17 @@ type generatorContext struct {
 	targetPath    string
 }
 
-const ProcessedFillingData = "OrgFilingData"
-const ProcessedIndFillingData = "IndFilingData"
-const ProcessedCtyFillingData = "CtyFilingData"
-const UserWhitelist = "UserWhitelist"
-const News = "News"
-const SuffixData = "Data"
-const Analysis = "SwotAnalysis"
-const charset = "abcdefghijklmnopqrstuvwxyz" +
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const (
+	ProcessedFillingData    = "OrgFilingData"
+	ProcessedIndFillingData = "IndFilingData"
+	ProcessedCtyFillingData = "CtyFilingData"
+	UserWhitelist           = "UserWhitelist"
+	News                    = "News"
+	SuffixData              = "Data"
+	Analysis                = "SwotAnalysis"
+	charset                 = "abcdefghijklmnopqrstuvwxyz" +
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+)
 
 func randomInteger() int {
 	return rand.Intn(100)
@@ -240,7 +242,7 @@ func (str CustomString) ToJsonTag() string {
 }
 
 func (str CustomString) ToCamelCase() string {
-	var re = regexp.MustCompile("([A-Z][a-z]+|ID)")
+	re := regexp.MustCompile("([A-Z][a-z]+|ID)")
 	var matches [][]string = re.FindAllStringSubmatch(string(str), -1)
 	if len(matches) == 0 {
 		return strings.ToLower(string(str))
@@ -261,8 +263,8 @@ func (str CustomString) ToCamelCase() string {
 }
 
 func (str CustomString) ToSnakeCases() string {
-	var value = string(str.Plural())
-	var re = regexp.MustCompile("([A-Z][a-z]+|ID)")
+	value := string(str.Plural())
+	re := regexp.MustCompile("([A-Z][a-z]+|ID)")
 	var matches [][]string = re.FindAllStringSubmatch(value, -1)
 	if len(matches) == 0 {
 		return strings.ToLower(value)
@@ -276,7 +278,7 @@ func (str CustomString) ToSnakeCases() string {
 }
 
 func (str CustomString) ToSnakeCase() string {
-	var re = regexp.MustCompile("([A-Z][a-z]+|ID)")
+	re := regexp.MustCompile("([A-Z][a-z]+|ID)")
 	var matches [][]string = re.FindAllStringSubmatch(string(str), -1)
 	if len(matches) == 0 {
 		return strings.ToLower(string(str))
@@ -326,11 +328,11 @@ func (context *generatorContext) Prepare() {
 		"onlyKeys":            onlyKeys,
 		"checkIsNotEmpty":     checkStringIsNotEmpty,
 	}
-	tplContent, err := readAllTextFromFile("generators/models/template.tpl")
+	tplContent, err := readAllTextFromFile("../../generators/models/template.tpl")
 	if err != nil {
 		return
 	}
-	testTplContent, err := readAllTextFromFile("generators/models/tests.template.tpl")
+	testTplContent, err := readAllTextFromFile("../../generators/models/tests.template.tpl")
 	if err != nil {
 		return
 	}
@@ -425,14 +427,14 @@ func (context *generatorContext) HandleFile(file os.FileInfo) error {
 }
 
 func main() {
-	var targetPath = "generated/models"
+	targetPath := "../../generated/models"
 	var files []os.FileInfo
 	var err error
-	var handler = &generatorContext{targetPath: targetPath}
+	handler := &generatorContext{targetPath: targetPath}
 	// Let the handler prepare its
-	//elf
+	// elf
 	handler.Prepare()
-	handler.SetSourcePath("specs")
+	handler.SetSourcePath("../../specs")
 	files, err = generators.GetSourceFiles(handler)
 	if err != nil {
 		log.Fatalln(err)

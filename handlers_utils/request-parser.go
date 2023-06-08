@@ -22,8 +22,8 @@ type RequestParameters interface {
 
 func extractAccessTokenFromRequest(request *http.Request) ([]byte, error) {
 	var err error
-	var uri = request.URL
-	var values = uri.Query()
+	uri := request.URL
+	values := uri.Query()
 	var keys []string
 	var ok bool
 	var decoded []byte

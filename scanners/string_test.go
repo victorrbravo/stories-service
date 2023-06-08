@@ -11,7 +11,6 @@ func TestString_ScanRow(t *testing.T) {
 	var query database.IQuery
 	var scanner String
 	var err error
-	query = database.NewQuery()
 	err = query.QueryOne("SELECT 'string value'", &scanner)
 	if err != nil {
 		t.Fatal(err)

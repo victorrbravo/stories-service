@@ -234,6 +234,7 @@ func (lt NotificationType) isNil() bool {
 	}
 	return false
 }
+
 func (lt NotificationType) Value() (driver.Value, error) {
 	if len(string(lt)) == 0 {
 		return nil, nil
@@ -318,6 +319,7 @@ func (lt MeasurementType) isNil() bool {
 	}
 	return false
 }
+
 func (lt MeasurementType) Value() (driver.Value, error) {
 	if len(string(lt)) == 0 {
 		return nil, nil
@@ -339,7 +341,6 @@ func (mt OrganizationExtendedFilter) IsValid() error {
 	switch mt {
 	case ExtendedCurrency, ExtendedMarketPrice, ExtendedName, ExtendedTicker:
 		return nil
-
 	}
 	return errors.New(fmt.Sprintf(constants.FieldMustBeType, "OrganizationExtendedFilter", "currency, market_price, name, ticker"))
 }
@@ -350,6 +351,7 @@ func (lt OrganizationExtendedFilter) isNil() bool {
 	}
 	return false
 }
+
 func (lt OrganizationExtendedFilter) Value() (driver.Value, error) {
 	if len(string(lt)) == 0 {
 		return nil, nil

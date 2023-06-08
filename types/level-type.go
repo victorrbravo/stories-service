@@ -3,9 +3,10 @@ package types
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"stories/constants"
 	"fmt"
 	"log"
+
+	"stories/constants"
 )
 
 type LevelType string

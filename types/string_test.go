@@ -9,7 +9,6 @@ import (
 )
 
 func TestScanString(t *testing.T) {
-
 	stringTests := []struct {
 		name       string
 		value      interface{}
@@ -26,10 +25,10 @@ func TestScanString(t *testing.T) {
 	for _, tt := range stringTests {
 		// using tt.name from the case to use it as the `t.Run` test name
 		t.Run(tt.name, func(t *testing.T) {
-			var str = new(types.String)
-			var err = str.Scan(tt.value)
-			var ErrText = ""
-			var SpectedErrText = ""
+			str := new(types.String)
+			err := str.Scan(tt.value)
+			ErrText := ""
+			SpectedErrText := ""
 			if err != nil {
 				ErrText = err.Error()
 			}
@@ -68,8 +67,8 @@ func TestUnmarshalJSONString(t *testing.T) {
 	for _, tt := range stringTests {
 		// using tt.name from the case to use it as the `t.Run` test name
 		t.Run(tt.name, func(t *testing.T) {
-			var str = new(types.String)
-			var err = str.UnmarshalJSON(tt.value)
+			str := new(types.String)
+			err := str.UnmarshalJSON(tt.value)
 			if err != nil && !tt.spectedError {
 				t.Errorf("1 %s got %v want %v", tt.name, err, tt.spected)
 				return
@@ -84,7 +83,6 @@ func TestUnmarshalJSONString(t *testing.T) {
 			}
 			if tt.isNil && value != nil {
 				t.Errorf("4 %s got %v want %v", tt.name, err, tt.spected)
-
 			}
 			if tt.isNil {
 				return
@@ -98,7 +96,7 @@ func TestUnmarshalJSONString(t *testing.T) {
 }
 
 func TestMarshalJSONString(t *testing.T) {
-	var bytesNill = []byte{110, 117, 108, 108}
+	bytesNill := []byte{110, 117, 108, 108}
 	stringTests := []struct {
 		name    string
 		value   types.String
@@ -113,7 +111,6 @@ func TestMarshalJSONString(t *testing.T) {
 	for _, tt := range stringTests {
 		// using tt.name from the case to use it as the `t.Run` test name
 		t.Run(tt.name, func(t *testing.T) {
-
 			value, err := tt.value.MarshalJSON()
 			if err != nil {
 				t.Errorf("%s got %v want %v", tt.name, err, tt.spected)

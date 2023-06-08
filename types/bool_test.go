@@ -26,8 +26,8 @@ func TestScanBool(t *testing.T) {
 	for _, tt := range stringTests {
 		// using tt.name from the case to use it as the `t.Run` test name
 		t.Run(tt.name, func(t *testing.T) {
-			var str = new(types.Bool)
-			var err = str.Scan(tt.value)
+			str := new(types.Bool)
+			err := str.Scan(tt.value)
 			// Error quest
 			if err != nil {
 				if !tt.spectedError {
@@ -46,7 +46,7 @@ func TestScanBool(t *testing.T) {
 				return
 			}
 
-			var vl = value
+			vl := value
 			if vl != tt.spectedValue {
 				t.Errorf("Error value not valid | Name: %s, spected %v, value: %v \n", tt.name, tt.spectedValue, vl)
 				return
@@ -105,8 +105,8 @@ func TestUnmarshalJSONBool(t *testing.T) {
 	for _, tt := range stringTests {
 		// using tt.name from the case to use it as the `t.Run` test name
 		t.Run(tt.name, func(t *testing.T) {
-			var parseElement = new(types.Bool)
-			var err = parseElement.UnmarshalJSON([]byte(tt.value))
+			parseElement := new(types.Bool)
+			err := parseElement.UnmarshalJSON([]byte(tt.value))
 			// Error quest
 			if err != nil {
 				if !tt.spectedError {
