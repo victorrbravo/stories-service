@@ -38,15 +38,15 @@ type JobWorkflow struct {
 }
 
 type Workflow struct {
-	ID                types.UUID   `json:"id"`
-	Name              string       `json:"name"`
-	TableName         string       `json:"table_name"`
-	FieldToken        string       `json:"field_token"`
-	TrackingTableName types.String `json:"tracking_table_name"`
-	tracking_keys     types.String `json:"tracking_keys"`
-	Variable          Variable     `json:"variable"`
-	Tasks             []*Task      `json:"tasks"`
-	Data              Data         `json:"data"`
+	ID                types.UUID       `json:"id"`
+	Name              string           `json:"name"`
+	TableName         string           `json:"table_name"`
+	FieldToken        string           `json:"field_token"`
+	TrackingTableName types.String     `json:"tracking_table_name"`
+	TrackingKeys      types.String     `json:"tracking_keys"`
+	Variable          Variable         `json:"variable"`
+	Tasks             map[string]*Task `json:"tasks"`
+	Data              Data             `json:"data"`
 }
 
 type Variable struct {
@@ -68,10 +68,10 @@ type Transition struct {
 }
 
 type Link struct {
-	LinkTask string       `json:"task"`
-	Query    string       `json:"query"`
-	Status   string       `json:"status,omitempty"`
-	data     types.String `json:"data"`
+	Task   string       `json:"task"`
+	Query  string       `json:"query"`
+	Status string       `json:"status,omitempty"`
+	data   types.String `json:"data"`
 }
 
 func Create(ctx context.Context, name string) (*Workflow, error) {
@@ -96,21 +96,16 @@ func (wf *Workflow) AddTask(ctx context.Context, name string, linkTask *Task, st
 	newTask := new(Task)
 	newTask.Name = name
 	newTransition := Transition{Pattern: PatternSequencial}
-	newLink := Link{LinkTask: linkTask.Name, Query: QueryName, Status: status}
+	newLink := Link{Task: linkTask.Name, Query: QueryName, Status: status}
 	newTransition.Links = append(newTransition.Links, newLink)
 	newTask.Transition = newTransition
-	wf.Tasks = append(wf.Tasks, newTask)
+	wf.Tasks[name] = newTask
 	return nil
 }
 
 // remove a task from the workflow by name
 func (wf *Workflow) RemoveTask(ctx context.Context, name string) error {
-	for i, task := range wf.Tasks {
-		if task.Name == name {
-			wf.Tasks = append(wf.Tasks[:i], wf.Tasks[i+1:]...)
-			return nil
-		}
-	}
+	delete(wf.Tasks, name)
 	return nil
 }
 
@@ -125,11 +120,20 @@ func (wf *Workflow) UpdateTask(ctx context.Context, name string, newTask *Task) 
 	return nil
 }
 
+func (wf Workflow) NextTask(name string) *Task {
+	for _, task := range wf.Tasks {
+		if task.Name == name {
+			return wf.Tasks[task.Transition.Links[0].Task]
+		}
+	}
+	return nil
+}
+
 // add a link to a task
 func (wf *Workflow) AddLink(ctx context.Context, taskName string, linkTask *Task, query string, status string) error {
 	for _, task := range wf.Tasks {
 		if task.Name == taskName {
-			newLink := Link{LinkTask: linkTask.Name, Query: query, Status: status}
+			newLink := Link{Task: linkTask.Name, Query: query, Status: status}
 			task.Transition.Links = append(task.Transition.Links, newLink)
 			return nil
 		}

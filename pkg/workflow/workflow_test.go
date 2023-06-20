@@ -16,13 +16,12 @@ const jsonFile = `
   "id": "%s",
   "name": "Workflow1",
   "variable": { "name": "basic", "query": "pk_story,name,status" },
-  "tracking_table_name": "tracking",
+  "tracking_table_name": "ta_tracking",
   "tracking_keys": "fk_story,fk_status",
   "field_token": "pk_story",
   "table_name": "ta_story",
-  "tasks": [
-    {
-      "name": "ToDo",
+  "tasks": {
+    "ToDo": {
       "info_field": "roles[1]",
       "time_field": "updated_at",
       "transition": {
@@ -31,13 +30,12 @@ const jsonFile = `
           {
             "task": "Progress",
             "query": "ToDo",
-	        "status": "status"
+            "status": "status"
           }
         ]
       }
     },
-    {
-      "name": "Progress",
+    "Progress": {
       "info_field": "name",
       "time_field": "updated_at",
       "transition": {
@@ -46,13 +44,12 @@ const jsonFile = `
           {
             "task": "Done",
             "query": "Progress",
-	        "status": "status"
+            "status": "status"
           }
         ]
       }
     },
-    {
-      "name": "Done",
+    "Done": {
       "info_field": "name",
       "time_field": "updated_at",
       "transition": {
@@ -61,12 +58,12 @@ const jsonFile = `
           {
             "task": "End",
             "query": "Done",
-	        "status": "status"
+            "status": "status"
           }
         ]
       }
     }
-  ]
+  }
 }
 
 `

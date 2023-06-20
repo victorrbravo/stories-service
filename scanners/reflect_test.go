@@ -39,7 +39,6 @@ func TestReflect_ScanRow(t *testing.T) {
 	value := testType{}
 	var err error
 	scanner = NewReflectScanner(&value)
-	query = database.NewQuery()
 	_, err = query.QueryMany(reflectSqlString, &scanner)
 	if err != nil {
 		t.Fatal(err)
