@@ -36,7 +36,7 @@ const jsonFile = `
       }
     },
     "Progress": {
-      "info_field": "name",
+      "info_field": "roles[1]",
       "time_field": "updated_at",
       "transition": {
         "pattern": "or",
@@ -50,7 +50,7 @@ const jsonFile = `
       }
     },
     "Done": {
-      "info_field": "name",
+      "info_field": "roles[1]",
       "time_field": "updated_at",
       "transition": {
         "pattern": "or",
@@ -103,5 +103,11 @@ func TestRead(t *testing.T) {
 		t.Error(err)
 	}
 	err = pgQuery.Generate(ctx, &jw.Workflow)
-
+	for key, task := range jw.Workflow.Tasks {
+		fmt.Println("===", key, "===")
+		fmt.Println("Count", task.Data.Count)
+		fmt.Println("TimeFields", task.Data.TimeField)
+		fmt.Println("Roles", task.Data.InfoField)
+		fmt.Println("")
+	}
 }

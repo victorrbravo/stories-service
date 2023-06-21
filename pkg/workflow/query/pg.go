@@ -9,6 +9,7 @@ import (
 	db "stories/database"
 	"stories/pkg/workflow/common"
 	"stories/scanners"
+	"stories/types"
 	"strings"
 	"text/template"
 )
@@ -31,15 +32,15 @@ FROM cte WHERE {{.Key2Link}}='{{.Status}}'  GROUP BY {{.Key2Link}} ;
 `
 
 	STATS_ROLEFIELD = `
-SELECT {{.RoleField}} AS count
-FROM  {{.TrackingTable}} where  {{.StatusField}} = {{.StatusValue}}
-GROUP BY {{.RoleField}}
+SELECT {{.InfoField}} AS roles
+FROM  {{.TrackingTableName}} where  {{.Key2Link}} = '{{.Status}}'
+GROUP BY {{.InfoField}}
 HAVING COUNT(*) = (
   SELECT MAX(count)
   FROM (
-    SELECT {{.RoleField}}, COUNT(*) AS count
-    FROM {{.TrackingTable}} tt where {{.StatusField}} = {{.StatusValue}} 
-    GROUP BY {{.RoleField}}
+    SELECT {{.InfoField}}, COUNT(*) AS count
+    FROM {{.TrackingTableName}} tt where {{.Key2Link}} = '{{.Status}}' 
+    GROUP BY {{.InfoField}}
   ) subquery
 ) limit 1;
 `
@@ -81,16 +82,58 @@ func GenerateOnJoins(tracking string, filter string, task *common.Task) string {
 	return statement
 }
 
-func (pg *PgQuery) TimeField(ctx context.Context, wf *common.Workflow, task string) error {
-	var count scanners.Interval
+func (pg *PgQuery) RoleField(ctx context.Context, wf *common.Workflow, id string) error {
+	var roles scanners.String
 	newQuery := pg.query.NewQuery()
-	current, ok := wf.Tasks[task]
+	current, ok := wf.Tasks[id]
 	if ok == false {
-		return errors.New(fmt.Sprintf("task doesn't exist", task))
+		return errors.New(fmt.Sprintf("task doesn't exist", id))
+	}
+	newSQL := ""
+	tmpl, err := template.New("roleSQL").Parse(STATS_ROLEFIELD)
+	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
+	linkStory, linkStatus := extractKeys(trackingKeys)
+	data := struct {
+		Key1Link          string
+		Key2Link          string
+		TimeField         string
+		InfoField         string
+		TrackingTableName string
+		StatusesList      string
+		Status            string
+	}{
+		Key1Link:          linkStory,
+		Key2Link:          linkStatus,
+		TimeField:         current.TimeField,
+		InfoField:         current.InfoField,
+		TrackingTableName: wf.TrackingTableName.String(),
+		StatusesList:      pg.StatusesList(ctx, wf),
+		Status:            id,
+	}
+	var outputBuffer bytes.Buffer
+	err = tmpl.Execute(&outputBuffer, data)
+	if err != nil {
+		return err
+	}
+	newSQL = outputBuffer.String()
+	err = newQuery.QueryOne(newSQL, &roles)
+	if err != nil {
+		return err
+	}
+	current.Data.InfoField = roles.Value
+	return nil
+}
+
+func (pg *PgQuery) TimeField(ctx context.Context, wf *common.Workflow, id string) error {
+	var duration scanners.Interval
+	newQuery := pg.query.NewQuery()
+	current, ok := wf.Tasks[id]
+	if ok == false {
+		return errors.New(fmt.Sprintf("id doesn't exist", id))
 	}
 	nextTask := wf.NextTask(current.Name)
 	if nextTask == nil {
-		return errors.New(fmt.Sprintf("task has no a next task", task))
+		return errors.New(fmt.Sprintf("id has no a next id", id))
 	}
 	newSQL := ""
 	tmpl, err := template.New("timeSQL").Parse(STATS_TIMEFIELD)
@@ -109,7 +152,7 @@ func (pg *PgQuery) TimeField(ctx context.Context, wf *common.Workflow, task stri
 		TimeField:         current.TimeField,
 		TrackingTableName: wf.TrackingTableName.String(),
 		StatusesList:      pg.StatusesList(ctx, wf),
-		Status:            task,
+		Status:            id,
 	}
 
 	var outputBuffer bytes.Buffer
@@ -118,23 +161,23 @@ func (pg *PgQuery) TimeField(ctx context.Context, wf *common.Workflow, task stri
 		return err
 	}
 	newSQL = outputBuffer.String()
-	err = newQuery.QueryOne(newSQL, &count)
+	err = newQuery.QueryOne(newSQL, &duration)
 	if err != nil {
 		return err
 	}
-	fmt.Println("count max (interval)", count.Value.String())
+	current.Data.TimeField = types.NewString(duration.Value.String())
 	return nil
 
 }
 
-func extractKeys(tranckingKeys []string) (string, string) {
+func extractKeys(trackingKeys []string) (string, string) {
 	linkStory := ""
 	linkStatus := ""
-	if len(tranckingKeys) > 0 {
-		linkStory = tranckingKeys[0]
+	if len(trackingKeys) > 0 {
+		linkStory = trackingKeys[0]
 	}
-	if len(tranckingKeys) > 1 {
-		linkStatus = tranckingKeys[1]
+	if len(trackingKeys) > 1 {
+		linkStatus = trackingKeys[1]
 	}
 	return linkStory, linkStatus
 }
@@ -149,7 +192,8 @@ func (pg *PgQuery) Count(ctx context.Context, wf *common.Workflow, task string) 
 	if err != nil {
 		return err
 	}
-	wf.Data.Count = count.Value
+	current.Data.Count = count.Value
+	wf.Tasks[task] = current
 	return nil
 }
 
@@ -173,6 +217,10 @@ func (query *PgQuery) Generate(ctx context.Context, wf *common.Workflow) error {
 			return err
 		}
 		fmt.Println("task ", task.Name, "data count", wf.Data.Count)
+		err = query.RoleField(ctx, wf, index)
+		if err != nil {
+			return err
+		}
 		err = query.TimeField(ctx, wf, index)
 		if err != nil {
 			return err

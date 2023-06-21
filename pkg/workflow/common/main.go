@@ -22,10 +22,10 @@ const (
 )
 
 type Data struct {
-	Count      types.Int
-	TimeField  types.String
+	Count      types.Int    // checked
+	TimeField  types.String // checked
 	InfoField  types.String
-	Roles      []types.String
+	Roles      []types.String // checked
 	Porcentage types.Float
 	Total      types.Int
 	FillValue  types.Int // Measaure progress in time, money or other type of value
@@ -46,7 +46,7 @@ type Workflow struct {
 	TrackingKeys      types.String     `json:"tracking_keys"`
 	Variable          Variable         `json:"variable"`
 	Tasks             map[string]*Task `json:"tasks"`
-	Data              Data             `json:"data"`
+	Data              Data             `json:"data,omitempty"`
 }
 
 type Variable struct {
@@ -55,11 +55,11 @@ type Variable struct {
 }
 
 type Task struct {
-	Name       string       `json:"name"`
-	TimeField  string       `json:"time_field"`
-	InfoField  string       `json:"info_field"`
-	Transition Transition   `json:"transition"`
-	data       types.String `json:"data"`
+	Name       string     `json:"name"`
+	TimeField  string     `json:"time_field"`
+	InfoField  string     `json:"info_field"`
+	Transition Transition `json:"transition"`
+	Data       Data       `json:"data,omitempty"`
 }
 
 type Transition struct {
