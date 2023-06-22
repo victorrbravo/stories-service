@@ -108,6 +108,8 @@ func TestRead(t *testing.T) {
 		fmt.Println("Count", task.Data.Count)
 		fmt.Println("TimeFields", task.Data.TimeField)
 		fmt.Println("Roles", task.Data.InfoField)
+		fmt.Println("Percentage", task.Data.Percentage)
 		fmt.Println("")
 	}
+	fmt.Println("total", jw.Workflow.Data.Total)
 }

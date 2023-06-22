@@ -182,10 +182,31 @@ func extractKeys(trackingKeys []string) (string, string) {
 	return linkStory, linkStatus
 }
 
-func (pg *PgQuery) Count(ctx context.Context, wf *common.Workflow, task string) error {
+func (pg *PgQuery) Percentage(ctx context.Context, wf *common.Workflow, id string) error {
+	total := 0
+	if !types.IsNil(wf.Data.Total) {
+		total = types.AsInt(wf.Data.Total)
+		return nil
+	}
+	for _, task := range wf.Tasks {
+		total = total + types.AsInt(task.Data.Count)
+	}
+
+	for _, task := range wf.Tasks {
+		value := float64(types.AsInt(task.Data.Count)) / float64(total)
+		task.Data.Percentage = value
+		task.Data.Total = types.NewInt(total)
+	}
+	wf.Data.Total = types.NewInt(total)
+	return nil
+}
+func (pg *PgQuery) Count(ctx context.Context, wf *common.Workflow, id string) error {
 	var count scanners.Int
 	newQuery := pg.query.NewQuery()
-	current := wf.Tasks[task]
+	current, ok := wf.Tasks[id]
+	if !ok { // task is not found
+		return fmt.Errorf("Task not found: %s", id)
+	}
 	newSQL := fmt.Sprintf(SELECT_BASIC, wf.TableName, current.Transition.Links[0].Status,
 		current.Transition.Links[0].Query)
 	err := newQuery.QueryOne(newSQL, &count)
@@ -193,7 +214,6 @@ func (pg *PgQuery) Count(ctx context.Context, wf *common.Workflow, task string) 
 		return err
 	}
 	current.Data.Count = count.Value
-	wf.Tasks[task] = current
 	return nil
 }
 
@@ -211,17 +231,23 @@ func (query *PgQuery) StatusesList(ctx context.Context, wf *common.Workflow) str
 }
 
 func (query *PgQuery) Generate(ctx context.Context, wf *common.Workflow) error {
-	for index, task := range wf.Tasks {
-		err := query.Count(ctx, wf, index)
+	for name, task := range wf.Tasks {
+		err := query.Count(ctx, wf, name)
 		if err != nil {
 			return err
 		}
 		fmt.Println("task ", task.Name, "data count", wf.Data.Count)
-		err = query.RoleField(ctx, wf, index)
+		err = query.RoleField(ctx, wf, name)
 		if err != nil {
 			return err
 		}
-		err = query.TimeField(ctx, wf, index)
+		err = query.TimeField(ctx, wf, name)
+		if err != nil {
+			return err
+		}
+	}
+	for name, _ := range wf.Tasks {
+		err := query.Percentage(ctx, wf, name)
 		if err != nil {
 			return err
 		}

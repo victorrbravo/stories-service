@@ -26,9 +26,9 @@ type Data struct {
 	TimeField  types.String // checked
 	InfoField  types.String
 	Roles      []types.String // checked
-	Porcentage types.Float
+	Percentage float64
 	Total      types.Int
-	FillValue  types.Int // Measaure progress in time, money or other type of value
+	FillValue  types.Int // Measure progress in time, money or other type of value
 	FillSelect FillType
 	Rows       []interface{}
 }
