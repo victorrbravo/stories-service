@@ -1,4 +1,4 @@
-package query
+package pg
 
 import (
 	"bytes"
@@ -46,45 +46,25 @@ HAVING COUNT(*) = (
 `
 )
 
-type PgQuery struct {
+type StatsQuery struct {
 	query *db.PostgresQuery
 }
 
-func (pg *PgQuery) Initialize(config *db.DatabaseConfig) error {
-	var query db.PostgresQuery
-	query.Initialize(config)
-	err := query.Connect()
+func (query *StatsQuery) Initialize(config *db.DatabaseConfig) error {
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(config)
+	err := pgQuery.Connect()
 	if err != nil {
 		log.Println("Db Connect error")
 		return err
 	}
-	pg.query = &query
+	query.query = &pgQuery
 	return nil
 }
 
-func GenerateJoins(tables ...string) string {
-	value := strings.Join(tables, " JOIN ")
-	return value
-}
-
-func GenerateOnJoins(tracking string, filter string, task *common.Task) string {
-	values := strings.Split(filter, ",")
-	statement := ""
-	if len(values) > 0 {
-		value := values[0]
-		statement = statement + fmt.Sprintf("%s.%s = %s.%s ", tracking, value, "1")
-	}
-	if len(values) > 1 {
-		value := values[1]
-		statement = statement + " AND "
-		statement = statement + fmt.Sprintf("%s.%s = '%s' ", tracking, value, task.Transition.Links[0].Query)
-	}
-	return statement
-}
-
-func (pg *PgQuery) RoleField(ctx context.Context, wf *common.Workflow, id string) error {
+func (query *StatsQuery) RoleField(ctx context.Context, wf *common.Workflow, id string) error {
 	var roles scanners.String
-	newQuery := pg.query.NewQuery()
+	newQuery := query.query.NewQuery()
 	current, ok := wf.Tasks[id]
 	if ok == false {
 		return errors.New(fmt.Sprintf("task doesn't exist", id))
@@ -107,7 +87,7 @@ func (pg *PgQuery) RoleField(ctx context.Context, wf *common.Workflow, id string
 		TimeField:         current.TimeField,
 		InfoField:         current.InfoField,
 		TrackingTableName: wf.TrackingTableName.String(),
-		StatusesList:      pg.StatusesList(ctx, wf),
+		StatusesList:      query.StatusesList(ctx, wf),
 		Status:            id,
 	}
 	var outputBuffer bytes.Buffer
@@ -124,9 +104,9 @@ func (pg *PgQuery) RoleField(ctx context.Context, wf *common.Workflow, id string
 	return nil
 }
 
-func (pg *PgQuery) TimeField(ctx context.Context, wf *common.Workflow, id string) error {
+func (query *StatsQuery) TimeField(ctx context.Context, wf *common.Workflow, id string) error {
 	var duration scanners.Interval
-	newQuery := pg.query.NewQuery()
+	newQuery := query.query.NewQuery()
 	current, ok := wf.Tasks[id]
 	if ok == false {
 		return errors.New(fmt.Sprintf("id doesn't exist", id))
@@ -151,7 +131,7 @@ func (pg *PgQuery) TimeField(ctx context.Context, wf *common.Workflow, id string
 		Key2Link:          linkStatus,
 		TimeField:         current.TimeField,
 		TrackingTableName: wf.TrackingTableName.String(),
-		StatusesList:      pg.StatusesList(ctx, wf),
+		StatusesList:      query.StatusesList(ctx, wf),
 		Status:            id,
 	}
 
@@ -182,7 +162,7 @@ func extractKeys(trackingKeys []string) (string, string) {
 	return linkStory, linkStatus
 }
 
-func (pg *PgQuery) Percentage(ctx context.Context, wf *common.Workflow, id string) error {
+func (query *StatsQuery) Percentage(ctx context.Context, wf *common.Workflow, id string) error {
 	total := 0
 	if !types.IsNil(wf.Data.Total) {
 		total = types.AsInt(wf.Data.Total)
@@ -200,9 +180,9 @@ func (pg *PgQuery) Percentage(ctx context.Context, wf *common.Workflow, id strin
 	wf.Data.Total = types.NewInt(total)
 	return nil
 }
-func (pg *PgQuery) Count(ctx context.Context, wf *common.Workflow, id string) error {
+func (query *StatsQuery) Count(ctx context.Context, wf *common.Workflow, id string) error {
 	var count scanners.Int
-	newQuery := pg.query.NewQuery()
+	newQuery := query.query.NewQuery()
 	current, ok := wf.Tasks[id]
 	if !ok { // task is not found
 		return fmt.Errorf("Task not found: %s", id)
@@ -217,7 +197,7 @@ func (pg *PgQuery) Count(ctx context.Context, wf *common.Workflow, id string) er
 	return nil
 }
 
-func (query *PgQuery) StatusesList(ctx context.Context, wf *common.Workflow) string {
+func (query *StatsQuery) StatusesList(ctx context.Context, wf *common.Workflow) string {
 	tasksList := ""
 	if true {
 		return "'ToDo','Progress','Done'"
@@ -230,7 +210,7 @@ func (query *PgQuery) StatusesList(ctx context.Context, wf *common.Workflow) str
 	return tasksList
 }
 
-func (query *PgQuery) Generate(ctx context.Context, wf *common.Workflow) error {
+func (query *StatsQuery) Generate(ctx context.Context, wf *common.Workflow) error {
 	for name, task := range wf.Tasks {
 		err := query.Count(ctx, wf, name)
 		if err != nil {

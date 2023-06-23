@@ -6,7 +6,7 @@ import (
 	"github.com/twinj/uuid"
 	"stories/database"
 	"stories/pkg/workflow/common"
-	"stories/pkg/workflow/query"
+	"stories/pkg/workflow/query/pg"
 	"stories/types"
 	"testing"
 )
@@ -85,7 +85,7 @@ func TestAddTask(t *testing.T) {
 // Test Read method
 func TestRead(t *testing.T) {
 	var err error
-	var pgQuery query.PgQuery
+	var pgQuery pg.StatsQuery
 	ctx := context.Background()
 	config := database.DatabaseConfig{
 		Host: "localhost", Name: "panel", Port: 5432, User: "postgres-dev",
