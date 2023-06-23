@@ -3,7 +3,6 @@ package pg
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	db "stories/database"
@@ -39,7 +38,7 @@ func (pg *TokenQuery) RoleField(ctx context.Context, wf *common.Workflow, id str
 	newQuery := pg.query.NewQuery()
 	current, ok := wf.Tasks[id]
 	if ok == false {
-		return errors.New(fmt.Sprintf("task doesn't exist", id))
+		return fmt.Errorf("id doesn't exist %s", id)
 	}
 	newSQL := ""
 	tmpl, err := template.New("roleSQL").Parse(STATS_ROLEFIELD)
@@ -51,7 +50,7 @@ func (pg *TokenQuery) RoleField(ctx context.Context, wf *common.Workflow, id str
 		TimeField         string
 		InfoField         string
 		TrackingTableName string
-		StatusesList      string
+		StatusesList      []string
 		Status            string
 	}{
 		Key1Link:          linkStory,
@@ -81,11 +80,11 @@ func (pg *TokenQuery) TimeField(ctx context.Context, wf *common.Workflow, id str
 	newQuery := pg.query.NewQuery()
 	current, ok := wf.Tasks[id]
 	if ok == false {
-		return errors.New(fmt.Sprintf("id doesn't exist", id))
+		return fmt.Errorf("id doesn't exist %s", id)
 	}
 	nextTask := wf.NextTask(current.Name)
 	if nextTask == nil {
-		return errors.New(fmt.Sprintf("id has no a next id", id))
+		return fmt.Errorf("id doesn't exist %s", id)
 	}
 	newSQL := ""
 	tmpl, err := template.New("timeSQL").Parse(STATS_TIMEFIELD)
@@ -96,7 +95,7 @@ func (pg *TokenQuery) TimeField(ctx context.Context, wf *common.Workflow, id str
 		Key2Link          string
 		TimeField         string
 		TrackingTableName string
-		StatusesList      string
+		StatusesList      []string
 		Status            string
 	}{
 		Key1Link:          linkStory,
@@ -157,26 +156,16 @@ func (pg *TokenQuery) Count(ctx context.Context, wf *common.Workflow, id string)
 	return nil
 }
 
-func (query *TokenQuery) StatusesList(ctx context.Context, wf *common.Workflow) string {
-	tasksList := ""
-	if true {
-		return "'ToDo','Progress','Done'"
-	}
-	for key, _ := range wf.Tasks {
-		tasksList = tasksList + "'" + key + "'"
-		tasksList = tasksList + ","
-	}
-	tasksList = strings.TrimRight(tasksList, ", ")
-	return tasksList
+func (query *TokenQuery) StatusesList(ctx context.Context, wf *common.Workflow) []string {
+	return []string{}
 }
 
 func (query *TokenQuery) Generate(ctx context.Context, wf *common.Workflow) error {
-	for name, task := range wf.Tasks {
+	for name, _ := range wf.Tasks {
 		err := query.Count(ctx, wf, name)
 		if err != nil {
 			return err
 		}
-		fmt.Println("task ", task.Name, "data count", wf.Data.Count)
 		err = query.RoleField(ctx, wf, name)
 		if err != nil {
 			return err

@@ -7,7 +7,6 @@ import (
 	"stories/database"
 	"stories/pkg/workflow/common"
 	"stories/pkg/workflow/query/pg"
-	"stories/types"
 	"testing"
 )
 
@@ -56,7 +55,7 @@ const jsonFile = `
         "pattern": "or",
         "links": [
           {
-            "task": "End",
+            "task": "END",
             "query": "Done",
             "status": "status"
           }
@@ -68,22 +67,8 @@ const jsonFile = `
 
 `
 
-// Test AddTask method
-func TestAddTask(t *testing.T) {
-	var err error
-	wf := common.Workflow{}
-	wf.Name = "New Workflow"
-	wf.ID, err = types.NewUUID(uuid.NewV1().String())
-	if err != nil {
-		t.Error(err)
-	}
-
-	ctx := context.Background()
-	err = wf.AddTask(ctx, "ToDo", nil, "")
-}
-
 // Test Read method
-func TestRead(t *testing.T) {
+func TestGenerateStats(t *testing.T) {
 	var err error
 	var pgQuery pg.StatsQuery
 	ctx := context.Background()

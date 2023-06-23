@@ -3,7 +3,6 @@ package pg
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	db "stories/database"
@@ -21,10 +20,10 @@ const (
 WITH cte AS (
 SELECT {{.Key2Link}} ,{{.Key1Link}} , {{.TimeField}} ,
 CASE
-	WHEN EXTRACT (epoch from (LEAD({{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.StatusesList}}], {{.Key2Link}})) - {{.TimeField}})) < 0 then INTERVAL '0 hour'
-	ELSE LEAD({{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.StatusesList}}], {{.Key2Link}})) - {{.TimeField}}
+	WHEN EXTRACT (epoch from (LEAD({{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})) - {{.TimeField}})) < 0 then INTERVAL '0 hour'
+	ELSE LEAD({{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})) - {{.TimeField}}
 END AS diff
-FROM {{.TrackingTableName}} tt  ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.StatusesList}}], {{.Key2Link}})  
+FROM {{.TrackingTableName}} tt  ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})  
 )
 SELECT 
 MAX(diff) AS maxtime
@@ -45,6 +44,16 @@ HAVING COUNT(*) = (
 ) limit 1;
 `
 )
+
+type DataTemplate struct {
+	Key1Link          string
+	Key2Link          string
+	TimeField         string
+	InfoField         string
+	TrackingTableName string
+	Statuses          string
+	Status            string
+}
 
 type StatsQuery struct {
 	query *db.PostgresQuery
@@ -67,27 +76,23 @@ func (query *StatsQuery) RoleField(ctx context.Context, wf *common.Workflow, id 
 	newQuery := query.query.NewQuery()
 	current, ok := wf.Tasks[id]
 	if ok == false {
-		return errors.New(fmt.Sprintf("task doesn't exist", id))
+		return fmt.Errorf("task doesn't exist %s", id)
 	}
 	newSQL := ""
 	tmpl, err := template.New("roleSQL").Parse(STATS_ROLEFIELD)
 	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
 	linkStory, linkStatus := extractKeys(trackingKeys)
-	data := struct {
-		Key1Link          string
-		Key2Link          string
-		TimeField         string
-		InfoField         string
-		TrackingTableName string
-		StatusesList      string
-		Status            string
-	}{
-		Key1Link:          linkStory,
+	list, err := wf.Statuses(ctx)
+	if err != nil {
+		return err
+	}
+	statuses := strings.Join(list, ",")
+	data := DataTemplate{Key1Link: linkStory,
 		Key2Link:          linkStatus,
 		TimeField:         current.TimeField,
 		InfoField:         current.InfoField,
 		TrackingTableName: wf.TrackingTableName.String(),
-		StatusesList:      query.StatusesList(ctx, wf),
+		Statuses:          statuses,
 		Status:            id,
 	}
 	var outputBuffer bytes.Buffer
@@ -106,36 +111,36 @@ func (query *StatsQuery) RoleField(ctx context.Context, wf *common.Workflow, id 
 
 func (query *StatsQuery) TimeField(ctx context.Context, wf *common.Workflow, id string) error {
 	var duration scanners.Interval
+	var outputBuffer bytes.Buffer
 	newQuery := query.query.NewQuery()
 	current, ok := wf.Tasks[id]
 	if ok == false {
-		return errors.New(fmt.Sprintf("id doesn't exist", id))
+		return fmt.Errorf("id doesn't exist %s", id)
 	}
 	nextTask := wf.NextTask(current.Name)
 	if nextTask == nil {
-		return errors.New(fmt.Sprintf("id has no a next id", id))
+		current.Data.TimeField = types.NewString("0s")
+		// End of flow
+		return nil
 	}
 	newSQL := ""
 	tmpl, err := template.New("timeSQL").Parse(STATS_TIMEFIELD)
 	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
 	linkStory, linkStatus := extractKeys(trackingKeys)
-	data := struct {
-		Key1Link          string
-		Key2Link          string
-		TimeField         string
-		TrackingTableName string
-		StatusesList      string
-		Status            string
-	}{
+	list, err := wf.Statuses(ctx)
+	if err != nil {
+		return err
+	}
+	statuses := strings.Join(list, ",")
+	fmt.Println("...statuses", statuses)
+	data := DataTemplate{
 		Key1Link:          linkStory,
 		Key2Link:          linkStatus,
 		TimeField:         current.TimeField,
 		TrackingTableName: wf.TrackingTableName.String(),
-		StatusesList:      query.StatusesList(ctx, wf),
+		Statuses:          statuses,
 		Status:            id,
 	}
-
-	var outputBuffer bytes.Buffer
 	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {
 		return err
@@ -164,10 +169,6 @@ func extractKeys(trackingKeys []string) (string, string) {
 
 func (query *StatsQuery) Percentage(ctx context.Context, wf *common.Workflow, id string) error {
 	total := 0
-	if !types.IsNil(wf.Data.Total) {
-		total = types.AsInt(wf.Data.Total)
-		return nil
-	}
 	for _, task := range wf.Tasks {
 		total = total + types.AsInt(task.Data.Count)
 	}
@@ -197,26 +198,12 @@ func (query *StatsQuery) Count(ctx context.Context, wf *common.Workflow, id stri
 	return nil
 }
 
-func (query *StatsQuery) StatusesList(ctx context.Context, wf *common.Workflow) string {
-	tasksList := ""
-	if true {
-		return "'ToDo','Progress','Done'"
-	}
-	for key, _ := range wf.Tasks {
-		tasksList = tasksList + "'" + key + "'"
-		tasksList = tasksList + ","
-	}
-	tasksList = strings.TrimRight(tasksList, ", ")
-	return tasksList
-}
-
 func (query *StatsQuery) Generate(ctx context.Context, wf *common.Workflow) error {
-	for name, task := range wf.Tasks {
+	for name, _ := range wf.Tasks {
 		err := query.Count(ctx, wf, name)
 		if err != nil {
 			return err
 		}
-		fmt.Println("task ", task.Name, "data count", wf.Data.Count)
 		err = query.RoleField(ctx, wf, name)
 		if err != nil {
 			return err

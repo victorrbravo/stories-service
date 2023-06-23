@@ -3,7 +3,9 @@ package common
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"stories/types"
+	"strings"
 )
 
 const (
@@ -12,6 +14,7 @@ const (
 	NewUUID           = "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
 	PatternSequencial = "sequencial"
 	StationFirst      = "StationFirst"
+	END_TASK          = "END"
 )
 
 type FillType string
@@ -31,6 +34,7 @@ type Data struct {
 	FillValue  types.Int // Measure progress in time, money or other type of value
 	FillSelect FillType
 	Rows       []interface{}
+	IDCurrent  types.Int
 }
 
 type JobWorkflow struct {
@@ -46,6 +50,7 @@ type Workflow struct {
 	TrackingKeys      types.String     `json:"tracking_keys"`
 	Variable          Variable         `json:"variable"`
 	Tasks             map[string]*Task `json:"tasks"`
+	InitialTask       *Task            `json:"initial_task,omitempty"`
 	Data              Data             `json:"data,omitempty"`
 }
 
@@ -68,10 +73,9 @@ type Transition struct {
 }
 
 type Link struct {
-	Task   string       `json:"task"`
-	Query  string       `json:"query"`
-	Status string       `json:"status,omitempty"`
-	data   types.String `json:"data"`
+	Task   string `json:"task"`
+	Query  string `json:"query"`
+	Status string `json:"status,omitempty"`
 }
 
 func Create(ctx context.Context, name string) (*Workflow, error) {
@@ -139,6 +143,51 @@ func (wf *Workflow) AddLink(ctx context.Context, taskName string, linkTask *Task
 		}
 	}
 	return nil
+}
+
+func (wf Workflow) Statuses(ctx context.Context) ([]string, error) {
+	list := []string{}
+	start, err := wf.CalculateInitialTask()
+	if err != nil {
+		return list, err
+	}
+	current := start
+	list = append(list, "'"+current+"'")
+	lenMax := len(wf.Tasks)
+	i := 0
+	for {
+		task, ok := wf.Tasks[current]
+		if !ok {
+			return list, fmt.Errorf("Incorrect value for task name %s", current)
+		}
+		current = task.Transition.Links[0].Task
+		if len(current) == 0 || strings.Compare(current, END_TASK) == 0 {
+			break
+		}
+		list = append(list, "'"+current+"'")
+		if i > lenMax {
+			return list, fmt.Errorf("Error iterating through tasks")
+		}
+		i++
+	}
+	return list, nil
+}
+
+func (wf *Workflow) CalculateInitialTask() (string, error) {
+	tasksVisited := map[string]bool{}
+	value := ""
+	for key, task := range wf.Tasks {
+		task.Name = key
+		next := task.Transition.Links[0].Task
+		tasksVisited[next] = true
+	}
+	for key, _ := range wf.Tasks {
+		_, ok := tasksVisited[key]
+		if !ok {
+			return key, nil
+		}
+	}
+	return value, fmt.Errorf("fail calculating the start task. No start task")
 }
 
 // load a wokflow instance using a json file
