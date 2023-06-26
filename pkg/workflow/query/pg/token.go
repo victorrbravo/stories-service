@@ -14,59 +14,82 @@ import (
 )
 
 const (
-	TOKEN_BASIC = ""
+	SELECT_BASIC_TOKEN     = "SELECT count(*) FROM %s WHERE %s = '%s'"
+	SELECT_TIMEFIELD_TOKEN = "SELECT %s FROM %s ON %s"
+	STATS_TIMEFIELD_TOKEN  = `
+WITH cte AS (
+SELECT {{.Key2Link}} ,{{.Key1Link}} , {{.TimeField}} ,
+CASE
+	WHEN EXTRACT (epoch from (LEAD({{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})) - {{.TimeField}})) < 0 then INTERVAL '0 hour'
+	ELSE LEAD({{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})) - {{.TimeField}}
+END AS diff
+FROM {{.TrackingTableName}} tt  ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})  
+)
+SELECT 
+MAX(diff) AS maxtime
+FROM cte WHERE {{.Key2Link}}='{{.Status}}'  GROUP BY {{.Key2Link}} ;
+`
+
+	STATS_ROLEFIELD_TOKEN = `
+SELECT {{.InfoField}} AS roles
+FROM  {{.TrackingTableName}} where  {{.Key2Link}} = '{{.Status}}'
+GROUP BY {{.InfoField}}
+HAVING COUNT(*) = (
+  SELECT MAX(count)
+  FROM (
+    SELECT {{.InfoField}}, COUNT(*) AS count
+    FROM {{.TrackingTableName}} tt where {{.Key2Link}} = '{{.Status}}' 
+    GROUP BY {{.InfoField}}
+  ) subquery
+) limit 1;
+`
 )
 
 type TokenQuery struct {
 	query *db.PostgresQuery
 }
 
-func (pg *TokenQuery) Initialize(config *db.DatabaseConfig) error {
-	var query db.PostgresQuery
-	query.Initialize(config)
-	err := query.Connect()
+func (query *TokenQuery) Initialize(config *db.DatabaseConfig) error {
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(config)
+	err := pgQuery.Connect()
 	if err != nil {
 		log.Println("Db Connect error")
 		return err
 	}
-	pg.query = &query
+	query.query = &pgQuery
 	return nil
 }
 
-func (pg *TokenQuery) RoleField(ctx context.Context, wf *common.Workflow, id string) error {
+func (query *TokenQuery) RoleField(ctx context.Context, wf *common.Workflow, id string) error {
 	var roles scanners.String
-	newQuery := pg.query.NewQuery()
+	var outputBuffer bytes.Buffer
+	newQuery := query.query.NewQuery()
 	current, ok := wf.Tasks[id]
 	if ok == false {
-		return fmt.Errorf("id doesn't exist %s", id)
+		return fmt.Errorf("task doesn't exist %s", id)
 	}
-	newSQL := ""
 	tmpl, err := template.New("roleSQL").Parse(STATS_ROLEFIELD)
 	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
-	linkStory, linkStatus := extractKeys(trackingKeys)
-	data := struct {
-		Key1Link          string
-		Key2Link          string
-		TimeField         string
-		InfoField         string
-		TrackingTableName string
-		StatusesList      []string
-		Status            string
-	}{
-		Key1Link:          linkStory,
+	linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
+	list, err := wf.Statuses(ctx)
+	if err != nil {
+		return err
+	}
+	statuses := strings.Join(list, ",")
+	data := DataTemplate{Key1Link: linkStory,
 		Key2Link:          linkStatus,
 		TimeField:         current.TimeField,
 		InfoField:         current.InfoField,
 		TrackingTableName: wf.TrackingTableName.String(),
-		StatusesList:      pg.StatusesList(ctx, wf),
+		Statuses:          statuses,
 		Status:            id,
 	}
-	var outputBuffer bytes.Buffer
 	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {
 		return err
 	}
-	newSQL = outputBuffer.String()
+	newSQL := outputBuffer.String()
 	err = newQuery.QueryOne(newSQL, &roles)
 	if err != nil {
 		return err
@@ -75,43 +98,42 @@ func (pg *TokenQuery) RoleField(ctx context.Context, wf *common.Workflow, id str
 	return nil
 }
 
-func (pg *TokenQuery) TimeField(ctx context.Context, wf *common.Workflow, id string) error {
+func (query *TokenQuery) TimeField(ctx context.Context, wf *common.Workflow, id string) error {
 	var duration scanners.Interval
-	newQuery := pg.query.NewQuery()
+	var outputBuffer bytes.Buffer
+	newQuery := query.query.NewQuery()
 	current, ok := wf.Tasks[id]
 	if ok == false {
 		return fmt.Errorf("id doesn't exist %s", id)
 	}
 	nextTask := wf.NextTask(current.Name)
 	if nextTask == nil {
-		return fmt.Errorf("id doesn't exist %s", id)
+		current.Data.TimeField = types.NewString("0s")
+		// End of flow
+		return nil
 	}
-	newSQL := ""
 	tmpl, err := template.New("timeSQL").Parse(STATS_TIMEFIELD)
 	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
-	linkStory, linkStatus := extractKeys(trackingKeys)
-	data := struct {
-		Key1Link          string
-		Key2Link          string
-		TimeField         string
-		TrackingTableName string
-		StatusesList      []string
-		Status            string
-	}{
+	linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
+	list, err := wf.Statuses(ctx)
+	if err != nil {
+		return err
+	}
+	statuses := strings.Join(list, ",")
+	fmt.Println("...statuses", statuses)
+	data := DataTemplate{
 		Key1Link:          linkStory,
 		Key2Link:          linkStatus,
 		TimeField:         current.TimeField,
 		TrackingTableName: wf.TrackingTableName.String(),
-		StatusesList:      pg.StatusesList(ctx, wf),
+		Statuses:          statuses,
 		Status:            id,
 	}
-
-	var outputBuffer bytes.Buffer
 	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {
 		return err
 	}
-	newSQL = outputBuffer.String()
+	newSQL := outputBuffer.String()
 	err = newQuery.QueryOne(newSQL, &duration)
 	if err != nil {
 		return err
@@ -121,12 +143,8 @@ func (pg *TokenQuery) TimeField(ctx context.Context, wf *common.Workflow, id str
 
 }
 
-func (pg *TokenQuery) Percentage(ctx context.Context, wf *common.Workflow, id string) error {
+func (query *TokenQuery) Percentage(ctx context.Context, wf *common.Workflow, id string) error {
 	total := 0
-	if !types.IsNil(wf.Data.Total) {
-		total = types.AsInt(wf.Data.Total)
-		return nil
-	}
 	for _, task := range wf.Tasks {
 		total = total + types.AsInt(task.Data.Count)
 	}
@@ -139,9 +157,9 @@ func (pg *TokenQuery) Percentage(ctx context.Context, wf *common.Workflow, id st
 	wf.Data.Total = types.NewInt(total)
 	return nil
 }
-func (pg *TokenQuery) Count(ctx context.Context, wf *common.Workflow, id string) error {
+func (query *TokenQuery) Count(ctx context.Context, wf *common.Workflow, id string) error {
 	var count scanners.Int
-	newQuery := pg.query.NewQuery()
+	newQuery := query.query.NewQuery()
 	current, ok := wf.Tasks[id]
 	if !ok { // task is not found
 		return fmt.Errorf("Task not found: %s", id)
@@ -154,10 +172,6 @@ func (pg *TokenQuery) Count(ctx context.Context, wf *common.Workflow, id string)
 	}
 	current.Data.Count = count.Value
 	return nil
-}
-
-func (query *TokenQuery) StatusesList(ctx context.Context, wf *common.Workflow) []string {
-	return []string{}
 }
 
 func (query *TokenQuery) Generate(ctx context.Context, wf *common.Workflow) error {

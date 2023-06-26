@@ -195,3 +195,15 @@ func (wf *Workflow) Load(ctx context.Context, jsonFile []byte) error {
 	err := json.Unmarshal(jsonFile, &wf)
 	return err
 }
+
+func (wf Workflow) ExtractKeys(trackingKeys []string) (string, string) {
+	linkStory := ""
+	linkStatus := ""
+	if len(trackingKeys) > 0 {
+		linkStory = trackingKeys[0]
+	}
+	if len(trackingKeys) > 1 {
+		linkStatus = trackingKeys[1]
+	}
+	return linkStory, linkStatus
+}

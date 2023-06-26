@@ -73,15 +73,15 @@ func (query *StatsQuery) Initialize(config *db.DatabaseConfig) error {
 
 func (query *StatsQuery) RoleField(ctx context.Context, wf *common.Workflow, id string) error {
 	var roles scanners.String
+	var outputBuffer bytes.Buffer
 	newQuery := query.query.NewQuery()
 	current, ok := wf.Tasks[id]
 	if ok == false {
 		return fmt.Errorf("task doesn't exist %s", id)
 	}
-	newSQL := ""
 	tmpl, err := template.New("roleSQL").Parse(STATS_ROLEFIELD)
 	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
-	linkStory, linkStatus := extractKeys(trackingKeys)
+	linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
 	list, err := wf.Statuses(ctx)
 	if err != nil {
 		return err
@@ -95,12 +95,11 @@ func (query *StatsQuery) RoleField(ctx context.Context, wf *common.Workflow, id 
 		Statuses:          statuses,
 		Status:            id,
 	}
-	var outputBuffer bytes.Buffer
 	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {
 		return err
 	}
-	newSQL = outputBuffer.String()
+	newSQL := outputBuffer.String()
 	err = newQuery.QueryOne(newSQL, &roles)
 	if err != nil {
 		return err
@@ -123,10 +122,9 @@ func (query *StatsQuery) TimeField(ctx context.Context, wf *common.Workflow, id 
 		// End of flow
 		return nil
 	}
-	newSQL := ""
 	tmpl, err := template.New("timeSQL").Parse(STATS_TIMEFIELD)
 	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
-	linkStory, linkStatus := extractKeys(trackingKeys)
+	linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
 	list, err := wf.Statuses(ctx)
 	if err != nil {
 		return err
@@ -145,7 +143,7 @@ func (query *StatsQuery) TimeField(ctx context.Context, wf *common.Workflow, id 
 	if err != nil {
 		return err
 	}
-	newSQL = outputBuffer.String()
+	newSQL := outputBuffer.String()
 	err = newQuery.QueryOne(newSQL, &duration)
 	if err != nil {
 		return err
@@ -153,18 +151,6 @@ func (query *StatsQuery) TimeField(ctx context.Context, wf *common.Workflow, id 
 	current.Data.TimeField = types.NewString(duration.Value.String())
 	return nil
 
-}
-
-func extractKeys(trackingKeys []string) (string, string) {
-	linkStory := ""
-	linkStatus := ""
-	if len(trackingKeys) > 0 {
-		linkStory = trackingKeys[0]
-	}
-	if len(trackingKeys) > 1 {
-		linkStatus = trackingKeys[1]
-	}
-	return linkStory, linkStatus
 }
 
 func (query *StatsQuery) Percentage(ctx context.Context, wf *common.Workflow, id string) error {

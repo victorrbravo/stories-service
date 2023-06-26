@@ -98,3 +98,35 @@ func TestGenerateStats(t *testing.T) {
 	}
 	fmt.Println("total", jw.Workflow.Data.Total)
 }
+
+// Test Read method
+func TestGenerateToken(t *testing.T) {
+	var err error
+	var pgQuery pg.StatsQuery
+	ctx := context.Background()
+	config := database.DatabaseConfig{
+		Host: "localhost", Name: "panel", Port: 5432, User: "postgres-dev",
+		Password: "password",
+	}
+	err = pgQuery.Initialize(&config)
+	if err != nil {
+		t.Error(err)
+	}
+	jw := common.JobWorkflow{}
+	newJson := fmt.Sprintf(jsonFile, uuid.NewV1().String())
+	dataFile := []byte(newJson)
+	err = jw.Workflow.Load(ctx, dataFile)
+	if err != nil {
+		t.Error(err)
+	}
+	err = pgQuery.Generate(ctx, &jw.Workflow)
+	for key, task := range jw.Workflow.Tasks {
+		fmt.Println("===", key, "===")
+		fmt.Println("Count", task.Data.Count)
+		fmt.Println("TimeFields", task.Data.TimeField)
+		fmt.Println("Roles", task.Data.InfoField)
+		fmt.Println("Percentage", task.Data.Percentage)
+		fmt.Println("")
+	}
+	fmt.Println("total", jw.Workflow.Data.Total)
+}
