@@ -23,7 +23,7 @@ type TaFlow struct {
 	PkFlow  types.Int    `json:"pk_flow"`
 	Name    types.String `json:"name"`
 	Flow    []byte       `json:"flow"`
-	FkStory types.String `json:"fk_story"`
+	FkStory types.Int    `json:"fk_story"`
 }
 
 func (taFlow *TaFlow) ScanRow(rows database.RowInterface) (interface{}, error) {
@@ -44,7 +44,7 @@ func CreateTaFlow(
 	query database.IQuery,
 	name types.String,
 	flow []byte,
-	fkStory types.String,
+	fkStory types.Int,
 ) (*TaFlow, error) {
 	var err error
 	var scanner scanners.Int
@@ -74,7 +74,7 @@ func (taFlow *TaFlow) Update(
 	query database.IQuery,
 	name types.String,
 	flow []byte,
-	fkStory types.String,
+	fkStory types.Int,
 ) error {
 	var err error
 	err = query.Exec(
@@ -120,7 +120,7 @@ func (taFlow TaFlow) GetName() types.String {
 	return taFlow.Name
 }
 
-func (taFlow TaFlow) GetFkStory() types.String {
+func (taFlow TaFlow) GetFkStory() types.Int {
 	return taFlow.FkStory
 }
 

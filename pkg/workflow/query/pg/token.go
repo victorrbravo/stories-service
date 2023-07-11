@@ -14,20 +14,12 @@ import (
 )
 
 const (
-	SELECT_BASIC_TOKEN     = "SELECT count(*) FROM %s WHERE %s = '%s'"
-	SELECT_TIMEFIELD_TOKEN = "SELECT %s FROM %s ON %s"
-	STATS_TIMEFIELD_TOKEN  = `
-WITH cte AS (
-SELECT {{.Key2Link}} ,{{.Key1Link}} , {{.TimeField}} ,
-CASE
-	WHEN EXTRACT (epoch from (LEAD({{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})) - {{.TimeField}})) < 0 then INTERVAL '0 hour'
-	ELSE LEAD({{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})) - {{.TimeField}}
-END AS diff
-FROM {{.TrackingTableName}} tt  ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})  
-)
-SELECT 
-MAX(diff) AS maxtime
-FROM cte WHERE {{.Key2Link}}='{{.Status}}'  GROUP BY {{.Key2Link}} ;
+	SELECT_WHERE_TOKEN = `
+SELECT COUNT(*) FROM {{.TableName}} WHERE {{.PkField}} = '{{.ID}}' AND {{.PkStatus}} = '{{.Status}}';
+`
+	SELECT_TIMEFIELD_TOKEN = `
+SELECT {{.TimeField}} from {{.TableName}} ts JOIN {{.TrackingTableName}} tt ON tt.{{.Key1Link}} = ts.{{.FieldToken}} 
+WHERE ts.{{.FieldToken}} = {{.Token}};
 `
 
 	STATS_ROLEFIELD_TOKEN = `
@@ -46,6 +38,7 @@ HAVING COUNT(*) = (
 )
 
 type TokenQuery struct {
+	Token types.String
 	query *db.PostgresQuery
 }
 
@@ -112,7 +105,7 @@ func (query *TokenQuery) TimeField(ctx context.Context, wf *common.Workflow, id 
 		// End of flow
 		return nil
 	}
-	tmpl, err := template.New("timeSQL").Parse(STATS_TIMEFIELD)
+	tmpl, err := template.New("timeSQL").Parse(SELECT_TIMEFIELD_TOKEN)
 	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
 	linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
 	list, err := wf.Statuses(ctx)
@@ -159,14 +152,25 @@ func (query *TokenQuery) Percentage(ctx context.Context, wf *common.Workflow, id
 }
 func (query *TokenQuery) Count(ctx context.Context, wf *common.Workflow, id string) error {
 	var count scanners.Int
+	var outputBuffer bytes.Buffer
 	newQuery := query.query.NewQuery()
 	current, ok := wf.Tasks[id]
 	if !ok { // task is not found
 		return fmt.Errorf("Task not found: %s", id)
 	}
-	newSQL := fmt.Sprintf(SELECT_BASIC, wf.TableName, current.Transition.Links[0].Status,
-		current.Transition.Links[0].Query)
-	err := newQuery.QueryOne(newSQL, &count)
+	tmpl, err := template.New("roleSQL").Parse(SELECT_WHERE_TOKEN)
+	data := DataTemplate{
+		TableName: wf.TableName,
+		Status:    id,
+		PkStatus:  current.Transition.Links[0].Status,
+	}
+	err = tmpl.Execute(&outputBuffer, data)
+	if err != nil {
+		return err
+	}
+	newSQL := outputBuffer.String()
+	fmt.Println("newSQL", newSQL)
+	err = newQuery.QueryOne(newSQL, &count)
 	if err != nil {
 		return err
 	}
@@ -175,6 +179,9 @@ func (query *TokenQuery) Count(ctx context.Context, wf *common.Workflow, id stri
 }
 
 func (query *TokenQuery) Generate(ctx context.Context, wf *common.Workflow) error {
+	if types.IsNil(query.Token) {
+		return fmt.Errorf("Token not set")
+	}
 	for name, _ := range wf.Tasks {
 		err := query.Count(ctx, wf, name)
 		if err != nil {

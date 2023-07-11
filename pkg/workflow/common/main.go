@@ -52,6 +52,8 @@ type Workflow struct {
 	Tasks             map[string]*Task `json:"tasks"`
 	InitialTask       *Task            `json:"initial_task,omitempty"`
 	Data              Data             `json:"data,omitempty"`
+	CurrentIDInt      types.Int        `json:"current_id_int,omitempty"`
+	CurrentIDUUID     types.UUID       `json:"current_id_uuid,omitempty"`
 }
 
 type Variable struct {

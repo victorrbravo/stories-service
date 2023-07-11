@@ -102,7 +102,7 @@ func TestGenerateStats(t *testing.T) {
 // Test Read method
 func TestGenerateToken(t *testing.T) {
 	var err error
-	var pgQuery pg.StatsQuery
+	pgQuery := pg.TokenQuery{}
 	ctx := context.Background()
 	config := database.DatabaseConfig{
 		Host: "localhost", Name: "panel", Port: 5432, User: "postgres-dev",

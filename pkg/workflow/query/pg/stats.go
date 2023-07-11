@@ -51,8 +51,12 @@ type DataTemplate struct {
 	TimeField         string
 	InfoField         string
 	TrackingTableName string
+	PkField           string
+	PkStatus          string
+	TableName         string
 	Statuses          string
 	Status            string
+	Token             string
 }
 
 type StatsQuery struct {

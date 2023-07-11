@@ -1,13 +1,10 @@
 package handlers
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"stories/generated/models"
-	"stories/pkg/workflow/common"
 	"stories/users"
 
 	"stories/database"
@@ -45,10 +42,7 @@ func (handler GetAllHandler) ServeHTTP(writer http.ResponseWriter, request *http
 		return
 	}
 	flows, err = models.GetAllTaFlows(handler.GetQuery())
-	wf, err := common.CreateExample(context.Background(), "TouristPlace")
-	fmt.Println("CreateExample err", err)
-	data, err := json.Marshal(wf)
-	fmt.Println("CreateExample wf", string(data))
+	fmt.Println("Get all executing...")
 	if err != nil {
 		fmt.Println("error flows")
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))

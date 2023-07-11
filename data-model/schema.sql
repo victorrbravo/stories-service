@@ -74,6 +74,11 @@
         "invalid"    boolean                  DEFAULT false
     );
 
+
+
+insert into ta_flow (name, fk_story) values ('flow1',1);
+
+insert into ta_user (first_name, last_name, email, account_type, password) DEFAULT VALUES ;
 insert into ta_story (name, status) values ('story1', 'ToDo');
 insert into ta_story (name, status) values ('story1', 'Progress');
 insert into ta_story (name, status) values ('story1', 'ToDo');

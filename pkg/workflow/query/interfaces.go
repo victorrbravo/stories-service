@@ -3,7 +3,6 @@ package query
 import (
 	"context"
 	"stories/pkg/workflow/common"
-	"stories/types"
 )
 
 type Query interface {
@@ -12,7 +11,5 @@ type Query interface {
 	TimeField(ctx context.Context, wf *common.Workflow, id string) error
 	RoleField(ctx context.Context, wf *common.Workflow, id string) error
 	Generate(ctx context.Context, wf *common.Workflow) error
-	GenerateTokenInt(ctx context.Context, wf *common.Workflow, id int) error
-	GenerateTokenUUID(ctx context.Context, wf *common.Workflow, id types.UUID) error
 	StatusesList(ctx context.Context, wf *common.Workflow) string
 }
