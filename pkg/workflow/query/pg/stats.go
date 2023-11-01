@@ -3,6 +3,8 @@ package pg
 import (
 	"bytes"
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	db "stories/database"
@@ -14,6 +16,7 @@ import (
 )
 
 const (
+	NA               = "n/a"
 	SELECT_BASIC     = "SELECT count(*) FROM %s WHERE %s = '%s'"
 	SELECT_TIMEFIELD = "SELECT %s FROM %s ON %s"
 	STATS_TIMEFIELD  = `
@@ -26,7 +29,7 @@ END AS diff
 FROM {{.TrackingTableName}} tt  ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})  
 )
 SELECT 
-MAX(diff) AS maxtime
+CASE WHEN AVG(diff) IS NULL THEN '0s' ELSE AVG(diff) END AS maxtime
 FROM cte WHERE {{.Key2Link}}='{{.Status}}'  GROUP BY {{.Key2Link}} ;
 `
 
@@ -63,7 +66,11 @@ type StatsQuery struct {
 	query *db.PostgresQuery
 }
 
-func (query *StatsQuery) Initialize(config *db.DatabaseConfig) error {
+func (q StatsQuery) Error() error {
+	return nil
+}
+
+func (q *StatsQuery) Initialize(config *db.DatabaseConfig) error {
 	var pgQuery db.PostgresQuery
 	pgQuery.Initialize(config)
 	err := pgQuery.Connect()
@@ -71,8 +78,8 @@ func (query *StatsQuery) Initialize(config *db.DatabaseConfig) error {
 		log.Println("Db Connect error")
 		return err
 	}
-	query.query = &pgQuery
-	return nil
+	q.query = &pgQuery
+	return err
 }
 
 func (query *StatsQuery) RoleField(ctx context.Context, wf *common.Workflow, id string) error {
@@ -106,7 +113,13 @@ func (query *StatsQuery) RoleField(ctx context.Context, wf *common.Workflow, id 
 	newSQL := outputBuffer.String()
 	err = newQuery.QueryOne(newSQL, &roles)
 	if err != nil {
-		return err
+		if !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		current.Data.InfoField = types.NewString(NA)
+		return nil
 	}
 	current.Data.InfoField = roles.Value
 	return nil
@@ -150,9 +163,15 @@ func (query *StatsQuery) TimeField(ctx context.Context, wf *common.Workflow, id 
 	newSQL := outputBuffer.String()
 	err = newQuery.QueryOne(newSQL, &duration)
 	if err != nil {
-		return err
+		if !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
 	}
-	current.Data.TimeField = types.NewString(duration.Value.String())
+	value := types.NewString(NA)
+	if !errors.Is(err, sql.ErrNoRows) {
+		value = types.NewString(duration.Value.String())
+	}
+	current.Data.TimeField = value
 	return nil
 
 }

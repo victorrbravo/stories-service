@@ -7,6 +7,7 @@ import (
 	"stories/database"
 	"stories/pkg/workflow/common"
 	"stories/pkg/workflow/query/pg"
+	"stories/types"
 	"testing"
 )
 
@@ -73,8 +74,8 @@ func TestGenerateStats(t *testing.T) {
 	var pgQuery pg.StatsQuery
 	ctx := context.Background()
 	config := database.DatabaseConfig{
-		Host: "localhost", Name: "panel", Port: 5432, User: "postgres-dev",
-		Password: "password",
+		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Password: "stories",
 	}
 	err = pgQuery.Initialize(&config)
 	if err != nil {
@@ -91,7 +92,7 @@ func TestGenerateStats(t *testing.T) {
 	for key, task := range jw.Workflow.Tasks {
 		fmt.Println("===", key, "===")
 		fmt.Println("Count", task.Data.Count)
-		fmt.Println("TimeFields", task.Data.TimeField)
+		fmt.Println("TimeField", task.Data.TimeField)
 		fmt.Println("Roles", task.Data.InfoField)
 		fmt.Println("Percentage", task.Data.Percentage)
 		fmt.Println("")
@@ -105,9 +106,10 @@ func TestGenerateToken(t *testing.T) {
 	pgQuery := pg.TokenQuery{}
 	ctx := context.Background()
 	config := database.DatabaseConfig{
-		Host: "localhost", Name: "panel", Port: 5432, User: "postgres-dev",
-		Password: "password",
+		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Password: "stories",
 	}
+	pgQuery.Token = types.NewString("1")
 	err = pgQuery.Initialize(&config)
 	if err != nil {
 		t.Error(err)

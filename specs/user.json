@@ -15,7 +15,8 @@
       "Scannable": true,
       "Nullable": true,
       "Getter": true,
-      "Title": "FullName"
+      "Title": "FullName",
+      "Valid": "minlength=3,alpha"
     },
     {
       "Name": "LastName",

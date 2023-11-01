@@ -12,4 +12,5 @@ type Query interface {
 	RoleField(ctx context.Context, wf *common.Workflow, id string) error
 	Generate(ctx context.Context, wf *common.Workflow) error
 	StatusesList(ctx context.Context, wf *common.Workflow) string
+	Error() error
 }

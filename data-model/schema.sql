@@ -76,13 +76,18 @@
 
 
 
-insert into ta_flow (name, fk_story) values ('flow1',1);
 
-insert into ta_user (first_name, last_name, email, account_type, password) DEFAULT VALUES ;
 insert into ta_story (name, status) values ('story1', 'ToDo');
 insert into ta_story (name, status) values ('story1', 'Progress');
 insert into ta_story (name, status) values ('story1', 'ToDo');
 insert into ta_story (name, status) values ('story1', 'Done');
 
-insert into ta_tracking (images, videos, roles, fk_status, fk_story) values ('{"image1", "image2"}', '{"video1"}', '{"role1"}', 'Done', 1);
+insert into ta_flow (name, fk_story) values ('flow1',1);
 
+insert into ta_tracking (images, videos, roles, fk_status, fk_story) values ('{"image1", "image2"}', '{"video1"}', '{"role1"}', 'Done', 1);
+insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at) values ('{"image3", "image6"}', '{"video3"}', '{"role3"}', 'Progress', 1, '2023-10-30 12:05:12.119 -0500');
+insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at) values ('{"image3", "image6"}', '{"video3"}', '{"role3"}', 'ToDo', 1, '2023-10-30 10:05:12.119 -0500');
+
+insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at) values ('{"image1", "image2"}', '{"video1"}', '{"role1"}', 'Done', 2, '2023-10-31 18:25:12.119 -0500');
+insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at) values ('{"image3", "image6"}', '{"video3"}', '{"role3"}', 'Progress', 2, '2023-10-31 17:18:12.119 -0500');
+insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at) values ('{"image3", "image6"}', '{"video3"}', '{"role3"}', 'ToDo', 2, '2023-10-31 16:08:12.119 -0500');

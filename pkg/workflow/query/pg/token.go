@@ -3,6 +3,7 @@ package pg
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	db "stories/database"
@@ -17,23 +18,12 @@ const (
 	SELECT_WHERE_TOKEN = `
 SELECT COUNT(*) FROM {{.TableName}} WHERE {{.PkField}} = '{{.ID}}' AND {{.PkStatus}} = '{{.Status}}';
 `
-	SELECT_TIMEFIELD_TOKEN = `
-SELECT {{.TimeField}} from {{.TableName}} ts JOIN {{.TrackingTableName}} tt ON tt.{{.Key1Link}} = ts.{{.FieldToken}} 
-WHERE ts.{{.FieldToken}} = {{.Token}};
+	SELECT_TIMEFIELD_TOKEN = `º
+SELECT {{.TimeField}}  FROM {{.TrackingTableName}} tt WHERE {{.Key2Link}} = '{{.Status}}' AND {{.Key1Link}} = {{.Token}};
 `
 
-	STATS_ROLEFIELD_TOKEN = `
-SELECT {{.InfoField}} AS roles
-FROM  {{.TrackingTableName}} where  {{.Key2Link}} = '{{.Status}}'
-GROUP BY {{.InfoField}}
-HAVING COUNT(*) = (
-  SELECT MAX(count)
-  FROM (
-    SELECT {{.InfoField}}, COUNT(*) AS count
-    FROM {{.TrackingTableName}} tt where {{.Key2Link}} = '{{.Status}}' 
-    GROUP BY {{.InfoField}}
-  ) subquery
-) limit 1;
+	SELECT_ROLEFIELD_TOKEN = `
+SELECT {{.InfoField}}  FROM {{.TrackingTableName}} tt WHERE {{.Key2Link}} = '{{.Status}}' AND {{.Key1Link}} = {{.Token}};
 `
 )
 
@@ -54,73 +44,24 @@ func (query *TokenQuery) Initialize(config *db.DatabaseConfig) error {
 	return nil
 }
 
-func (query *TokenQuery) RoleField(ctx context.Context, wf *common.Workflow, id string) error {
-	var roles scanners.String
+func (query *TokenQuery) TimeField(ctx context.Context, wf *common.Workflow, statusValue string) error {
+	var duration scanners.String
 	var outputBuffer bytes.Buffer
 	newQuery := query.query.NewQuery()
-	current, ok := wf.Tasks[id]
+	current, ok := wf.Tasks[statusValue]
 	if ok == false {
-		return fmt.Errorf("task doesn't exist %s", id)
-	}
-	tmpl, err := template.New("roleSQL").Parse(STATS_ROLEFIELD)
-	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
-	linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
-	list, err := wf.Statuses(ctx)
-	if err != nil {
-		return err
-	}
-	statuses := strings.Join(list, ",")
-	data := DataTemplate{Key1Link: linkStory,
-		Key2Link:          linkStatus,
-		TimeField:         current.TimeField,
-		InfoField:         current.InfoField,
-		TrackingTableName: wf.TrackingTableName.String(),
-		Statuses:          statuses,
-		Status:            id,
-	}
-	err = tmpl.Execute(&outputBuffer, data)
-	if err != nil {
-		return err
-	}
-	newSQL := outputBuffer.String()
-	err = newQuery.QueryOne(newSQL, &roles)
-	if err != nil {
-		return err
-	}
-	current.Data.InfoField = roles.Value
-	return nil
-}
-
-func (query *TokenQuery) TimeField(ctx context.Context, wf *common.Workflow, id string) error {
-	var duration scanners.Interval
-	var outputBuffer bytes.Buffer
-	newQuery := query.query.NewQuery()
-	current, ok := wf.Tasks[id]
-	if ok == false {
-		return fmt.Errorf("id doesn't exist %s", id)
-	}
-	nextTask := wf.NextTask(current.Name)
-	if nextTask == nil {
-		current.Data.TimeField = types.NewString("0s")
-		// End of flow
-		return nil
+		return fmt.Errorf("id doesn't exist %s", statusValue)
 	}
 	tmpl, err := template.New("timeSQL").Parse(SELECT_TIMEFIELD_TOKEN)
 	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
 	linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
-	list, err := wf.Statuses(ctx)
-	if err != nil {
-		return err
-	}
-	statuses := strings.Join(list, ",")
-	fmt.Println("...statuses", statuses)
 	data := DataTemplate{
 		Key1Link:          linkStory,
 		Key2Link:          linkStatus,
 		TimeField:         current.TimeField,
 		TrackingTableName: wf.TrackingTableName.String(),
-		Statuses:          statuses,
-		Status:            id,
+		Status:            statusValue,
+		Token:             query.Token.String(),
 	}
 	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {
@@ -128,10 +69,43 @@ func (query *TokenQuery) TimeField(ctx context.Context, wf *common.Workflow, id 
 	}
 	newSQL := outputBuffer.String()
 	err = newQuery.QueryOne(newSQL, &duration)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	current.Data.TimeField = duration.Value
+	return nil
+}
+
+func (query *TokenQuery) RoleField(ctx context.Context, wf *common.Workflow, statusValue string) error {
+	var role scanners.String
+	var outputBuffer bytes.Buffer
+	newQuery := query.query.NewQuery()
+	current, ok := wf.Tasks[statusValue]
+	if ok == false {
+		return fmt.Errorf("statusValue doesn't exist %s", statusValue)
+	}
+	tmpl, err := template.New("timeSQL").Parse(SELECT_ROLEFIELD_TOKEN)
+	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
+	linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
+	data := DataTemplate{
+		Key1Link:          linkStory,
+		Key2Link:          linkStatus,
+		InfoField:         current.InfoField,
+		TrackingTableName: wf.TrackingTableName.String(),
+		Status:            statusValue,
+		Token:             query.Token.String(),
+	}
+	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {
 		return err
 	}
-	current.Data.TimeField = types.NewString(duration.Value.String())
+	newSQL := outputBuffer.String()
+	err = newQuery.QueryOne(newSQL, &role)
+	fmt.Println("Role newSQL", newSQL)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	current.Data.InfoField = role.Value
 	return nil
 
 }
@@ -171,7 +145,7 @@ func (query *TokenQuery) Count(ctx context.Context, wf *common.Workflow, id stri
 	newSQL := outputBuffer.String()
 	fmt.Println("newSQL", newSQL)
 	err = newQuery.QueryOne(newSQL, &count)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
 	current.Data.Count = count.Value
@@ -180,24 +154,14 @@ func (query *TokenQuery) Count(ctx context.Context, wf *common.Workflow, id stri
 
 func (query *TokenQuery) Generate(ctx context.Context, wf *common.Workflow) error {
 	if types.IsNil(query.Token) {
-		return fmt.Errorf("Token not set")
+		return fmt.Errorf("token not set")
 	}
 	for name, _ := range wf.Tasks {
-		err := query.Count(ctx, wf, name)
+		err := query.TimeField(ctx, wf, name)
 		if err != nil {
 			return err
 		}
 		err = query.RoleField(ctx, wf, name)
-		if err != nil {
-			return err
-		}
-		err = query.TimeField(ctx, wf, name)
-		if err != nil {
-			return err
-		}
-	}
-	for name, _ := range wf.Tasks {
-		err := query.Percentage(ctx, wf, name)
 		if err != nil {
 			return err
 		}

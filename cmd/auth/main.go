@@ -13,12 +13,13 @@ func main() {
 	var server web.Server
 	var err error
 	config := database.DatabaseConfig{
-		Host: "localhost", Name: "panel", Port: 5432, User: "postgres-dev",
-		Password: "password",
+		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Password: "stories",
 	}
 	var query database.PostgresQuery
-	query.Initialize(&config)
-	log.Println("Connect Suceeded!")
+	result := query.Initialize(&config)
+	err = query.Connect()
+	log.Println("Connect Suceeded! result", result)
 	newQuery := query.NewQuery()
 	server, err = web.NewServer()
 	if err != nil {

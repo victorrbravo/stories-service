@@ -1,12 +1,13 @@
 module stories
 
-go 1.18
+go 1.20
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/lib/pq v1.10.4
 	github.com/twinj/uuid v1.0.0
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
