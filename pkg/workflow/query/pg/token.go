@@ -16,10 +16,21 @@ import (
 
 const (
 	SELECT_WHERE_TOKEN = `
-SELECT COUNT(*) FROM {{.TableName}} WHERE {{.PkField}} = '{{.ID}}' AND {{.PkStatus}} = '{{.Status}}';
+SELECT COUNT(*) FROM {{.TableName}} WHERE {{.PkField}} = '{{.Token}}' AND {{.PkStatus}} = '{{.Status}}';
 `
-	SELECT_TIMEFIELD_TOKEN = `º
-SELECT {{.TimeField}}  FROM {{.TrackingTableName}} tt WHERE {{.Key2Link}} = '{{.Status}}' AND {{.Key1Link}} = {{.Token}};
+	SELECT_TIMEFIELD_TOKEN = `
+WITH cte AS (
+SELECT {{.Key2Link}} ,{{.Key1Link}} , {{.TimeField}} ,
+CASE
+	WHEN EXTRACT (epoch from (LEAD({{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})) - {{.TimeField}})) < 0 then INTERVAL '0 hour'
+	ELSE LEAD({{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})) - {{.TimeField}}
+END AS diff
+FROM {{.TrackingTableName}} tt  WHERE {{.Key1Link}}='{{.Token}}' ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})  
+)
+SELECT 
+CASE WHEN diff IS NULL THEN '0s' ELSE diff END AS maxtime
+FROM cte WHERE {{.Key2Link}}='{{.Status}}' AND  {{.Key1Link}}='{{.Token}}'  ;
+
 `
 
 	SELECT_ROLEFIELD_TOKEN = `
@@ -44,6 +55,11 @@ func (query *TokenQuery) Initialize(config *db.DatabaseConfig) error {
 	return nil
 }
 
+func getLinkFields(ctx context.Context, wf *common.Workflow) (string, string) {
+	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
+	return wf.ExtractKeys(trackingKeys)
+}
+
 func (query *TokenQuery) TimeField(ctx context.Context, wf *common.Workflow, statusValue string) error {
 	var duration scanners.String
 	var outputBuffer bytes.Buffer
@@ -53,14 +69,20 @@ func (query *TokenQuery) TimeField(ctx context.Context, wf *common.Workflow, sta
 		return fmt.Errorf("id doesn't exist %s", statusValue)
 	}
 	tmpl, err := template.New("timeSQL").Parse(SELECT_TIMEFIELD_TOKEN)
-	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
-	linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
+	linkStory, linkStatus := getLinkFields(ctx, wf)
+	list, err := wf.Statuses(ctx)
+	if err != nil {
+		return err
+	}
+	statuses := strings.Join(list, ",")
+	fmt.Println("...statuses", statuses)
 	data := DataTemplate{
 		Key1Link:          linkStory,
 		Key2Link:          linkStatus,
 		TimeField:         current.TimeField,
 		TrackingTableName: wf.TrackingTableName.String(),
 		Status:            statusValue,
+		Statuses:          statuses,
 		Token:             query.Token.String(),
 	}
 	err = tmpl.Execute(&outputBuffer, data)
@@ -85,8 +107,7 @@ func (query *TokenQuery) RoleField(ctx context.Context, wf *common.Workflow, sta
 		return fmt.Errorf("statusValue doesn't exist %s", statusValue)
 	}
 	tmpl, err := template.New("timeSQL").Parse(SELECT_ROLEFIELD_TOKEN)
-	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
-	linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
+	linkStory, linkStatus := getLinkFields(ctx, wf)
 	data := DataTemplate{
 		Key1Link:          linkStory,
 		Key2Link:          linkStatus,
@@ -136,7 +157,9 @@ func (query *TokenQuery) Count(ctx context.Context, wf *common.Workflow, id stri
 	data := DataTemplate{
 		TableName: wf.TableName,
 		Status:    id,
+		Token:     query.Token.String(),
 		PkStatus:  current.Transition.Links[0].Status,
+		PkField:   wf.FieldToken,
 	}
 	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {
@@ -157,7 +180,11 @@ func (query *TokenQuery) Generate(ctx context.Context, wf *common.Workflow) erro
 		return fmt.Errorf("token not set")
 	}
 	for name, _ := range wf.Tasks {
-		err := query.TimeField(ctx, wf, name)
+		err := query.Count(ctx, wf, name)
+		if err != nil {
+			return err
+		}
+		err = query.TimeField(ctx, wf, name)
 		if err != nil {
 			return err
 		}

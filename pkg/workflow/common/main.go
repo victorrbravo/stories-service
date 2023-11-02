@@ -147,13 +147,20 @@ func (wf *Workflow) AddLink(ctx context.Context, taskName string, linkTask *Task
 	return nil
 }
 
-func (wf Workflow) Statuses(ctx context.Context) ([]string, error) {
+func (wf *Workflow) Statuses(ctx context.Context) ([]string, error) {
+	var err error
+	var start string
 	list := []string{}
-	start, err := wf.CalculateInitialTask()
+	if wf.InitialTask != nil {
+		start = wf.InitialTask.Name
+	} else {
+		start, err = wf.CalculateInitialTask()
+	}
 	if err != nil {
 		return list, err
 	}
 	current := start
+	wf.InitialTask = wf.Tasks[start]
 	list = append(list, "'"+current+"'")
 	lenMax := len(wf.Tasks)
 	i := 0
@@ -208,4 +215,19 @@ func (wf Workflow) ExtractKeys(trackingKeys []string) (string, string) {
 		linkStatus = trackingKeys[1]
 	}
 	return linkStory, linkStatus
+}
+
+func (wf Workflow) Draw() {
+	nextTask := wf.InitialTask.Name
+	for strings.Compare(nextTask, END_TASK) != 0 {
+		key := nextTask
+		task := wf.Tasks[key]
+		fmt.Println("===", key, "===")
+		fmt.Println("Count", task.Data.Count)
+		fmt.Println("TimeFields", task.Data.TimeField)
+		fmt.Println("Roles", task.Data.InfoField)
+		fmt.Println("Percentage", task.Data.Percentage)
+		fmt.Println("")
+		nextTask = task.Transition.Links[0].Task
+	}
 }

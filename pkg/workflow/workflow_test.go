@@ -122,13 +122,7 @@ func TestGenerateToken(t *testing.T) {
 		t.Error(err)
 	}
 	err = pgQuery.Generate(ctx, &jw.Workflow)
-	for key, task := range jw.Workflow.Tasks {
-		fmt.Println("===", key, "===")
-		fmt.Println("Count", task.Data.Count)
-		fmt.Println("TimeFields", task.Data.TimeField)
-		fmt.Println("Roles", task.Data.InfoField)
-		fmt.Println("Percentage", task.Data.Percentage)
-		fmt.Println("")
-	}
+
+	jw.Workflow.Draw()
 	fmt.Println("total", jw.Workflow.Data.Total)
 }
