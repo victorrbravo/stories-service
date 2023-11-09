@@ -6,7 +6,7 @@ import (
 	"github.com/twinj/uuid"
 	"stories/database"
 	"stories/pkg/workflow/common"
-	"stories/pkg/workflow/query/pg"
+	"stories/pkg/workflow/queries/pg"
 	"stories/types"
 	"testing"
 )
@@ -15,7 +15,7 @@ const jsonFile = `
 {
   "id": "%s",
   "name": "Workflow1",
-  "variable": { "name": "basic", "query": "pk_story,name,status" },
+  "variable": { "name": "basic", "queries": "pk_story,name,status" },
   "tracking_table_name": "ta_tracking",
   "tracking_keys": "fk_story,fk_status",
   "field_token": "pk_story",
@@ -29,7 +29,7 @@ const jsonFile = `
         "links": [
           {
             "task": "Progress",
-            "query": "ToDo",
+            "queries": "ToDo",
             "status": "status"
           }
         ]
@@ -43,7 +43,7 @@ const jsonFile = `
         "links": [
           {
             "task": "Done",
-            "query": "Progress",
+            "queries": "Progress",
             "status": "status"
           }
         ]
@@ -57,7 +57,7 @@ const jsonFile = `
         "links": [
           {
             "task": "END",
-            "query": "Done",
+            "queries": "Done",
             "status": "status"
           }
         ]
@@ -71,15 +71,10 @@ const jsonFile = `
 // Test Read method
 func TestGenerateStats(t *testing.T) {
 	var err error
-	var pgQuery pg.StatsQuery
 	ctx := context.Background()
 	config := database.DatabaseConfig{
 		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
 		Password: "stories",
-	}
-	err = pgQuery.Initialize(&config)
-	if err != nil {
-		t.Error(err)
 	}
 	jw := common.JobWorkflow{}
 	newJson := fmt.Sprintf(jsonFile, uuid.NewV1().String())
@@ -88,7 +83,17 @@ func TestGenerateStats(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = pgQuery.Generate(ctx, &jw.Workflow)
+	monad := pg.New(&jw.Workflow, &config)
+
+	monad = pg.Bind(monad, pg.TimeStats)
+	monad = pg.Bind(monad, pg.RoleStats)
+	monad = pg.Bind(monad, pg.Count)
+	monad = pg.Bind(monad, pg.Percentage)
+	_, err = monad(nil)
+	if err != nil {
+		t.Error(err)
+	}
+
 	for key, task := range jw.Workflow.Tasks {
 		fmt.Println("===", key, "===")
 		fmt.Println("Count", task.Data.Count)
@@ -103,16 +108,10 @@ func TestGenerateStats(t *testing.T) {
 // Test Read method
 func TestGenerateToken(t *testing.T) {
 	var err error
-	pgQuery := pg.TokenQuery{}
 	ctx := context.Background()
 	config := database.DatabaseConfig{
 		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
 		Password: "stories",
-	}
-	pgQuery.Token = types.NewString("1")
-	err = pgQuery.Initialize(&config)
-	if err != nil {
-		t.Error(err)
 	}
 	jw := common.JobWorkflow{}
 	newJson := fmt.Sprintf(jsonFile, uuid.NewV1().String())
@@ -121,8 +120,24 @@ func TestGenerateToken(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = pgQuery.Generate(ctx, &jw.Workflow)
+	jw.Workflow.CurrentIDInt = types.NewInt(1)
+	monad := pg.New(&jw.Workflow, &config)
 
-	jw.Workflow.Draw()
+	monad = pg.Bind(monad, pg.TimeField)
+	monad = pg.Bind(monad, pg.RoleField)
+	monad = pg.Bind(monad, pg.CountToken)
+	_, err = monad(nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	for key, task := range jw.Workflow.Tasks {
+		fmt.Println("===", key, "===")
+		fmt.Println("Count", task.Data.Count)
+		fmt.Println("TimeField", task.Data.TimeField)
+		fmt.Println("Roles", task.Data.InfoField)
+		fmt.Println("Percentage", task.Data.Percentage)
+		fmt.Println("")
+	}
 	fmt.Println("total", jw.Workflow.Data.Total)
 }

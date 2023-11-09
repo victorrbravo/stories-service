@@ -101,7 +101,7 @@ func (handler RequestAuthorizer) ServeHTTP(writer http.ResponseWriter, request *
 	var err error
 	query := handler.GetQuery()
 	email, err = getJWTToken(request)
-	log.Println("ServeHTTP getJWTToken email ", email, " err", err, "query", query)
+	log.Println("ServeHTTP getJWTToken email ", email, " err", err, "queries", query)
 	if err != nil {
 		RespondWithError(writer, helpers.NewHttpError(http.StatusForbidden, constants.YouHaveNoAccessToResource))
 	}

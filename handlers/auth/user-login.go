@@ -99,7 +99,7 @@ func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *h
 
 		return
 	}
-	// token, err = user.CreateSession(handler.query)
+	// token, err = user.CreateSession(handler.queries)
 	var tokenDetails *helpers.TokenDetails
 	tokenDetails, err = helpers.CreateJWTToken(types.AsString(handler.Email))
 	if err != nil {

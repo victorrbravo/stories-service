@@ -205,7 +205,7 @@ func queryManyPaged(native NativeQuery, query string, scanner Scanner, pageNumbe
 func queryOne(native NativeQuery, query string, scanner Scanner, values ...interface{}) error {
 	var err error
 	var rows *sql.Rows
-	// Perform the query
+	// Perform the queries
 	rows, err = native.Query(query, values...)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -223,7 +223,7 @@ func queryOne(native NativeQuery, query string, scanner Scanner, values ...inter
 	// Scan now (we ignore the return value because it's set int the scanner)
 	_, err = scanner.ScanRow(rows)
 	if rows.Next() {
-		return fmt.Errorf("oops, found more than a single row in a 1 row query")
+		return fmt.Errorf("oops, found more than a single row in a 1 row queries")
 	}
 	return parseSqlError(err)
 }

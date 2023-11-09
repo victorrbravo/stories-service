@@ -6,7 +6,7 @@ import (
 	"stories/types"
 )
 
-// Query is used to run a single query without transactions
+// Query is used to run a single queries without transactions
 type Query struct {
 	db       *sql.DB
 	instance *Connection

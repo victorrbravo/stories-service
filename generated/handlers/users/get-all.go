@@ -35,7 +35,7 @@ func (handler GetAllHandler) ServeHTTP(writer http.ResponseWriter, request *http
 	var err error
 	//var users []models.TaUser
 	var flows []models.TaFlow
-	log.Println("GETQUERY.....handler.query", handler.GetQuery())
+	log.Println("GETQUERY.....handler.queries", handler.GetQuery())
 	_, err = models.GetAllTaUsers(handler.GetQuery())
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))

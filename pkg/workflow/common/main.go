@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	db "stories/database"
 	"stories/types"
 	"strings"
 )
@@ -42,23 +44,24 @@ type JobWorkflow struct {
 }
 
 type Workflow struct {
-	ID                types.UUID       `json:"id"`
-	Name              string           `json:"name"`
-	TableName         string           `json:"table_name"`
-	FieldToken        string           `json:"field_token"`
-	TrackingTableName types.String     `json:"tracking_table_name"`
-	TrackingKeys      types.String     `json:"tracking_keys"`
-	Variable          Variable         `json:"variable"`
-	Tasks             map[string]*Task `json:"tasks"`
-	InitialTask       *Task            `json:"initial_task,omitempty"`
-	Data              Data             `json:"data,omitempty"`
-	CurrentIDInt      types.Int        `json:"current_id_int,omitempty"`
-	CurrentIDUUID     types.UUID       `json:"current_id_uuid,omitempty"`
+	ID                types.UUID        `json:"id"`
+	Name              string            `json:"name"`
+	TableName         string            `json:"table_name"`
+	FieldToken        string            `json:"field_token"`
+	TrackingTableName types.String      `json:"tracking_table_name"`
+	TrackingKeys      types.String      `json:"tracking_keys"`
+	Variable          Variable          `json:"variable"`
+	Tasks             map[string]*Task  `json:"tasks"`
+	InitialTask       *Task             `json:"initial_task,omitempty"`
+	Data              Data              `json:"data,omitempty"`
+	CurrentIDInt      types.Int         `json:"current_id_int,omitempty"`
+	CurrentIDUUID     types.UUID        `json:"current_id_uuid,omitempty"`
+	Query             *db.PostgresQuery `json:"omitempty"`
 }
 
 type Variable struct {
 	Name  string `json:"name"`
-	Query string `json:"query"`
+	Query string `json:"queries"`
 }
 
 type Task struct {
@@ -76,7 +79,7 @@ type Transition struct {
 
 type Link struct {
 	Task   string `json:"task"`
-	Query  string `json:"query"`
+	Query  string `json:"queries"`
 	Status string `json:"status,omitempty"`
 }
 
@@ -127,12 +130,22 @@ func (wf *Workflow) UpdateTask(ctx context.Context, name string, newTask *Task) 
 }
 
 func (wf Workflow) NextTask(name string) *Task {
-	for _, task := range wf.Tasks {
-		if task.Name == name {
-			return wf.Tasks[task.Transition.Links[0].Task]
-		}
+	ctx := context.Background()
+	task, ok := wf.Tasks[name]
+	if !ok {
+		log.Println("error task", name)
+		return nil
 	}
-	return nil
+	nextName := task.Transition.Links[0].Task
+	if strings.Compare(nextName, END_TASK) == 0 {
+		return nil
+	}
+	nextTask, ok := wf.Tasks[nextName]
+	if !ok {
+		log.Println(ctx, "error Next task", nextName)
+		return nil
+	}
+	return nextTask
 }
 
 // add a link to a task

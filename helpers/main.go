@@ -233,7 +233,7 @@ func GetSqlFromTemplate(base string, feature string) (string, error) {
 	var tpl *template.Template
 	var buffer bytes.Buffer
 	var err error
-	tpl = template.New("update-query")
+	tpl = template.New("update-queries")
 	// Try to parse the code
 	tpl, err = tpl.Parse(base)
 	if err != nil {

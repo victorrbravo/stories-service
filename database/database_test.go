@@ -3,7 +3,6 @@ package database
 import (
 	"testing"
 
-	"stories/generated/queries"
 	"stories/types"
 )
 
@@ -36,7 +35,7 @@ func TestDatabaseConnect(t *testing.T) {
 	t.Log("Connect err", err)
 	var user User
 	// Connect to the database
-	newQuery := query.NewQuery()
-	newQuery.QueryMany(queries.GetUsers, &user)
+	//newQuery := query.NewQuery()
+	//newQuery.QueryMany(queries.GetUsers, &user)
 	t.Logf("User: Nombre: %s Apellido: %s", user.FirstName, user.LastName)
 }

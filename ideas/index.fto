@@ -1,5 +1,32 @@
 project Stories/main
+import { View, RenderElement } from "fromto:ui"
 
-fn Elements(){
+type Gender = 'Hombre' | 'Mujer'
+struct User { name: string, age: int8, gender?: Gender }
 
+// Comment
+// Types (number): int | int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64 | float32 | float64
+/*
+Comentario de
+varias líneas
+*/
+
+fn Elements() {
+    // Constante
+    const victor = User({ name: "Victor", age: 48 })
+    // Variable
+    let marcelo = User({ name: "Marcelo", age: 12 })
+    // Array
+    let arrayUsers = [victor, marcelo]
+    // Tuple
+    let tupleUsers = (victor, marcelo) // Esta variable no es usada y daría error, toda variable o constante debe ser usada
+
+    tupleUsers.push(4) // Error: El tipo de dato no es correcto y las tuplas no son modificables | El método push no existe en una tupla
+    return (
+        <View>
+            {for (let i in arrayUsers) {
+                <RenderElement element={i}/>
+            }}
+        </View>
+    )
 }

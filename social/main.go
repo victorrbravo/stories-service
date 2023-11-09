@@ -78,7 +78,7 @@ const SocialSchema string = `
 
 type Link struct {
 	To    string `json:"to"`
-	Query string `json:"query"`
+	Query string `json:"queries"`
 }
 
 type Task struct {

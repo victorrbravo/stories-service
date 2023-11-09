@@ -16,7 +16,7 @@ type AddStepHandler struct {
 	Name      types.String    `json:"name"`
 	TokenLink types.String    `json:"token_link"`
 	Pattern   types.String    `json:"pattern"`
-	Query     database.IQuery `json:"query,omitempty"`
+	Query     database.IQuery `json:"queries,omitempty"`
 }
 
 func (handler AddStepHandler) GetQuery() database.IQuery {
