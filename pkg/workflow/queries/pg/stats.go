@@ -53,7 +53,7 @@ type Any interface{}
 
 type Monad func(error) (*common.Workflow, error)
 
-func Initialize(config *db.DatabaseConfig) Monad {
+func Initialize[T any](config *db.DatabaseConfig) Monad {
 	return func(e error) (*common.Workflow, error) {
 		return nil, e
 	}
@@ -85,10 +85,9 @@ func Bind(m Monad, f func(*common.Workflow) Monad) Monad {
 
 func TimeStats(wf *common.Workflow) Monad {
 	log.Println("time Stats")
-	ctx := context.Background()
 	return func(error) (*common.Workflow, error) {
 		var duration scanners.Interval
-		var outputBuffer bytes.Buffer
+
 		newQuery := wf.Query.NewQuery()
 		for name, current := range wf.Tasks {
 			nextTask := wf.NextTask(name)
@@ -97,28 +96,10 @@ func TimeStats(wf *common.Workflow) Monad {
 				// End of flow
 				continue
 			}
-			tmpl, err := template.New("timeSQL").Parse(STATS_TIMEFIELD)
-			trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
-			linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
-			list, err := wf.Statuses(ctx)
+			newSQL, err := buildSQL(wf, current, name, STATS_TIMEFIELD)
 			if err != nil {
 				return wf, err
 			}
-			statuses := strings.Join(list, ",")
-			fmt.Println("...statuses", statuses)
-			data := queries.DataTemplate{
-				Key1Link:      linkStory,
-				Key2Link:      linkStatus,
-				TimeField:     current.TimeField,
-				TrackingTable: wf.TrackingTableName.String(),
-				Statuses:      statuses,
-				Status:        name,
-			}
-			err = tmpl.Execute(&outputBuffer, data)
-			if err != nil {
-				return wf, err
-			}
-			newSQL := outputBuffer.String()
 			err = newQuery.QueryOne(newSQL, &duration)
 			if err != nil {
 				if !errors.Is(err, sql.ErrNoRows) {
@@ -130,7 +111,7 @@ func TimeStats(wf *common.Workflow) Monad {
 				value = types.NewString(duration.Value.String())
 			}
 			current.Data.TimeField = value
-			outputBuffer.Reset()
+
 		}
 		return wf, nil
 	}
@@ -138,45 +119,27 @@ func TimeStats(wf *common.Workflow) Monad {
 
 func RoleStats(wf *common.Workflow) Monad {
 	log.Println("unmarshalling the file to json")
-	ctx := context.Background()
 	var roles scanners.String
-	var outputBuffer bytes.Buffer
 	newQuery := wf.Query.NewQuery()
 	return func(error) (*common.Workflow, error) {
 		for name, current := range wf.Tasks {
-			tmpl, err := template.New("roleSQL").Parse(STATS_ROLEFIELD)
-			trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
-			linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
-			list, err := wf.Statuses(ctx)
+			newSQL, err := buildSQL(wf, current, name, STATS_TIMEFIELD)
 			if err != nil {
-				return wf, err
+				log.Println("Error RoleStats err", err)
+				continue
 			}
-			statuses := strings.Join(list, ",")
-			data := queries.DataTemplate{Key1Link: linkStory,
-				Key2Link:      linkStatus,
-				TimeField:     current.TimeField,
-				InfoField:     current.InfoField,
-				TrackingTable: wf.TrackingTableName.String(),
-				Statuses:      statuses,
-				Status:        name,
-			}
-			err = tmpl.Execute(&outputBuffer, data)
-			if err != nil {
-				return wf, err
-			}
-			newSQL := outputBuffer.String()
 			err = newQuery.QueryOne(newSQL, &roles)
 			if err != nil {
 				if !errors.Is(err, sql.ErrNoRows) {
-					return wf, err
+					log.Println("Error query one err", err)
+					continue
 				}
 			}
 			if errors.Is(err, sql.ErrNoRows) {
 				current.Data.InfoField = types.NewString(NA)
-				return wf, nil
+				continue
 			}
 			current.Data.InfoField = roles.Value
-			outputBuffer.Reset()
 		}
 		return wf, nil
 	}
@@ -199,8 +162,6 @@ func Count(wf *common.Workflow) Monad {
 	}
 }
 
-/// ******* STATS Query
-
 func Percentage(wf *common.Workflow) Monad {
 	total := 0
 	for _, task := range wf.Tasks {
@@ -215,4 +176,33 @@ func Percentage(wf *common.Workflow) Monad {
 		wf.Data.Total = types.NewInt(total)
 		return wf, nil
 	}
+}
+
+func buildSQL(wf *common.Workflow, current *common.Task, name string, sqlString string) (string, error) {
+	var outputBuffer bytes.Buffer
+	ctx := context.Background()
+	tmpl, err := template.New("timeSQL").Parse(sqlString)
+	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
+	linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
+	list, err := wf.Statuses(ctx)
+	if err != nil {
+		return "", err
+	}
+	statuses := strings.Join(list, ",")
+	fmt.Println("...statuses", statuses)
+	data := queries.DataTemplate{
+		Key1Link:      linkStory,
+		Key2Link:      linkStatus,
+		TimeField:     current.TimeField,
+		InfoField:     current.InfoField,
+		TrackingTable: wf.TrackingTableName.String(),
+		Statuses:      statuses,
+		Status:        name,
+	}
+	err = tmpl.Execute(&outputBuffer, data)
+	if err != nil {
+		return "", err
+	}
+	newSQL := outputBuffer.String()
+	return newSQL, nil
 }

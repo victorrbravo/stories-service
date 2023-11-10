@@ -83,12 +83,14 @@ func TestGenerateStats(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	monad := pg.New(&jw.Workflow, &config)
+	var wf common.Workflow = jw.Workflow
+	monad := pg.New(&wf, &config)
 
 	monad = pg.Bind(monad, pg.TimeStats)
 	monad = pg.Bind(monad, pg.RoleStats)
 	monad = pg.Bind(monad, pg.Count)
 	monad = pg.Bind(monad, pg.Percentage)
+	monad = pg.Bind(monad, pg.Render)
 	_, err = monad(nil)
 	if err != nil {
 		t.Error(err)
@@ -103,6 +105,7 @@ func TestGenerateStats(t *testing.T) {
 		fmt.Println("")
 	}
 	fmt.Println("total", jw.Workflow.Data.Total)
+
 }
 
 // Test Read method
@@ -126,6 +129,7 @@ func TestGenerateToken(t *testing.T) {
 	monad = pg.Bind(monad, pg.TimeField)
 	monad = pg.Bind(monad, pg.RoleField)
 	monad = pg.Bind(monad, pg.CountToken)
+	monad = pg.Bind(monad, pg.Render)
 	_, err = monad(nil)
 	if err != nil {
 		t.Error(err)

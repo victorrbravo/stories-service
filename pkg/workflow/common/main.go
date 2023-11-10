@@ -17,6 +17,7 @@ const (
 	PatternSequencial = "sequencial"
 	StationFirst      = "StationFirst"
 	END_TASK          = "END"
+	ARROW_TASK        = " -> "
 )
 
 type FillType string
@@ -37,10 +38,17 @@ type Data struct {
 	FillSelect FillType
 	Rows       []interface{}
 	IDCurrent  types.Int
+	ToExport   Exportable
 }
 
 type JobWorkflow struct {
 	Workflow Workflow
+}
+
+type Exportable struct {
+	Data     types.String   `json:"data"`
+	UpdateAt types.DateTime `json:"update_at"`
+	Synced   bool           `json:"synced"`
 }
 
 type Workflow struct {

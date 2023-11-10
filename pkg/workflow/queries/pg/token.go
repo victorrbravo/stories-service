@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"stories/pkg/workflow/common"
@@ -109,8 +110,7 @@ func RoleField(wf *common.Workflow) Monad {
 			}
 			newSQL := outputBuffer.String()
 			err = newQuery.QueryOne(newSQL, &role)
-			fmt.Println("Role newSQL", newSQL)
-			if err != nil && err != sql.ErrNoRows {
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				log.Println("Error Query one err", err)
 				continue
 			}
@@ -142,9 +142,8 @@ func CountToken(wf *common.Workflow) Monad {
 				continue
 			}
 			newSQL := outputBuffer.String()
-			fmt.Println("newSQL", newSQL)
 			err = newQuery.QueryOne(newSQL, &count)
-			if err != nil && err != sql.ErrNoRows {
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				log.Println("Error query token err", err)
 				continue
 			}
