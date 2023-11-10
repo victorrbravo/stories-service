@@ -123,7 +123,7 @@ func RoleStats(wf *common.Workflow) Monad {
 	newQuery := wf.Query.NewQuery()
 	return func(error) (*common.Workflow, error) {
 		for name, current := range wf.Tasks {
-			newSQL, err := buildSQL(wf, current, name, STATS_TIMEFIELD)
+			newSQL, err := buildSQL(wf, current, name, STATS_ROLEFIELD)
 			if err != nil {
 				log.Println("Error RoleStats err", err)
 				continue
