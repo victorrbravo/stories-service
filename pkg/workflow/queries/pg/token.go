@@ -148,6 +148,7 @@ func CountToken(wf *common.Workflow) Monad {
 				continue
 			}
 			current.Data.Count = count.Value
+			wf.Data.Stats.Assign(count.Value)
 			outputBuffer.Reset()
 		}
 		return wf, nil

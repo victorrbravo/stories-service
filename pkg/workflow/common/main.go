@@ -27,6 +27,23 @@ const (
 	FillMoney FillType = "Money"
 )
 
+type Values struct {
+	Value types.Int
+	Min   types.Int
+	Max   types.Int
+}
+
+func (obj *Values) Assign(v types.Int) types.Int {
+	obj.Value = v
+	if types.IsNil(obj.Max) || types.AsInt(v) > types.AsInt(obj.Max) {
+		obj.Max = v
+	}
+	if types.IsNil(obj.Min) || types.AsInt(v) < types.AsInt(obj.Min) {
+		obj.Min = v
+	}
+	return v
+}
+
 type Data struct {
 	Count      types.Int    // checked
 	TimeField  types.String // checked
@@ -39,6 +56,7 @@ type Data struct {
 	Rows       []interface{}
 	IDCurrent  types.Int
 	ToExport   Exportable
+	Stats      Values
 }
 
 type JobWorkflow struct {

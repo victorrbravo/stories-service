@@ -157,6 +157,7 @@ func Count(wf *common.Workflow) Monad {
 				continue
 			}
 			current.Data.Count = count.Value
+			wf.Data.Stats.Assign(count.Value)
 		}
 		return wf, nil
 	}

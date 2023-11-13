@@ -38,7 +38,8 @@ func GenerateGraphDefinition(wf *common.Workflow) (string, error) {
 		str = str + common.ARROW_TASK
 		newStyle := fmt.Sprintf(`
 		%s.style.border-radius: %s
-`, name, "8")
+		%s.style.fill: "%s"
+`, name, "8", name, SelectColor(current.Data.Count, wf.Data.Stats.Min, wf.Data.Stats.Max))
 		styles = styles + newStyle
 		titleTime := current.Data.TimeField.String()
 		titleRole := current.Data.InfoField.String()
@@ -50,12 +51,13 @@ style: {
 	stroke-dash: 3
 }
 }
-"%s".style.stroke: "#f4a261"
+"%s".style.stroke: gray
 "%s".style.fill: white
-"%s".style.font-size: 10
+"%s".style.font-size: 12
 "%s".style.font-color: gray
+"%s".style.shadow: true
 
-`, title, name, title, title, title, title)
+`, title, name, title, title, title, title, title)
 
 	}
 	str, _ = strings.CutSuffix(str, common.ARROW_TASK)
