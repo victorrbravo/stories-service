@@ -246,8 +246,7 @@ func ReduceTwoWheres(s0 string, s1 string) (string, error) {
 	for _, orStatement := range sql0.Or {
 		for _, andStatement := range orStatement.And {
 			// Check Second Statement
-			for index, orStatement1 := range sql1.Or {
-				fmt.Println("index71", index)
+			for _, orStatement1 := range sql1.Or {
 				for _, andStatement1 := range orStatement1.And {
 					similar := checkSimilary(andStatement.Operand, andStatement1.Operand)
 					statement0 := WriteStruct(andStatement.Operand)
@@ -295,8 +294,41 @@ func checkSimilary(e0 *ConditionOperand, e1 *ConditionOperand) bool {
 	if hasSimilar == false {
 		return false
 	}
+	// case 1
 	value := reflect.DeepEqual(op0, op1) && DeepEqualCompare(cp0, cp1)
-	fmt.Println("...value", value)
+	// case 2  operand in second place
+	if value == false {
+		fMix := func() {
+			defer func() {
+				if r := recover(); r != nil {
+					hasSimilar = false
+				}
+			}()
+			op0 = e0.ConditionRHS.Compare.Operand
+			op1 = e1.Operand
+			cp0 = e0.ConditionRHS
+			cp1 = e1.ConditionRHS
+		}
+		fMix()
+		value = reflect.DeepEqual(op0, op1) && DeepEqualCompare(cp0, cp1)
+	}
+	// case 3
+	if value == false {
+		fMix := func() {
+			defer func() {
+				if r := recover(); r != nil {
+					hasSimilar = false
+				}
+			}()
+			op0 = e0.Operand
+			op1 = e1.ConditionRHS.Compare.Operand
+			cp0 = e0.ConditionRHS
+			cp1 = e1.ConditionRHS
+		}
+		fMix()
+		value = reflect.DeepEqual(op0, op1) && DeepEqualCompare(cp0, cp1)
+	}
+
 	return value
 }
 
@@ -324,21 +356,4 @@ func DeepEqualCompare(c0 *ConditionRHS, c1 *ConditionRHS) bool {
 	}
 
 	return false
-}
-
-func checkObj() bool {
-
-	var evaluated bool
-	var a *Operand
-	f := func() {
-		defer func() {
-			if r := recover(); r != nil {
-				evaluated = true
-				fmt.Println("Recovered. Error:\n", r)
-			}
-		}()
-		fmt.Println("summand", a)
-	}
-	f()
-	return evaluated
 }
