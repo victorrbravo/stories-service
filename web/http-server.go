@@ -29,7 +29,7 @@ func CreateRouter(newQuery database.IQuery) handlers_utils.Router {
 
 	router.AddAuthenticated(Social, "/add-step/{nameId}", social.AddStepHandler{Query: newQuery}, http.MethodPost, newQuery)
 	router.AddAuthenticated(Users, "/", handlers.GetAllHandler{Query: newQuery}, http.MethodGet, newQuery)
-	//	router.AddAuthenticated(Users, "/", handlers.CreateHandler{Query: newQuery}, http.MethodPost, newQuery)
+	router.AddAuthenticated(Users, "/", handlers.CreateHandler{Query: newQuery}, http.MethodPost, newQuery)
 	router.AddAuthenticated(Users, "/", handlers.DeleteHandler{Query: newQuery}, http.MethodDelete, newQuery)
 	router.AddAuthenticated(Users, "/", handlers.UpdateHandler{Query: newQuery}, http.MethodPut, newQuery)
 	return router

@@ -20,6 +20,7 @@ const jsonFile = `
   "tracking_keys": "fk_story,fk_status",
   "field_token": "pk_story",
   "table_name": "ta_story",
+  "initial": "fk_status='ToDo'",
   "tasks": {
     "ToDo": {
       "info_field": "roles[1]",
@@ -29,8 +30,7 @@ const jsonFile = `
         "links": [
           {
             "task": "Progress",
-            "queries": "ToDo",
-            "status": "status"
+            "queries": "fk_status='Progress'"
           }
         ]
       }
@@ -43,8 +43,7 @@ const jsonFile = `
         "links": [
           {
             "task": "Done",
-            "queries": "Progress",
-            "status": "status"
+            "queries": "fk_status='Done'"
           }
         ]
       }
@@ -57,8 +56,7 @@ const jsonFile = `
         "links": [
           {
             "task": "END",
-            "queries": "Done",
-            "status": "status"
+            "queries": "END"
           }
         ]
       }
@@ -144,4 +142,26 @@ func TestGenerateToken(t *testing.T) {
 		fmt.Println("")
 	}
 	fmt.Println("total", jw.Workflow.Data.Total)
+}
+
+func TestWhereExpressions(t *testing.T) {
+	pg.CheckWhereExpression("status='Progress'")
+}
+
+func TestWhereClauses(t *testing.T) {
+	var err error
+	ctx := context.Background()
+
+	jw := common.JobWorkflow{}
+	newJson := fmt.Sprintf(jsonFile, uuid.NewV1().String())
+	dataFile := []byte(newJson)
+	err = jw.Workflow.Load(ctx, dataFile)
+	if err != nil {
+		t.Error(err)
+	}
+	wheres := jw.Workflow.ClausesWheres()
+	if len(wheres) == 0 {
+		t.Logf("len wheres is zero")
+	}
+	fmt.Println("wheres", wheres)
 }

@@ -18,6 +18,8 @@ const (
 	StationFirst      = "StationFirst"
 	END_TASK          = "END"
 	ARROW_TASK        = " -> "
+	OR_OPERATOR       = " OR "
+	AND_OPERATOR      = " AND "
 )
 
 type FillType string
@@ -31,6 +33,11 @@ type Values struct {
 	Value types.Int
 	Min   types.Int
 	Max   types.Int
+}
+
+type WhereTask struct {
+	Name  string
+	Where string
 }
 
 func (obj *Values) Assign(v types.Int) types.Int {
@@ -63,6 +70,8 @@ type JobWorkflow struct {
 	Workflow Workflow
 }
 
+type WhereClause func(wf Workflow) types.String
+
 type Exportable struct {
 	Data     types.String   `json:"data"`
 	UpdateAt types.DateTime `json:"update_at"`
@@ -78,11 +87,13 @@ type Workflow struct {
 	TrackingKeys      types.String      `json:"tracking_keys"`
 	Variable          Variable          `json:"variable"`
 	Tasks             map[string]*Task  `json:"tasks"`
-	InitialTask       *Task             `json:"initial_task,omitempty"`
+	initialTask       types.String      `json:"initial_task,omitempty"`
 	Data              Data              `json:"data,omitempty"`
 	CurrentIDInt      types.Int         `json:"current_id_int,omitempty"`
 	CurrentIDUUID     types.UUID        `json:"current_id_uuid,omitempty"`
+	Initial           types.String      `json:"initial"`
 	Query             *db.PostgresQuery `json:"omitempty"`
+	WhereClause       WhereClause       `json:"where_clause"`
 }
 
 type Variable struct {
@@ -186,21 +197,23 @@ func (wf *Workflow) AddLink(ctx context.Context, taskName string, linkTask *Task
 	return nil
 }
 
-func (wf *Workflow) Statuses(ctx context.Context) ([]string, error) {
+func (wf *Workflow) Statuses(ctx context.Context, quotes bool) ([]string, error) {
 	var err error
 	var start string
 	list := []string{}
-	if wf.InitialTask != nil {
-		start = wf.InitialTask.Name
-	} else {
+	if types.IsNil(wf.initialTask) {
 		start, err = wf.CalculateInitialTask()
+		if err != nil {
+			return list, err
+		}
+		wf.initialTask = types.NewString(start)
 	}
-	if err != nil {
-		return list, err
+	current := wf.initialTask.String()
+	title := current
+	if quotes {
+		title = "'" + current + "'"
 	}
-	current := start
-	wf.InitialTask = wf.Tasks[start]
-	list = append(list, "'"+current+"'")
+	list = append(list, title)
 	lenMax := len(wf.Tasks)
 	i := 0
 	for {
@@ -212,7 +225,11 @@ func (wf *Workflow) Statuses(ctx context.Context) ([]string, error) {
 		if len(current) == 0 || strings.Compare(current, END_TASK) == 0 {
 			break
 		}
-		list = append(list, "'"+current+"'")
+		title = current
+		if quotes {
+			title = "'" + current + "'"
+		}
+		list = append(list, title)
 		if i > lenMax {
 			return list, fmt.Errorf("Error iterating through tasks")
 		}
@@ -256,17 +273,38 @@ func (wf Workflow) ExtractKeys(trackingKeys []string) (string, string) {
 	return linkStory, linkStatus
 }
 
-func (wf Workflow) Draw() {
-	nextTask := wf.InitialTask.Name
-	for strings.Compare(nextTask, END_TASK) != 0 {
-		key := nextTask
-		task := wf.Tasks[key]
-		fmt.Println("===", key, "===")
-		fmt.Println("Count", task.Data.Count)
-		fmt.Println("TimeFields", task.Data.TimeField)
-		fmt.Println("Roles", task.Data.InfoField)
-		fmt.Println("Percentage", task.Data.Percentage)
-		fmt.Println("")
-		nextTask = task.Transition.Links[0].Task
+func (wf Workflow) ReducesFilter(name string) string {
+	wheres := wf.ClausesWheres()
+	value := ""
+	for _, tuple := range wheres {
+		if strings.Compare(tuple.Name, name) == 0 {
+			value = tuple.Where
+		}
 	}
+	return value
+}
+
+func (wf Workflow) ClausesWheres() map[int]WhereTask {
+	ctx := context.Background()
+	values := make(map[int]WhereTask)
+	statuses, err := wf.Statuses(ctx, false)
+	if err != nil {
+		log.Println("Error WhereClauses Statuses")
+		return values
+	}
+	index := 0
+	str := ""
+	for _, name := range statuses {
+		current, _ := wf.Tasks[name]
+		if index == 0 {
+			values[index] = WhereTask{name, wf.Initial.String()}
+		} else {
+			values[index] = WhereTask{name, str}
+		}
+		str = current.Transition.Links[0].Query
+		if strings.Compare(str, END_TASK) != 0 {
+			index++
+		}
+	}
+	return values
 }

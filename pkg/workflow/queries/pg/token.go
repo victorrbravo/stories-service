@@ -52,7 +52,7 @@ func TimeField(wf *common.Workflow) Monad {
 		for name, current := range wf.Tasks {
 			tmpl, err := template.New("timeSQL").Parse(SELECT_TIMEFIELD_TOKEN)
 			linkStory, linkStatus := getLinkFields(ctx, wf)
-			list, err := wf.Statuses(ctx)
+			list, err := wf.Statuses(ctx, true)
 			if err != nil {
 				log.Println("Error statuses err", err)
 				continue

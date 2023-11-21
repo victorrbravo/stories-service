@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"stories/users"
 
 	"stories/constants"
 	"stories/database"
@@ -39,14 +40,14 @@ func (handler CreateHandler) IsEnabled() bool {
 }
 
 // Create a new currency
-func (handler CreateHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (handler CreateHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request, user users.User) {
 	var err error
 	err = handlers_utils.GetParameters(&handler, request)
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, err.Error()))
 		return
 	}
-	user, err := models.CreateTaUser(handler.GetQuery(), handler.FirstName, handler.LastName, handler.Email,
+	_, err = models.CreateTaUser(handler.GetQuery(), handler.FirstName, handler.LastName, handler.Email,
 		types.NewString("pass"),
 		handler.AccountType)
 	if err != nil {

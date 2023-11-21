@@ -2,13 +2,20 @@ package pg
 
 import (
 	"fmt"
+	"stories/pkg/workflow/common"
 	"stories/types"
 )
 
 const (
-	MAX_YELLOW = 245
-	MIN_YELLOW = 90
+	MAX_YELLOW = 230
+	MIN_YELLOW = 80
 )
+
+func CalculateWhere(wf common.Workflow) types.String {
+	value := types.NewString("")
+
+	return value
+}
 
 func calculateYellowRGB(brightness int, min int, max int) (int, int, int) {
 	// Ensure the brightness is within the valid range (0 to 100)
@@ -26,8 +33,9 @@ func clamp(x float64, min float64, max float64) int {
 	if (max - min) > 0 {
 		scaleX = ((x - min) / (max - min)) * (100)
 	}
-	result := int(scaleX/100*155 + 90.0)
-	resultInv := 90 + 155 - (result - 90)
+	diff := MAX_YELLOW - MIN_YELLOW
+	result := int(scaleX/100*float64(diff) + MIN_YELLOW)
+	resultInv := MIN_YELLOW + diff - (result - MIN_YELLOW)
 	return resultInv
 }
 

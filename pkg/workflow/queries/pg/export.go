@@ -20,15 +20,14 @@ func GenerateGraphDefinition(wf *common.Workflow) (string, error) {
 	var str string
 	var styles string
 	ctx := context.Background()
-	statuses, err := wf.Statuses(ctx)
+	statuses, err := wf.Statuses(ctx, false)
 	dataForTasks := ""
 
 	if err != nil {
 		return str, err
 	}
 
-	for _, key := range statuses {
-		name := strings.Trim(key, "'")
+	for _, name := range statuses {
 		current, ok := wf.Tasks[name]
 		if !ok {
 			log.Println("Error accessing name", name)

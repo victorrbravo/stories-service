@@ -18,7 +18,7 @@ import (
 
 const (
 	NA               = "n/a"
-	SELECT_BASIC     = "SELECT count(*) FROM %s WHERE %s = '%s'"
+	SELECT_BASIC     = "SELECT count(*) FROM %s JOIN %s ON %s=%s WHERE %s"
 	SELECT_TIMEFIELD = "SELECT %s FROM %s ON %s"
 	STATS_TIMEFIELD  = `
 WITH cte AS (
@@ -31,12 +31,12 @@ FROM {{.TrackingTable}} tt  ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Stat
 )
 SELECT 
 CASE WHEN AVG(diff) IS NULL THEN '0s' ELSE AVG(diff) END AS maxtime
-FROM cte WHERE {{.Key2Link}}='{{.Status}}'  GROUP BY {{.Key2Link}} ;
+FROM cte WHERE {{.Filter}}  GROUP BY {{.Key2Link}} ;
 `
 
 	STATS_ROLEFIELD = `
 SELECT {{.InfoField}} AS roles
-FROM  {{.TrackingTable}} where  {{.Key2Link}} = '{{.Status}}'
+FROM  {{.TrackingTable}} WHERE {{.Filter}}
 GROUP BY {{.InfoField}}
 HAVING COUNT(*) = (
   SELECT MAX(count)
@@ -53,12 +53,6 @@ type Any interface{}
 
 type Monad func(error) (*common.Workflow, error)
 
-func Initialize[T any](config *db.DatabaseConfig) Monad {
-	return func(e error) (*common.Workflow, error) {
-		return nil, e
-	}
-}
-
 func New(v *common.Workflow, config *db.DatabaseConfig) Monad {
 	return func(s error) (*common.Workflow, error) {
 		var pgQuery db.PostgresQuery
@@ -69,6 +63,9 @@ func New(v *common.Workflow, config *db.DatabaseConfig) Monad {
 			return nil, err
 		}
 		v.Query = &pgQuery
+		if v.WhereClause == nil {
+			v.WhereClause = CalculateWhere
+		}
 		return v, s
 	}
 }
@@ -96,7 +93,7 @@ func TimeStats(wf *common.Workflow) Monad {
 				// End of flow
 				continue
 			}
-			newSQL, err := buildSQL(wf, current, name, STATS_TIMEFIELD)
+			newSQL, err := buildSQL(wf, name, STATS_TIMEFIELD)
 			if err != nil {
 				return wf, err
 			}
@@ -123,7 +120,7 @@ func RoleStats(wf *common.Workflow) Monad {
 	newQuery := wf.Query.NewQuery()
 	return func(error) (*common.Workflow, error) {
 		for name, current := range wf.Tasks {
-			newSQL, err := buildSQL(wf, current, name, STATS_ROLEFIELD)
+			newSQL, err := buildSQL(wf, name, STATS_ROLEFIELD)
 			if err != nil {
 				log.Println("Error RoleStats err", err)
 				continue
@@ -148,10 +145,13 @@ func RoleStats(wf *common.Workflow) Monad {
 func Count(wf *common.Workflow) Monad {
 	var count scanners.Int
 	newQuery := wf.Query.NewQuery()
+	ctx := context.Background()
 	return func(error) (*common.Workflow, error) {
-		for _, current := range wf.Tasks {
-			newSQL := fmt.Sprintf(SELECT_BASIC, wf.TableName, current.Transition.Links[0].Status,
-				current.Transition.Links[0].Query)
+		for name, current := range wf.Tasks {
+			whereExp := wf.ReducesFilter(name)
+			trackingKey, _ := getLinkFields(ctx, wf)
+			newSQL := fmt.Sprintf(SELECT_BASIC, wf.TableName, wf.TrackingTableName,
+				wf.FieldToken, trackingKey, whereExp)
 			err := newQuery.QueryOne(newSQL, &count)
 			if err != nil {
 				continue
@@ -179,18 +179,20 @@ func Percentage(wf *common.Workflow) Monad {
 	}
 }
 
-func buildSQL(wf *common.Workflow, current *common.Task, name string, sqlString string) (string, error) {
+func buildSQL(wf *common.Workflow, name string, sqlString string) (string, error) {
 	var outputBuffer bytes.Buffer
 	ctx := context.Background()
 	tmpl, err := template.New("timeSQL").Parse(sqlString)
 	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
 	linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
-	list, err := wf.Statuses(ctx)
+	list, err := wf.Statuses(ctx, true)
 	if err != nil {
 		return "", err
 	}
 	statuses := strings.Join(list, ",")
+	queryValue := wf.ReducesFilter(name)
 	fmt.Println("...statuses", statuses)
+	current := wf.Tasks[name]
 	data := queries.DataTemplate{
 		Key1Link:      linkStory,
 		Key2Link:      linkStatus,
@@ -199,6 +201,7 @@ func buildSQL(wf *common.Workflow, current *common.Task, name string, sqlString 
 		TrackingTable: wf.TrackingTableName.String(),
 		Statuses:      statuses,
 		Status:        name,
+		Filter:        queryValue,
 	}
 	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {
