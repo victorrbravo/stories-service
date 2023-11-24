@@ -4,13 +4,13 @@ go 1.20
 
 require (
 	github.com/alecthomas/participle/v2 v2.1.0
-	github.com/alecthomas/repr v0.2.0
 	github.com/bzick/tokenizer v1.4.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/lib/pq v1.10.4
 	github.com/stretchr/testify v1.8.1
 	github.com/twinj/uuid v1.0.0
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
+	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	oss.terrastruct.com/d2 v0.6.1
 )

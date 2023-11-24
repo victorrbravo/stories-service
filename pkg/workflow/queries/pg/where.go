@@ -4,7 +4,6 @@ package pg
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer"
 	"reflect"
@@ -187,7 +186,7 @@ var (
 	)
 )
 
-func Parse(exp0 string, exp1 string) (*Expression, error) {
+func Parse(exp0 string, exp1 string, exp2 string, status string) (string, error) {
 	ctx := context.Background()
 	ts := map[int]common.WhereTask{
 		0: {
@@ -198,13 +197,16 @@ func Parse(exp0 string, exp1 string) (*Expression, error) {
 			Name:  "Progress",
 			Where: exp1,
 		},
+		2: {
+			Name:  "Done",
+			Where: exp2,
+		},
 	}
-	str, err := ReduceWheres(ctx, ts, "Progress")
+	str, err := ReduceWheres(ctx, ts, status)
 	if err != nil {
-		return nil, err
+		return str, err
 	}
-	fmt.Println("str:", str)
-	return nil, err
+	return str, err
 }
 
 func ReduceWheres(ctx context.Context, ts map[int]common.WhereTask, t string) (string, error) {
@@ -223,6 +225,9 @@ func ReduceWheres(ctx context.Context, ts map[int]common.WhereTask, t string) (s
 		lastWhere, err = ReduceTwoWheres(lastWhere, ts[index].Where)
 		if err != nil {
 			return value, err
+		}
+		if strings.Compare(ts[index].Name, t) == 0 {
+			break
 		}
 		index++
 	}
@@ -266,10 +271,10 @@ func ReduceTwoWheres(s0 string, s1 string) (string, error) {
 	}
 	for _, statement := range statementSet.Elements() {
 		value.WriteString(statement)
-		value.WriteString(common.AND_OPERATOR)
+		value.WriteString(common.AndOperator)
 	}
 	str := value.String()
-	str = strings.Trim(str, common.AND_OPERATOR)
+	str = strings.Trim(str, common.AndOperator)
 	return str, nil
 }
 

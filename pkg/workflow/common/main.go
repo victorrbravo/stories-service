@@ -16,10 +16,11 @@ const (
 	NewUUID           = "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
 	PatternSequencial = "sequencial"
 	StationFirst      = "StationFirst"
-	END_TASK          = "END"
+	EndTask           = "END"
 	ARROW_TASK        = " -> "
 	OR_OPERATOR       = " OR "
-	AND_OPERATOR      = " AND "
+	AndOperator       = " AND "
+	TablePrefix       = "ta_"
 )
 
 type FillType string
@@ -174,7 +175,7 @@ func (wf Workflow) NextTask(name string) *Task {
 		return nil
 	}
 	nextName := task.Transition.Links[0].Task
-	if strings.Compare(nextName, END_TASK) == 0 {
+	if strings.Compare(nextName, EndTask) == 0 {
 		return nil
 	}
 	nextTask, ok := wf.Tasks[nextName]
@@ -222,7 +223,7 @@ func (wf *Workflow) Statuses(ctx context.Context, quotes bool) ([]string, error)
 			return list, fmt.Errorf("Incorrect value for task name %s", current)
 		}
 		current = task.Transition.Links[0].Task
-		if len(current) == 0 || strings.Compare(current, END_TASK) == 0 {
+		if len(current) == 0 || strings.Compare(current, EndTask) == 0 {
 			break
 		}
 		title = current
@@ -302,7 +303,7 @@ func (wf Workflow) ClausesWheres() map[int]WhereTask {
 			values[index] = WhereTask{name, str}
 		}
 		str = current.Transition.Links[0].Query
-		if strings.Compare(str, END_TASK) != 0 {
+		if strings.Compare(str, EndTask) != 0 {
 			index++
 		}
 	}

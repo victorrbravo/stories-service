@@ -9,6 +9,7 @@ import (
 
 //go:generate go run ../../generators/queries/main.go
 //go:generate go run ../../generators/models/main.go
+//go:generate go run ../../generators/inputs/main.go
 func main() {
 	var server web.Server
 	var err error

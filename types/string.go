@@ -4,7 +4,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
-
 	"stories/constants"
 )
 
@@ -54,6 +53,20 @@ func (str *String) UnmarshalJSON(src []byte) error {
 		str.notNil = true
 	}
 	return nil
+}
+
+func (str *String) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var value string
+	value = str.value
+	if err := unmarshal(&value); err != nil {
+		return err
+	}
+	*str = NewString(value)
+	return nil
+}
+
+func (str String) MarshalYAML() (interface{}, error) {
+	return str.value, nil
 }
 
 // MarshalJSON implements the json.Marshaler interface
