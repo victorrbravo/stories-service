@@ -70,6 +70,20 @@ func (integer Int) MarshalJSON() ([]byte, error) {
 	return json.Marshal(integer.value)
 }
 
+func (integer *Int) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var value int
+	value = integer.value
+	if err := unmarshal(&value); err != nil {
+		return err
+	}
+	*integer = NewInt(value)
+	return nil
+}
+
+func (integer Int) MarshalYAML() (interface{}, error) {
+	return integer.value, nil
+}
+
 // Stringer implementation
 func (integer Int) String() string {
 	if !integer.notNil {

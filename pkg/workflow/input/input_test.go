@@ -1,12 +1,14 @@
 package input
 
 import (
+	"fmt"
 	"stories/database"
 	db "stories/database"
+	pg "stories/generated/inputs"
 	"testing"
 )
 
-func TestProcessInput(t *testing.T) {
+func TestProcessInputCreate(t *testing.T) {
 	var err error
 	config := database.DatabaseConfig{
 		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
@@ -20,17 +22,95 @@ func TestProcessInput(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-firstname: Solazver
+firstname: Omaira
 lastname: sole
 account: user
 password: secret1
-email: solazver@gmail.com
+email: solazver3@gmail.com
 action: add_user
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
+	}
+
+}
+
+func TestProcessInputDeleteUser(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: delete_user
+pk_user: 39
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+}
+
+func TestProcessInputUpdateUser(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: update_user
+pk_user: 42
+firstname: Hecmair
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+}
+
+func TestProcessInputGetAll(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: all_user
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+	for index, value := range pg.ValuesTaUser {
+		fmt.Println(index+1, "Firstname", value.Firstname, "Lastname", value.Lastname, "Email", value.Email)
 	}
 
 }
