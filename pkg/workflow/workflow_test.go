@@ -4,8 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/twinj/uuid"
+	"log"
 	"stories/database"
+	db "stories/database"
+	pgi "stories/generated/inputs"
 	"stories/pkg/workflow/common"
+	input2 "stories/pkg/workflow/input"
 	"stories/pkg/workflow/queries/pg"
 	"stories/types"
 	"testing"
@@ -66,6 +70,17 @@ const jsonFile = `
 
 `
 
+func getPgQuery(config db.DatabaseConfig) (db.PostgresQuery, error) {
+	var query db.PostgresQuery
+	query.Initialize(&config)
+	err := query.Connect()
+	if err != nil {
+		log.Println("Db Connect error")
+		return query, err
+	}
+	return query, nil
+}
+
 // Test Read method
 func TestGenerateStats(t *testing.T) {
 	var err error
@@ -75,14 +90,44 @@ func TestGenerateStats(t *testing.T) {
 		Password: "stories",
 	}
 	jw := common.JobWorkflow{}
-	newJson := fmt.Sprintf(jsonFile, uuid.NewV1().String())
-	dataFile := []byte(newJson)
-	err = jw.Workflow.Load(ctx, dataFile)
+
+	input := `
+action: get_flow_by_PkFlow
+pk_flow: 1
+`
+
+	order := []byte(input)
+	query, err := getPgQuery(config)
+	if err != nil {
+		t.Error("error connecting db")
+		return
+	}
+	q := query.NewQuery()
+	err = input2.ProcessInput(order, &q)
 	if err != nil {
 		t.Error(err)
 	}
+	if len(pgi.ValuesTaFlow) == 0 {
+		t.Error("Values TaFlow is zero 0")
+		return
+	}
+
+	uuidValue := uuid.NewV1().String()
+	println(uuidValue)
+	dataFile := pgi.ValuesTaFlow[0].Flow
+	err = jw.Workflow.Load(ctx, dataFile)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	newJson, err := jw.Workflow.Marshal(ctx)
+	if err != nil {
+		fmt.Printf("marshal err %s\n", err)
+		t.Error(err)
+	}
+	fmt.Println("newJson Marshal:", string(newJson))
 	var wf common.Workflow = jw.Workflow
-	monad := pg.New(&wf, &config)
+	monad := pg.New(&wf, &query)
 
 	monad = pg.Bind(monad, pg.TimeStats)
 	monad = pg.Bind(monad, pg.RoleStats)
@@ -122,7 +167,12 @@ func TestGenerateToken(t *testing.T) {
 		t.Error(err)
 	}
 	jw.Workflow.CurrentIDInt = types.NewInt(1)
-	monad := pg.New(&jw.Workflow, &config)
+	query, err := getPgQuery(config)
+	if err != nil {
+		t.Error("error connecting db")
+		return
+	}
+	monad := pg.New(&jw.Workflow, &query)
 
 	monad = pg.Bind(monad, pg.TimeField)
 	monad = pg.Bind(monad, pg.RoleField)

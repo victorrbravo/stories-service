@@ -114,3 +114,61 @@ action: all_user
 	}
 
 }
+
+func TestProcessInputGetAllFLow(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: all_flow
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+	for index, value := range pg.ValuesTaFlow {
+		fmt.Println(index+1, "Flow", string(value.Flow))
+	}
+
+}
+
+func TestProcessInputGetByPkFlow(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: get_flow_by_PkFlow
+pk_flow: 1
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(pg.ValuesTaFlow) == 0 {
+		t.Error("Value Ta Flow not found")
+		return
+	}
+	fmt.Println("Flow name:", pg.ValuesTaFlow[0].Name)
+	fmt.Println("Flow string:", string(pg.ValuesTaFlow[0].Flow))
+
+}

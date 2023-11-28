@@ -73,6 +73,10 @@ type JobWorkflow struct {
 
 type WhereClause func(wf Workflow) types.String
 
+func (w WhereClause) MarshalJSON() ([]byte, error) {
+	return []byte("\"\""), nil
+}
+
 type Exportable struct {
 	Data     types.String   `json:"data"`
 	UpdateAt types.DateTime `json:"update_at"`
@@ -260,6 +264,11 @@ func (wf *Workflow) CalculateInitialTask() (string, error) {
 func (wf *Workflow) Load(ctx context.Context, jsonFile []byte) error {
 	err := json.Unmarshal(jsonFile, &wf)
 	return err
+}
+
+func (wf Workflow) Marshal(ctx context.Context) ([]byte, error) {
+	value, err := json.Marshal(wf)
+	return value, err
 }
 
 func (wf Workflow) ExtractKeys(trackingKeys []string) (string, string) {

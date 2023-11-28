@@ -32,7 +32,12 @@ type entity struct {
 	OrderBy      CustomString
 	Order        CustomString
 	AddPaging    bool
-	Models       []CustomString
+	Models       []Description
+}
+
+type Description struct {
+	Name     CustomString
+	KeyField CustomString
 }
 
 type attr struct {
@@ -64,7 +69,8 @@ type generatorContext struct {
 	addPaging  bool
 	sourcePath string
 	targetPath string
-	models     []CustomString
+	models     []Description
+	keys       map[string]string
 }
 
 const (
@@ -351,7 +357,7 @@ func (context *generatorContext) Prepare() {
 		return
 	}
 	context.template = template.Must(parser1.Funcs(funcMap).Parse(string(tplContent)))
-	context.functions = template.Must(parser2.Parse(string(funcContent)))
+	context.functions = template.Must(parser2.Funcs(funcMap).Parse(string(funcContent)))
 
 }
 
@@ -439,7 +445,10 @@ func (context *generatorContext) HandleFile(file os.FileInfo) error {
 	context.attrs = make([]attr, 0)
 	context.searcher = make([]attr, 0)
 	if context.models == nil {
-		context.models = make([]CustomString, 0)
+		context.models = make([]Description, 0)
+	}
+	if context.keys == nil {
+		context.keys = make(map[string]string)
 	}
 	filePath := context.sourcePath + "/" + file.Name()
 	// Read all the content of the file
@@ -452,7 +461,6 @@ func (context *generatorContext) HandleFile(file os.FileInfo) error {
 		return err
 	}
 	context.model = string(entity.Model)
-	context.models = append(context.models, CustomString(context.model))
 	if len(string(entity.Schema)) > 0 {
 		context.schema = fmt.Sprintf("%s.", strings.TrimRight(string(entity.Schema), "."))
 	} else {
@@ -468,6 +476,10 @@ func (context *generatorContext) HandleFile(file os.FileInfo) error {
 	context.addPaging = entity.AddPaging
 	for _, attr := range entity.Attrs {
 		context.attrs = append(context.attrs, attr)
+		if attr.Key {
+			desc := Description{entity.Model, attr.Name}
+			context.models = append(context.models, desc)
+		}
 	}
 	for _, attr := range entity.Searcher {
 		context.searcher = append(context.searcher, attr)

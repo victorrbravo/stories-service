@@ -35,7 +35,7 @@ func  Delete{{ .Model }}(order string, query *database.IQuery) error {
         return err
     }
     {{- range $index, $value := onlyKeys .Attrs }}
-    user, err := models.Get{{ $.Model }}By{{ $value.Name }}(*query,
+    {{ $.Model.ToCamelCase }}, err := models.Get{{ $.Model }}By{{ $value.Name }}(*query,
             handler.{{ $value.Name }},
     )
     {{- end }}
@@ -43,11 +43,29 @@ func  Delete{{ .Model }}(order string, query *database.IQuery) error {
     if err != nil {
         return err
     }
-    err = user.Delete(*query)
+    err = {{ $.Model.ToCamelCase }}.Delete(*query)
     if err != nil {
         return err
     }
     return nil
+}
+
+{{- range $index, $value := onlyKeys .Attrs }}
+func  Get{{ $.Model }}By{{ $value.Name }}(order string, query *database.IQuery) (*models.{{ $.Model }}, error) {
+{{- end }}
+    handler, err := Unmarshall{{ .Model }}([]byte(order))
+    if err != nil {
+        return nil, err
+    }
+    {{- range $index, $value := onlyKeys .Attrs }}
+    {{ $.Model.ToCamelCase }}, err := models.Get{{ $.Model }}By{{ $value.Name }}(*query,
+            handler.{{ $value.Name }},
+    )
+    {{- end }}
+    if err != nil {
+        return {{ $.Model.ToCamelCase }}, err
+    }
+    return {{ $.Model.ToCamelCase }}, nil
 }
 
 
@@ -57,14 +75,14 @@ func  Update{{ .Model }}(order string, query *database.IQuery) error {
         return err
     }
     {{- range $index, $value := onlyKeys .Attrs }}
-    user, err := models.Get{{ $.Model }}By{{ $value.Name }}(*query,
+    {{ $.Model.ToCamelCase }}, err := models.Get{{ $.Model }}By{{ $value.Name }}(*query,
             handler.{{ $value.Name }},
     )
     {{- end }}
     if err != nil {
         return err
     }
-    err = user.Update(*query,
+    err = {{ $.Model.ToCamelCase }}.Update(*query,
     {{- range $index, $value := onlyNonKeys .Attrs }}
             handler.{{ $value.Name }},
         {{- end }}
@@ -78,9 +96,10 @@ func  Update{{ .Model }}(order string, query *database.IQuery) error {
 
 func  GetAll{{ .Model }}(query *database.IQuery) ([]models.{{ .Model }}, error) {
 
-    users, err := models.GetAll{{ .Model.Plural }}(*query)
+    {{ .Model.ToCamelCase }}, err := models.GetAll{{ .Model.Plural }}(*query)
     if err != nil {
-        return users, err
+        return {{ .Model.ToCamelCase }}, err
     }
-    return users, nil
+    return {{ .Model.ToCamelCase }}, nil
 }
+

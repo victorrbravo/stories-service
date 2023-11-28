@@ -7,34 +7,42 @@ import (
 )
 
 {{range .Models}}
-var Values{{.}}  []models.{{.}}
+var Values{{.Name}}  []models.{{.Name}}
 {{end}}
 
 func ChooseProcessor(action string, order string, query *database.IQuery) error {
+    {{range .Models}}
+    if Values{{.Name}}  == nil {
+        Values{{.Name}} = make([]models.{{.Name}}, 0)
+    }
+    {{end}}
 	switch action {
     {{range .Models}}
-    			case "add_{{.Simplified}}":
-    			    Insert{{.}}(order, query)
-    			case "delete_{{.Simplified}}":
-                    Delete{{.}}(order, query)
-    			case "update_{{.Simplified}}":
-                    Update{{.}}(order, query)
-                case "all_{{.Simplified}}":
-                    Values{{.}}, _ = GetAll{{.}}(query)
+    			case "add_{{.Name.Simplified}}":
+    			    Insert{{.Name}}(order, query)
+    			case "delete_{{.Name.Simplified}}":
+                    Delete{{.Name}}(order, query)
+    			case "update_{{.Name.Simplified}}":
+                    Update{{.Name}}(order, query)
+                case "all_{{.Name.Simplified}}":
+                    Values{{.Name}}, _ = GetAll{{.Name}}(query)
+                case "get_{{.Name.Simplified}}_by_{{.KeyField }}":
+                    Value{{.Name}}, _ := Get{{.Name}}By{{.KeyField }}(order, query)
+                    Values{{.Name}} = append(Values{{.Name}}, *Value{{.Name}})
     {{end}}
 	}
 	return nil
 }
 {{range .Models}}
 
-func Unmarshall{{.}}(order []byte) ({{.}}, error) {
-	var {{ .ToCamelCase }} {{.}}
+func Unmarshall{{.Name}}(order []byte) ({{.Name}}, error) {
+	var {{ .Name.ToCamelCase }} {{.Name}}
 	var err error
-	err = yaml.Unmarshal(order, &{{.ToCamelCase}})
+	err = yaml.Unmarshal(order, &{{.Name.ToCamelCase}})
 	if err != nil {
-		return {{.ToCamelCase}}, err
+		return {{.Name.ToCamelCase}}, err
 	}
-	return {{.ToCamelCase}}, nil
+	return {{.Name.ToCamelCase}}, nil
 }
 
 {{end}}

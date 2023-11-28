@@ -11,6 +11,15 @@ var ValuesTaFlow []models.TaFlow
 var ValuesTaUser []models.TaUser
 
 func ChooseProcessor(action string, order string, query *database.IQuery) error {
+
+	if ValuesTaFlow == nil {
+		ValuesTaFlow = make([]models.TaFlow, 0)
+	}
+
+	if ValuesTaUser == nil {
+		ValuesTaUser = make([]models.TaUser, 0)
+	}
+
 	switch action {
 
 	case "add_flow":
@@ -21,6 +30,9 @@ func ChooseProcessor(action string, order string, query *database.IQuery) error 
 		UpdateTaFlow(order, query)
 	case "all_flow":
 		ValuesTaFlow, _ = GetAllTaFlow(query)
+	case "get_flow_by_PkFlow":
+		ValueTaFlow, _ := GetTaFlowByPkFlow(order, query)
+		ValuesTaFlow = append(ValuesTaFlow, *ValueTaFlow)
 
 	case "add_user":
 		InsertTaUser(order, query)
@@ -30,6 +42,9 @@ func ChooseProcessor(action string, order string, query *database.IQuery) error 
 		UpdateTaUser(order, query)
 	case "all_user":
 		ValuesTaUser, _ = GetAllTaUser(query)
+	case "get_user_by_PkUser":
+		ValueTaUser, _ := GetTaUserByPkUser(order, query)
+		ValuesTaUser = append(ValuesTaUser, *ValueTaUser)
 
 	}
 	return nil

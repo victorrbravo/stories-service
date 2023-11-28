@@ -64,8 +64,8 @@ func (handler UpdateHandler) ServeHTTP(writer http.ResponseWriter, request *http
 	var pass types.String
 	err = element.Update(
 		handler.GetQuery(),
-		element.FirstName,
-		element.LastName,
+		element.Firstname,
+		element.Lastname,
 		handler.Email,
 		pass,
 		handler.AccountType,

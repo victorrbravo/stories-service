@@ -10,7 +10,7 @@ type TaFlow struct {
 	PkFlow  types.Int    `yaml:"pk_flow"`
 	Name    types.String `yaml:"name"`
 	Flow    []byte       `yaml:"flow"`
-	FkStory types.String `yaml:"fk_story"`
+	FkStory types.Int    `yaml:"fk_story"`
 }
 
 func InsertTaFlow(order string, query *database.IQuery) error {
@@ -34,18 +34,31 @@ func DeleteTaFlow(order string, query *database.IQuery) error {
 	if err != nil {
 		return err
 	}
-	user, err := models.GetTaFlowByPkFlow(*query,
+	taFlow, err := models.GetTaFlowByPkFlow(*query,
 		handler.PkFlow,
 	)
 
 	if err != nil {
 		return err
 	}
-	err = user.Delete(*query)
+	err = taFlow.Delete(*query)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+func GetTaFlowByPkFlow(order string, query *database.IQuery) (*models.TaFlow, error) {
+	handler, err := UnmarshallTaFlow([]byte(order))
+	if err != nil {
+		return nil, err
+	}
+	taFlow, err := models.GetTaFlowByPkFlow(*query,
+		handler.PkFlow,
+	)
+	if err != nil {
+		return taFlow, err
+	}
+	return taFlow, nil
 }
 
 func UpdateTaFlow(order string, query *database.IQuery) error {
@@ -53,13 +66,13 @@ func UpdateTaFlow(order string, query *database.IQuery) error {
 	if err != nil {
 		return err
 	}
-	user, err := models.GetTaFlowByPkFlow(*query,
+	taFlow, err := models.GetTaFlowByPkFlow(*query,
 		handler.PkFlow,
 	)
 	if err != nil {
 		return err
 	}
-	err = user.Update(*query,
+	err = taFlow.Update(*query,
 		handler.Name,
 		handler.Flow,
 		handler.FkStory,
@@ -72,9 +85,9 @@ func UpdateTaFlow(order string, query *database.IQuery) error {
 
 func GetAllTaFlow(query *database.IQuery) ([]models.TaFlow, error) {
 
-	users, err := models.GetAllTaFlows(*query)
+	taFlow, err := models.GetAllTaFlows(*query)
 	if err != nil {
-		return users, err
+		return taFlow, err
 	}
-	return users, nil
+	return taFlow, nil
 }

@@ -53,16 +53,9 @@ type Any interface{}
 
 type Monad func(error) (*common.Workflow, error)
 
-func New(v *common.Workflow, config *db.DatabaseConfig) Monad {
+func New(v *common.Workflow, query *db.PostgresQuery) Monad {
 	return func(s error) (*common.Workflow, error) {
-		var pgQuery db.PostgresQuery
-		pgQuery.Initialize(config)
-		err := pgQuery.Connect()
-		if err != nil {
-			log.Println("Db Connect error")
-			return nil, err
-		}
-		v.Query = &pgQuery
+		v.Query = query
 		if v.WhereClause == nil {
 			v.WhereClause = CalculateWhere
 		}

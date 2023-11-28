@@ -38,18 +38,31 @@ func DeleteTaUser(order string, query *database.IQuery) error {
 	if err != nil {
 		return err
 	}
-	user, err := models.GetTaUserByPkUser(*query,
+	taUser, err := models.GetTaUserByPkUser(*query,
 		handler.PkUser,
 	)
 
 	if err != nil {
 		return err
 	}
-	err = user.Delete(*query)
+	err = taUser.Delete(*query)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+func GetTaUserByPkUser(order string, query *database.IQuery) (*models.TaUser, error) {
+	handler, err := UnmarshallTaUser([]byte(order))
+	if err != nil {
+		return nil, err
+	}
+	taUser, err := models.GetTaUserByPkUser(*query,
+		handler.PkUser,
+	)
+	if err != nil {
+		return taUser, err
+	}
+	return taUser, nil
 }
 
 func UpdateTaUser(order string, query *database.IQuery) error {
@@ -57,13 +70,13 @@ func UpdateTaUser(order string, query *database.IQuery) error {
 	if err != nil {
 		return err
 	}
-	user, err := models.GetTaUserByPkUser(*query,
+	taUser, err := models.GetTaUserByPkUser(*query,
 		handler.PkUser,
 	)
 	if err != nil {
 		return err
 	}
-	err = user.Update(*query,
+	err = taUser.Update(*query,
 		handler.Firstname,
 		handler.Lastname,
 		handler.Email,
@@ -78,9 +91,9 @@ func UpdateTaUser(order string, query *database.IQuery) error {
 
 func GetAllTaUser(query *database.IQuery) ([]models.TaUser, error) {
 
-	users, err := models.GetAllTaUsers(*query)
+	taUser, err := models.GetAllTaUsers(*query)
 	if err != nil {
-		return users, err
+		return taUser, err
 	}
-	return users, nil
+	return taUser, nil
 }

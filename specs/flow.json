@@ -25,7 +25,7 @@
     },
     {
       "Name": "FkStory",
-      "Type": "types.String",
+      "Type": "types.Int",
       "Scannable": true,
       "Nullable": true,
       "Searchable": true,
