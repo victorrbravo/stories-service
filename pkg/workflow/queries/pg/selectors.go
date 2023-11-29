@@ -2,6 +2,7 @@ package pg
 
 import (
 	"fmt"
+	db "stories/database"
 	"stories/pkg/workflow/common"
 	"stories/types"
 )
@@ -11,7 +12,7 @@ const (
 	MIN_YELLOW = 80
 )
 
-func CalculateWhere(wf common.Workflow) types.String {
+func CalculateWhere[T db.Scanner](wf common.Workflow[T]) types.String {
 	value := types.NewString("")
 
 	return value

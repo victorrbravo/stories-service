@@ -8,6 +8,7 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 	"log"
 	"reflect"
+	db "stories/database"
 	"stories/pkg/workflow/common"
 	"strings"
 )
@@ -351,7 +352,7 @@ func DeepEqualCompare(c0 *ConditionRHS, c1 *ConditionRHS) bool {
 	return false
 }
 
-func ReducesFilter(wf common.Workflow, name string) (string, error) {
+func ReducesFilter[T db.Scanner](wf common.Workflow[T], name string) (string, error) {
 	wheres := ClausesWheres(wf)
 	value := ""
 	ctx := context.Background()
@@ -362,7 +363,7 @@ func ReducesFilter(wf common.Workflow, name string) (string, error) {
 	return value, nil
 }
 
-func ClausesWheres(wf common.Workflow) map[int]WhereTask {
+func ClausesWheres[T db.Scanner](wf common.Workflow[T]) map[int]WhereTask {
 	ctx := context.Background()
 	values := make(map[int]WhereTask)
 	statuses, err := wf.Statuses(ctx, false)

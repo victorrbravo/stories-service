@@ -8,12 +8,18 @@ import (
 
 var ValuesTaFlow []models.TaFlow
 
+var ValuesTaTracking []models.TaTracking
+
 var ValuesTaUser []models.TaUser
 
 func ChooseProcessor(action string, order string, query *database.IQuery) error {
 
 	if ValuesTaFlow == nil {
 		ValuesTaFlow = make([]models.TaFlow, 0)
+	}
+
+	if ValuesTaTracking == nil {
+		ValuesTaTracking = make([]models.TaTracking, 0)
 	}
 
 	if ValuesTaUser == nil {
@@ -33,6 +39,18 @@ func ChooseProcessor(action string, order string, query *database.IQuery) error 
 	case "get_flow_by_PkFlow":
 		ValueTaFlow, _ := GetTaFlowByPkFlow(order, query)
 		ValuesTaFlow = append(ValuesTaFlow, *ValueTaFlow)
+
+	case "add_tracking":
+		InsertTaTracking(order, query)
+	case "delete_tracking":
+		DeleteTaTracking(order, query)
+	case "update_tracking":
+		UpdateTaTracking(order, query)
+	case "all_tracking":
+		ValuesTaTracking, _ = GetAllTaTracking(query)
+	case "get_tracking_by_FkStatus":
+		ValueTaTracking, _ := GetTaTrackingByFkStatus(order, query)
+		ValuesTaTracking = append(ValuesTaTracking, *ValueTaTracking)
 
 	case "add_user":
 		InsertTaUser(order, query)
@@ -58,6 +76,16 @@ func UnmarshallTaFlow(order []byte) (TaFlow, error) {
 		return taFlow, err
 	}
 	return taFlow, nil
+}
+
+func UnmarshallTaTracking(order []byte) (TaTracking, error) {
+	var taTracking TaTracking
+	var err error
+	err = yaml.Unmarshal(order, &taTracking)
+	if err != nil {
+		return taTracking, err
+	}
+	return taTracking, nil
 }
 
 func UnmarshallTaUser(order []byte) (TaUser, error) {

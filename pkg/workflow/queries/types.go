@@ -20,4 +20,5 @@ type DataTemplate struct {
 	Status        string
 	Token         string
 	Filter        string
+	Fields        string
 }

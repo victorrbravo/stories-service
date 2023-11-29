@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	db "stories/database"
 	"stories/pkg/workflow/common"
 	"stories/pkg/workflow/queries"
 	"stories/scanners"
@@ -38,17 +39,17 @@ SELECT {{.InfoField}}  FROM {{.TrackingTable}} tt WHERE {{.Key2Link}} = '{{.Stat
 `
 )
 
-func getLinkFields(ctx context.Context, wf *common.Workflow) (string, string) {
+func getLinkFields[T db.Scanner](ctx context.Context, wf *common.Workflow[T]) (string, string) {
 	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
 	return wf.ExtractKeys(trackingKeys)
 }
 
-func TimeField(wf *common.Workflow) Monad {
+func TimeField[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 	var duration scanners.String
 	var outputBuffer bytes.Buffer
 	ctx := context.Background()
 	newQuery := wf.Query.NewQuery()
-	return func(error) (*common.Workflow, error) {
+	return func(error) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
 			tmpl, err := template.New("timeSQL").Parse(SELECT_TIMEFIELD_TOKEN)
 			linkStory, linkStatus := getLinkFields(ctx, wf)
@@ -86,12 +87,12 @@ func TimeField(wf *common.Workflow) Monad {
 	return nil
 }
 
-func RoleField(wf *common.Workflow) Monad {
+func RoleField[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 	var role scanners.String
 	var outputBuffer bytes.Buffer
 	newQuery := wf.Query.NewQuery()
 	ctx := context.Background()
-	return func(error) (*common.Workflow, error) {
+	return func(error) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
 			tmpl, err := template.New("timeSQL").Parse(SELECT_ROLEFIELD_TOKEN)
 			linkStory, linkStatus := getLinkFields(ctx, wf)
@@ -121,11 +122,11 @@ func RoleField(wf *common.Workflow) Monad {
 	}
 }
 
-func CountToken(wf *common.Workflow) Monad {
+func CountToken[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 	var count scanners.Int
 	var outputBuffer bytes.Buffer
 	newQuery := wf.Query.NewQuery()
-	return func(error) (*common.Workflow, error) {
+	return func(error) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
 
 			tmpl, err := template.New("roleSQL").Parse(SELECT_WHERE_TOKEN)

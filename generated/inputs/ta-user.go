@@ -1,99 +1,102 @@
 package pg
 
 import (
-	"stories/database"
-	"stories/generated/models"
+    "stories/generated/models"
+    "stories/database"
 	"stories/types"
 )
 
 type TaUser struct {
-	PkUser    types.Int    `yaml:"pk_user"`
+	PkUser types.Int `yaml:"pk_user"`
 	Firstname types.String `yaml:"firstname"`
-	Lastname  types.String `yaml:"lastname"`
-	Email     types.String `yaml:"email"`
-	Password  types.String `yaml:"password"`
-	Account   types.String `yaml:"account"`
+	Lastname types.String `yaml:"lastname"`
+	Email types.String `yaml:"email"`
+	Password types.String `yaml:"password"`
+	Account types.String `yaml:"account"`
 }
 
-func InsertTaUser(order string, query *database.IQuery) error {
-	handler, err := UnmarshallTaUser([]byte(order))
-	if err != nil {
-		return err
-	}
-	_, err = models.CreateTaUser(*query,
-		handler.Firstname,
-		handler.Lastname,
-		handler.Email,
-		handler.Password,
-		handler.Account,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
+func  InsertTaUser(order string, query *database.IQuery) error {
+    handler, err := UnmarshallTaUser([]byte(order))
+    if err != nil {
+        return err
+    }
+    _, err = models.CreateTaUser(*query,
+            handler.Firstname,
+            handler.Lastname,
+            handler.Email,
+            handler.Password,
+            handler.Account,
+    )
+    if err != nil {
+        return err
+    }
+    return nil
 }
 
-func DeleteTaUser(order string, query *database.IQuery) error {
-	handler, err := UnmarshallTaUser([]byte(order))
-	if err != nil {
-		return err
-	}
-	taUser, err := models.GetTaUserByPkUser(*query,
-		handler.PkUser,
-	)
+func  DeleteTaUser(order string, query *database.IQuery) error {
+    handler, err := UnmarshallTaUser([]byte(order))
+    if err != nil {
+        return err
+    }
+    taUser, err := models.GetTaUserByPkUser(*query,
+            handler.PkUser,
+    )
 
-	if err != nil {
-		return err
-	}
-	err = taUser.Delete(*query)
-	if err != nil {
-		return err
-	}
-	return nil
+    if err != nil {
+        return err
+    }
+    err = taUser.Delete(*query)
+    if err != nil {
+        return err
+    }
+    return nil
 }
-func GetTaUserByPkUser(order string, query *database.IQuery) (*models.TaUser, error) {
-	handler, err := UnmarshallTaUser([]byte(order))
-	if err != nil {
-		return nil, err
-	}
-	taUser, err := models.GetTaUserByPkUser(*query,
-		handler.PkUser,
-	)
-	if err != nil {
-		return taUser, err
-	}
-	return taUser, nil
-}
-
-func UpdateTaUser(order string, query *database.IQuery) error {
-	handler, err := UnmarshallTaUser([]byte(order))
-	if err != nil {
-		return err
-	}
-	taUser, err := models.GetTaUserByPkUser(*query,
-		handler.PkUser,
-	)
-	if err != nil {
-		return err
-	}
-	err = taUser.Update(*query,
-		handler.Firstname,
-		handler.Lastname,
-		handler.Email,
-		handler.Password,
-		handler.Account,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
+func  GetTaUserByPkUser(order string, query *database.IQuery) (*models.TaUser, error) {
+    handler, err := UnmarshallTaUser([]byte(order))
+    if err != nil {
+        return nil, err
+    }
+    taUser, err := models.GetTaUserByPkUser(*query,
+            handler.PkUser,
+    )
+    if err != nil {
+        return taUser, err
+    }
+    return taUser, nil
 }
 
-func GetAllTaUser(query *database.IQuery) ([]models.TaUser, error) {
 
-	taUser, err := models.GetAllTaUsers(*query)
-	if err != nil {
-		return taUser, err
-	}
-	return taUser, nil
+func  UpdateTaUser(order string, query *database.IQuery) error {
+    handler, err := UnmarshallTaUser([]byte(order))
+    if err != nil {
+        return err
+    }
+    taUser, err := models.GetTaUserByPkUser(*query,
+            handler.PkUser,
+    )
+    if err != nil {
+        return err
+    }
+    err = taUser.Update(*query,
+            handler.Firstname,
+            handler.Lastname,
+            handler.Email,
+            handler.Password,
+            handler.Account,
+    )
+    if err != nil {
+        return err
+    }
+    return nil
 }
+
+
+func  GetAllTaUser(query *database.IQuery) ([]models.TaUser, error) {
+
+    taUser, err := models.GetAllTaUsers(*query)
+    if err != nil {
+        return taUser, err
+    }
+    return taUser, nil
+}
+

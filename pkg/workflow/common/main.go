@@ -61,13 +61,13 @@ type Data struct {
 	Stats      Values
 }
 
-type JobWorkflow struct {
-	Workflow Workflow
+type JobWorkflow[T db.Scanner] struct {
+	Workflow Workflow[T]
 }
 
-type WhereClause func(wf Workflow) types.String
+type WhereClause[T db.Scanner] func(wf Workflow[T]) types.String
 
-func (w WhereClause) MarshalJSON() ([]byte, error) {
+func (w WhereClause[T]) MarshalJSON() ([]byte, error) {
 	return []byte("\"\""), nil
 }
 
@@ -77,7 +77,7 @@ type Exportable struct {
 	Synced   bool           `json:"synced"`
 }
 
-type Workflow struct {
+type Workflow[T db.Scanner] struct {
 	ID                types.UUID        `json:"id"`
 	Name              string            `json:"name"`
 	TableName         string            `json:"table_name"`
@@ -92,12 +92,13 @@ type Workflow struct {
 	CurrentIDUUID     types.UUID        `json:"current_id_uuid,omitempty"`
 	Initial           types.String      `json:"initial"`
 	Query             *db.PostgresQuery `json:"omitempty"`
-	WhereClause       WhereClause       `json:"where_clause"`
+	WhereClause       WhereClause[T]    `json:"where_clause"`
+	ValueScanner      T                 `json:"omitempty"`
 }
 
 type Variable struct {
-	Name  string `json:"name"`
-	Query string `json:"queries"`
+	Name   string `json:"name"`
+	Fields string `json:"fields"`
 }
 
 type Task struct {
@@ -120,25 +121,7 @@ type Link struct {
 	Status string `json:"status,omitempty"`
 }
 
-func Create(ctx context.Context, name string) (*Workflow, error) {
-	wf := Workflow{}
-	return &wf, nil
-}
-
-func CreateExample(ctx context.Context, name string) (*Workflow, error) {
-	var err error
-	wf := Workflow{}
-	wf.Name = WorkflowName
-	wf.ID, err = types.NewUUID(NewUUID)
-	if err != nil {
-		return nil, err
-	}
-	wf.Name = name
-	err = wf.AddTask(ctx, StationFirst, nil, "")
-	return &wf, err
-}
-
-func (wf *Workflow) AddTask(ctx context.Context, name string, linkTask *Task, status string) error {
+func (wf *Workflow[T]) AddTask(ctx context.Context, name string, linkTask *Task, status string) error {
 	newTask := new(Task)
 	newTask.Name = name
 	newTransition := Transition{Pattern: PatternSequencial}
@@ -150,13 +133,13 @@ func (wf *Workflow) AddTask(ctx context.Context, name string, linkTask *Task, st
 }
 
 // remove a task from the workflow by name
-func (wf *Workflow) RemoveTask(ctx context.Context, name string) error {
+func (wf *Workflow[T]) RemoveTask(ctx context.Context, name string) error {
 	delete(wf.Tasks, name)
 	return nil
 }
 
 // update a task in the workflow by name
-func (wf *Workflow) UpdateTask(ctx context.Context, name string, newTask *Task) error {
+func (wf *Workflow[T]) UpdateTask(ctx context.Context, name string, newTask *Task) error {
 	for i, task := range wf.Tasks {
 		if task.Name == name {
 			wf.Tasks[i] = newTask
@@ -166,7 +149,7 @@ func (wf *Workflow) UpdateTask(ctx context.Context, name string, newTask *Task) 
 	return nil
 }
 
-func (wf Workflow) NextTask(name string) *Task {
+func (wf Workflow[T]) NextTask(name string) *Task {
 	ctx := context.Background()
 	task, ok := wf.Tasks[name]
 	if !ok {
@@ -186,7 +169,7 @@ func (wf Workflow) NextTask(name string) *Task {
 }
 
 // add a link to a task
-func (wf *Workflow) AddLink(ctx context.Context, taskName string, linkTask *Task, query string, status string) error {
+func (wf *Workflow[T]) AddLink(ctx context.Context, taskName string, linkTask *Task, query string, status string) error {
 	for _, task := range wf.Tasks {
 		if task.Name == taskName {
 			newLink := Link{Task: linkTask.Name, Query: query, Status: status}
@@ -197,7 +180,7 @@ func (wf *Workflow) AddLink(ctx context.Context, taskName string, linkTask *Task
 	return nil
 }
 
-func (wf *Workflow) Statuses(ctx context.Context, quotes bool) ([]string, error) {
+func (wf *Workflow[T]) Statuses(ctx context.Context, quotes bool) ([]string, error) {
 	var err error
 	var start string
 	list := []string{}
@@ -238,7 +221,7 @@ func (wf *Workflow) Statuses(ctx context.Context, quotes bool) ([]string, error)
 	return list, nil
 }
 
-func (wf *Workflow) CalculateInitialTask() (string, error) {
+func (wf *Workflow[T]) CalculateInitialTask() (string, error) {
 	tasksVisited := map[string]bool{}
 	value := ""
 	for key, task := range wf.Tasks {
@@ -256,17 +239,17 @@ func (wf *Workflow) CalculateInitialTask() (string, error) {
 }
 
 // load a wokflow instance using a json file
-func (wf *Workflow) Load(ctx context.Context, jsonFile []byte) error {
+func (wf *Workflow[T]) Load(ctx context.Context, jsonFile []byte) error {
 	err := json.Unmarshal(jsonFile, &wf)
 	return err
 }
 
-func (wf Workflow) Marshal(ctx context.Context) ([]byte, error) {
+func (wf Workflow[T]) Marshal(ctx context.Context) ([]byte, error) {
 	value, err := json.Marshal(wf)
 	return value, err
 }
 
-func (wf Workflow) ExtractKeys(trackingKeys []string) (string, string) {
+func (wf Workflow[T]) ExtractKeys(trackingKeys []string) (string, string) {
 	linkStory := ""
 	linkStatus := ""
 	if len(trackingKeys) > 0 {

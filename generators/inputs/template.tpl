@@ -2,6 +2,7 @@ package pg
 
 import (
     "stories/generated/models"
+    "stories/database"
 {{- if .UsesTypes }}
 	"stories/types"
 {{- end }}

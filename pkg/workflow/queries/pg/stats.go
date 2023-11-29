@@ -22,6 +22,11 @@ const (
 SELECT count(*) FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
 {{if ne .Filter ""}} WHERE {{.Filter}} {{end}}
 `
+
+	SelectRowsStats = `
+SELECT {{.Fields}} FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
+{{if ne .Filter ""}} WHERE {{.Filter}} {{end}}
+`
 	STATS_TIMEFIELD = `
 WITH cte AS (
 SELECT {{.Key2Link}} ,{{.Key1Link}} , {{.TimeField}} ,
@@ -53,20 +58,20 @@ HAVING COUNT(*) = (
 
 type Any interface{}
 
-type Monad func(error) (*common.Workflow, error)
+type Monad[T db.Scanner] func(error) (*common.Workflow[T], error)
 
-func New(v *common.Workflow, query *db.PostgresQuery) Monad {
-	return func(s error) (*common.Workflow, error) {
+func New[T db.Scanner](v *common.Workflow[T], query *db.PostgresQuery) Monad[T] {
+	return func(s error) (*common.Workflow[T], error) {
 		v.Query = query
 		if v.WhereClause == nil {
-			v.WhereClause = CalculateWhere
+			v.WhereClause = CalculateWhere[T]
 		}
 		return v, s
 	}
 }
 
-func Bind(m Monad, f func(*common.Workflow) Monad) Monad {
-	return func(s error) (*common.Workflow, error) {
+func Bind[T db.Scanner](m Monad[T], f func(*common.Workflow[T]) Monad[T]) Monad[T] {
+	return func(s error) (*common.Workflow[T], error) {
 		a, e := m(s)
 		if e != nil {
 			return nil, e
@@ -75,9 +80,9 @@ func Bind(m Monad, f func(*common.Workflow) Monad) Monad {
 	}
 }
 
-func TimeStats(wf *common.Workflow) Monad {
+func TimeStats[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 	log.Println("time Stats")
-	return func(error) (*common.Workflow, error) {
+	return func(error) (*common.Workflow[T], error) {
 		var duration scanners.Interval
 
 		newQuery := wf.Query.NewQuery()
@@ -112,11 +117,11 @@ func TimeStats(wf *common.Workflow) Monad {
 	}
 }
 
-func RoleStats(wf *common.Workflow) Monad {
+func RoleStats[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 	log.Println("unmarshalling the file to json")
 	var roles scanners.String
 	newQuery := wf.Query.NewQuery()
-	return func(error) (*common.Workflow, error) {
+	return func(error) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
 			newSQL, err := buildSQL(wf, name, STATS_ROLEFIELD)
 			if err != nil {
@@ -140,10 +145,10 @@ func RoleStats(wf *common.Workflow) Monad {
 	}
 }
 
-func Count(wf *common.Workflow) Monad {
+func Count[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 	var count scanners.Int
 	newQuery := wf.Query.NewQuery()
-	return func(error) (*common.Workflow, error) {
+	return func(error) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
 			newSQL, err := buildSQL(wf, name, SelectCountStats)
 			if err != nil {
@@ -165,8 +170,26 @@ func Count(wf *common.Workflow) Monad {
 	}
 }
 
-func Total(wf *common.Workflow) Monad {
-	return func(error) (*common.Workflow, error) {
+func AllRows[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
+	newQuery := wf.Query.NewQuery()
+	return func(error) (*common.Workflow[T], error) {
+		for name, current := range wf.Tasks {
+			newSQL, err := buildSQL[T](wf, name, SelectRowsStats)
+			if err != nil {
+				log.Println("Error Count err", err)
+				continue
+			}
+			current.Data.Rows, err = newQuery.QueryMany(newSQL, wf.ValueScanner)
+			if err != nil {
+				log.Println("Error Rows SQL err", err)
+			}
+		}
+		return wf, nil
+	}
+}
+
+func Total[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
+	return func(error) (*common.Workflow[T], error) {
 		total := 0
 		if types.IsNil(wf.Data.Total) {
 			for _, task := range wf.Tasks {
@@ -180,9 +203,9 @@ func Total(wf *common.Workflow) Monad {
 	}
 }
 
-func Percentage(wf *common.Workflow) Monad {
+func Percentage[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 
-	return func(error) (*common.Workflow, error) {
+	return func(error) (*common.Workflow[T], error) {
 		for _, task := range wf.Tasks {
 			var value float64
 			if types.IsNil(task.Report) || task.Report.ToBool() == true {
@@ -197,7 +220,7 @@ func Percentage(wf *common.Workflow) Monad {
 	}
 }
 
-func buildSQL(wf *common.Workflow, name string, sqlString string) (string, error) {
+func buildSQL[T db.Scanner](wf *common.Workflow[T], name string, sqlString string) (string, error) {
 	var outputBuffer bytes.Buffer
 	ctx := context.Background()
 	tmpl, err := template.New("timeSQL").Parse(sqlString)
@@ -224,6 +247,7 @@ func buildSQL(wf *common.Workflow, name string, sqlString string) (string, error
 		Status:        name,
 		Filter:        queryValue,
 		Token:         wf.FieldToken,
+		Fields:        wf.Variable.Fields,
 	}
 	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {

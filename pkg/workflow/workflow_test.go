@@ -8,6 +8,7 @@ import (
 	"stories/database"
 	db "stories/database"
 	pgi "stories/generated/inputs"
+	"stories/generated/models"
 	"stories/pkg/workflow/common"
 	input2 "stories/pkg/workflow/input"
 	"stories/pkg/workflow/queries/pg"
@@ -89,7 +90,7 @@ func TestGenerateStats(t *testing.T) {
 		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
 		Password: "stories",
 	}
-	jw := common.JobWorkflow{}
+	jw := common.JobWorkflow[models.TaTracking]{}
 	query, err := getPgQuery(config)
 	if err != nil {
 		t.Error(err)
@@ -106,14 +107,15 @@ func TestGenerateStats(t *testing.T) {
 		return
 	}
 	var wf = jw.Workflow
-	monad := pg.New(&wf, &query)
+	monad := pg.New[models.TaTracking](&wf, &query)
 
-	monad = pg.Bind(monad, pg.TimeStats)
-	monad = pg.Bind(monad, pg.RoleStats)
-	monad = pg.Bind(monad, pg.Count)
-	monad = pg.Bind(monad, pg.Total)
-	monad = pg.Bind(monad, pg.Percentage)
-	monad = pg.Bind(monad, pg.Render)
+	monad = pg.Bind(monad, pg.TimeStats[models.TaTracking])
+	monad = pg.Bind(monad, pg.RoleStats[models.TaTracking])
+	monad = pg.Bind(monad, pg.Count[models.TaTracking])
+	monad = pg.Bind(monad, pg.Total[models.TaTracking])
+	monad = pg.Bind(monad, pg.Percentage[models.TaTracking])
+	monad = pg.Bind(monad, pg.AllRows[models.TaTracking])
+	monad = pg.Bind(monad, pg.Render[models.TaTracking])
 	_, err = monad(nil)
 	if err != nil {
 		t.Error(err)
@@ -159,7 +161,7 @@ func TestGenerateToken(t *testing.T) {
 		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
 		Password: "stories",
 	}
-	jw := common.JobWorkflow{}
+	jw := common.JobWorkflow[models.TaTracking]{}
 	newJson := fmt.Sprintf(jsonFile, uuid.NewV1().String())
 	dataFile := []byte(newJson)
 	err = jw.Workflow.Load(ctx, dataFile)
@@ -174,10 +176,10 @@ func TestGenerateToken(t *testing.T) {
 	}
 	monad := pg.New(&jw.Workflow, &query)
 
-	monad = pg.Bind(monad, pg.TimeField)
-	monad = pg.Bind(monad, pg.RoleField)
-	monad = pg.Bind(monad, pg.CountToken)
-	monad = pg.Bind(monad, pg.Render)
+	monad = pg.Bind(monad, pg.TimeField[models.TaTracking])
+	monad = pg.Bind(monad, pg.RoleField[models.TaTracking])
+	monad = pg.Bind(monad, pg.CountToken[models.TaTracking])
+	monad = pg.Bind(monad, pg.Render[models.TaTracking])
 	_, err = monad(nil)
 	if err != nil {
 		t.Error(err)
@@ -210,7 +212,7 @@ func TestWhereClauses(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	jw := common.JobWorkflow{}
+	jw := common.JobWorkflow[models.TaTracking]{}
 	dataFile, err := getJsonDatafile(&query)
 	if err != nil {
 		t.Error(err)

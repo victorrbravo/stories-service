@@ -12,11 +12,12 @@ import (
 	"oss.terrastruct.com/d2/d2themes/d2themescatalog"
 	"oss.terrastruct.com/d2/lib/textmeasure"
 	"path/filepath"
+	db "stories/database"
 	"stories/pkg/workflow/common"
 	"strings"
 )
 
-func GenerateGraphDefinition(wf *common.Workflow) (string, error) {
+func GenerateGraphDefinition[T db.Scanner](wf *common.Workflow[T]) (string, error) {
 	var str string
 	var styles string
 	ctx := context.Background()
@@ -67,15 +68,15 @@ style: {
 	return str, nil
 }
 
-func DummyFunc(wf *common.Workflow) Monad {
-	return func(error) (*common.Workflow, error) {
+func DummyFunc[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
+	return func(error) (*common.Workflow[T], error) {
 		return wf, nil
 	}
 }
 
-func Render(wf *common.Workflow) Monad {
+func Render[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 	definition, err := GenerateGraphDefinition(wf)
-	return func(error) (*common.Workflow, error) {
+	return func(error) (*common.Workflow[T], error) {
 		if err != nil {
 			return nil, err
 		}

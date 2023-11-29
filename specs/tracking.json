@@ -1,0 +1,22 @@
+{
+  "Model": "TaTracking",
+  "Attrs": [
+    {
+      "Name": "FkStatus",
+      "Type": "types.String",
+      "Scannable": true,
+      "Key": true,
+      "Getter": true,
+      "Title": "Status"
+    },
+    {
+      "Name": "FkStory",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "Story"
+    }
+  ]
+}
+
