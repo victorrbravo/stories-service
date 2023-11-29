@@ -6,12 +6,23 @@ import (
 	"errors"
 	"github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer"
+	"log"
 	"reflect"
 	"stories/pkg/workflow/common"
 	"strings"
 )
 
+const (
+	AndOperator = " AND "
+	EndTask     = "END"
+)
+
 type Boolean bool
+
+type WhereTask struct {
+	Name  string
+	Where string
+}
 
 func (b *Boolean) Capture(values []string) error {
 	*b = values[0] == "TRUE"
@@ -186,30 +197,7 @@ var (
 	)
 )
 
-func Parse(exp0 string, exp1 string, exp2 string, status string) (string, error) {
-	ctx := context.Background()
-	ts := map[int]common.WhereTask{
-		0: {
-			Name:  "ToDo",
-			Where: exp0,
-		},
-		1: {
-			Name:  "Progress",
-			Where: exp1,
-		},
-		2: {
-			Name:  "Done",
-			Where: exp2,
-		},
-	}
-	str, err := ReduceWheres(ctx, ts, status)
-	if err != nil {
-		return str, err
-	}
-	return str, err
-}
-
-func ReduceWheres(ctx context.Context, ts map[int]common.WhereTask, t string) (string, error) {
+func ReduceWheres(ctx context.Context, ts map[int]WhereTask, t string) (string, error) {
 	var value string
 	var err error
 	if len(ts) == 0 {
@@ -271,10 +259,10 @@ func ReduceTwoWheres(s0 string, s1 string) (string, error) {
 	}
 	for _, statement := range statementSet.Elements() {
 		value.WriteString(statement)
-		value.WriteString(common.AndOperator)
+		value.WriteString(AndOperator)
 	}
 	str := value.String()
-	str = strings.Trim(str, common.AndOperator)
+	str = strings.Trim(str, AndOperator)
 	return str, nil
 }
 
@@ -361,4 +349,40 @@ func DeepEqualCompare(c0 *ConditionRHS, c1 *ConditionRHS) bool {
 	}
 
 	return false
+}
+
+func ReducesFilter(wf common.Workflow, name string) (string, error) {
+	wheres := ClausesWheres(wf)
+	value := ""
+	ctx := context.Background()
+	value, err := ReduceWheres(ctx, wheres, name)
+	if err != nil {
+		return value, err
+	}
+	return value, nil
+}
+
+func ClausesWheres(wf common.Workflow) map[int]WhereTask {
+	ctx := context.Background()
+	values := make(map[int]WhereTask)
+	statuses, err := wf.Statuses(ctx, false)
+	if err != nil {
+		log.Println("Error WhereClauses Statuses")
+		return values
+	}
+	index := 0
+	str := ""
+	for _, name := range statuses {
+		current, _ := wf.Tasks[name]
+		if index == 0 {
+			values[index] = WhereTask{name, wf.Initial.String()}
+		} else {
+			values[index] = WhereTask{name, str}
+		}
+		str = current.Transition.Links[0].Query
+		if strings.Compare(str, EndTask) != 0 {
+			index++
+		}
+	}
+	return values
 }

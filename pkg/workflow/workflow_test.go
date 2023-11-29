@@ -90,48 +90,28 @@ func TestGenerateStats(t *testing.T) {
 		Password: "stories",
 	}
 	jw := common.JobWorkflow{}
-
-	input := `
-action: get_flow_by_PkFlow
-pk_flow: 1
-`
-
-	order := []byte(input)
 	query, err := getPgQuery(config)
 	if err != nil {
-		t.Error("error connecting db")
+		t.Error(err)
 		return
 	}
-	q := query.NewQuery()
-	err = input2.ProcessInput(order, &q)
+	dataFile, err := getJsonDatafile(&query)
 	if err != nil {
 		t.Error(err)
-	}
-	if len(pgi.ValuesTaFlow) == 0 {
-		t.Error("Values TaFlow is zero 0")
 		return
 	}
-
-	uuidValue := uuid.NewV1().String()
-	println(uuidValue)
-	dataFile := pgi.ValuesTaFlow[0].Flow
 	err = jw.Workflow.Load(ctx, dataFile)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	newJson, err := jw.Workflow.Marshal(ctx)
-	if err != nil {
-		fmt.Printf("marshal err %s\n", err)
-		t.Error(err)
-	}
-	fmt.Println("newJson Marshal:", string(newJson))
-	var wf common.Workflow = jw.Workflow
+	var wf = jw.Workflow
 	monad := pg.New(&wf, &query)
 
 	monad = pg.Bind(monad, pg.TimeStats)
 	monad = pg.Bind(monad, pg.RoleStats)
 	monad = pg.Bind(monad, pg.Count)
+	monad = pg.Bind(monad, pg.Total)
 	monad = pg.Bind(monad, pg.Percentage)
 	monad = pg.Bind(monad, pg.Render)
 	_, err = monad(nil)
@@ -139,7 +119,7 @@ pk_flow: 1
 		t.Error(err)
 	}
 
-	for key, task := range jw.Workflow.Tasks {
+	for key, task := range wf.Tasks {
 		fmt.Println("===", key, "===")
 		fmt.Println("Count", task.Data.Count)
 		fmt.Println("TimeField", task.Data.TimeField)
@@ -147,8 +127,28 @@ pk_flow: 1
 		fmt.Println("Percentage", task.Data.Percentage)
 		fmt.Println("")
 	}
-	fmt.Println("total", jw.Workflow.Data.Total)
+	fmt.Println("total", wf.Data.Total)
 
+}
+
+func getJsonDatafile(query *db.PostgresQuery) ([]byte, error) {
+	var err error
+	var value []byte
+	input := `
+action: get_flow_by_PkFlow
+pk_flow: 1
+`
+	order := []byte(input)
+	q := query.NewQuery()
+	err = input2.ProcessInput(order, &q)
+	if err != nil {
+		return value, err
+	}
+	if len(pgi.ValuesTaFlow) == 0 {
+		return value, err
+	}
+	dataFile := pgi.ValuesTaFlow[0].Flow
+	return dataFile, nil
 }
 
 // Test Read method
@@ -201,15 +201,27 @@ func TestWhereExpressions(t *testing.T) {
 func TestWhereClauses(t *testing.T) {
 	var err error
 	ctx := context.Background()
-
+	config := database.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Password: "stories",
+	}
+	query, err := getPgQuery(config)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	jw := common.JobWorkflow{}
-	newJson := fmt.Sprintf(jsonFile, uuid.NewV1().String())
-	dataFile := []byte(newJson)
+	dataFile, err := getJsonDatafile(&query)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	err = jw.Workflow.Load(ctx, dataFile)
 	if err != nil {
 		t.Error(err)
+		return
 	}
-	wheres := jw.Workflow.ClausesWheres()
+	wheres := pg.ClausesWheres(jw.Workflow)
 	if len(wheres) == 0 {
 		t.Logf("len wheres is zero")
 	}

@@ -19,7 +19,6 @@ const (
 	EndTask           = "END"
 	ARROW_TASK        = " -> "
 	OR_OPERATOR       = " OR "
-	AndOperator       = " AND "
 	TablePrefix       = "ta_"
 )
 
@@ -34,11 +33,6 @@ type Values struct {
 	Value types.Int
 	Min   types.Int
 	Max   types.Int
-}
-
-type WhereTask struct {
-	Name  string
-	Where string
 }
 
 func (obj *Values) Assign(v types.Int) types.Int {
@@ -112,6 +106,7 @@ type Task struct {
 	InfoField  string     `json:"info_field"`
 	Transition Transition `json:"transition"`
 	Data       Data       `json:"data,omitempty"`
+	Report     types.Bool `json:"report,omitempty"`
 }
 
 type Transition struct {
@@ -281,40 +276,4 @@ func (wf Workflow) ExtractKeys(trackingKeys []string) (string, string) {
 		linkStatus = trackingKeys[1]
 	}
 	return linkStory, linkStatus
-}
-
-func (wf Workflow) ReducesFilter(name string) string {
-	wheres := wf.ClausesWheres()
-	value := ""
-	for _, tuple := range wheres {
-		if strings.Compare(tuple.Name, name) == 0 {
-			value = tuple.Where
-		}
-	}
-	return value
-}
-
-func (wf Workflow) ClausesWheres() map[int]WhereTask {
-	ctx := context.Background()
-	values := make(map[int]WhereTask)
-	statuses, err := wf.Statuses(ctx, false)
-	if err != nil {
-		log.Println("Error WhereClauses Statuses")
-		return values
-	}
-	index := 0
-	str := ""
-	for _, name := range statuses {
-		current, _ := wf.Tasks[name]
-		if index == 0 {
-			values[index] = WhereTask{name, wf.Initial.String()}
-		} else {
-			values[index] = WhereTask{name, str}
-		}
-		str = current.Transition.Links[0].Query
-		if strings.Compare(str, EndTask) != 0 {
-			index++
-		}
-	}
-	return values
 }

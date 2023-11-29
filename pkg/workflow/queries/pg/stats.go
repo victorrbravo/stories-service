@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"log"
 	db "stories/database"
 	"stories/pkg/workflow/common"
@@ -19,8 +18,11 @@ import (
 const (
 	NA               = "n/a"
 	SELECT_BASIC     = "SELECT count(*) FROM %s JOIN %s ON %s=%s WHERE %s"
-	SELECT_TIMEFIELD = "SELECT %s FROM %s ON %s"
-	STATS_TIMEFIELD  = `
+	SelectCountStats = `
+SELECT count(*) FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
+{{if ne .Filter ""}} WHERE {{.Filter}} {{end}}
+`
+	STATS_TIMEFIELD = `
 WITH cte AS (
 SELECT {{.Key2Link}} ,{{.Key1Link}} , {{.TimeField}} ,
 CASE
@@ -93,7 +95,10 @@ func TimeStats(wf *common.Workflow) Monad {
 			err = newQuery.QueryOne(newSQL, &duration)
 			if err != nil {
 				if !errors.Is(err, sql.ErrNoRows) {
-					return wf, err
+					log.Println("Error TimeStats on sql task", name)
+					current.Data.TimeField = types.NewString(NA)
+					// FIXME: error catch here
+					continue
 				}
 			}
 			value := types.NewString(NA)
@@ -138,36 +143,56 @@ func RoleStats(wf *common.Workflow) Monad {
 func Count(wf *common.Workflow) Monad {
 	var count scanners.Int
 	newQuery := wf.Query.NewQuery()
-	ctx := context.Background()
 	return func(error) (*common.Workflow, error) {
 		for name, current := range wf.Tasks {
-			whereExp := wf.ReducesFilter(name)
-			trackingKey, _ := getLinkFields(ctx, wf)
-			newSQL := fmt.Sprintf(SELECT_BASIC, wf.TableName, wf.TrackingTableName,
-				wf.FieldToken, trackingKey, whereExp)
-			err := newQuery.QueryOne(newSQL, &count)
+			newSQL, err := buildSQL(wf, name, SelectCountStats)
 			if err != nil {
+				log.Println("Error Count err", err)
+				continue
+			}
+			err = newQuery.QueryOne(newSQL, &count)
+			if err != nil {
+				log.Println("Error Count SQL err", err)
 				continue
 			}
 			current.Data.Count = count.Value
+			if types.IsNil(current.Report) || current.Report.ToBool() == true {
+				wf.Data.Total = types.NewInt(types.AsInt(wf.Data.Total) + types.AsInt(count.Value))
+			}
 			wf.Data.Stats.Assign(count.Value)
 		}
 		return wf, nil
 	}
 }
 
-func Percentage(wf *common.Workflow) Monad {
-	total := 0
-	for _, task := range wf.Tasks {
-		total = total + types.AsInt(task.Data.Count)
+func Total(wf *common.Workflow) Monad {
+	return func(error) (*common.Workflow, error) {
+		total := 0
+		if types.IsNil(wf.Data.Total) {
+			for _, task := range wf.Tasks {
+				if types.IsNil(task.Report) || task.Report.ToBool() == true {
+					total = total + types.AsInt(task.Data.Count)
+				}
+			}
+			wf.Data.Total = types.NewInt(total)
+		}
+		return wf, nil
 	}
+}
+
+func Percentage(wf *common.Workflow) Monad {
+
 	return func(error) (*common.Workflow, error) {
 		for _, task := range wf.Tasks {
-			value := float64(types.AsInt(task.Data.Count)) / float64(total)
+			var value float64
+			if types.IsNil(task.Report) || task.Report.ToBool() == true {
+				total := float64(types.AsInt(wf.Data.Total))
+				if total > 0 {
+					value = float64(types.AsInt(task.Data.Count)) / total
+				}
+			}
 			task.Data.Percentage = value
-			task.Data.Total = types.NewInt(total)
 		}
-		wf.Data.Total = types.NewInt(total)
 		return wf, nil
 	}
 }
@@ -183,18 +208,22 @@ func buildSQL(wf *common.Workflow, name string, sqlString string) (string, error
 		return "", err
 	}
 	statuses := strings.Join(list, ",")
-	queryValue := wf.ReducesFilter(name)
-	fmt.Println("...statuses", statuses)
+	queryValue, err := ReducesFilter(*wf, name)
+	if err != nil {
+		return queryValue, err
+	}
 	current := wf.Tasks[name]
 	data := queries.DataTemplate{
 		Key1Link:      linkStory,
 		Key2Link:      linkStatus,
+		TableName:     wf.TableName,
 		TimeField:     current.TimeField,
 		InfoField:     current.InfoField,
 		TrackingTable: wf.TrackingTableName.String(),
 		Statuses:      statuses,
 		Status:        name,
 		Filter:        queryValue,
+		Token:         wf.FieldToken,
 	}
 	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {
