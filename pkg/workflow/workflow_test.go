@@ -114,7 +114,7 @@ func TestGenerateStats(t *testing.T) {
 	monad = pg.Bind(monad, pg.Count[models.TaTracking])
 	monad = pg.Bind(monad, pg.Total[models.TaTracking])
 	monad = pg.Bind(monad, pg.Percentage[models.TaTracking])
-	monad = pg.Bind(monad, pg.AllRows[models.TaTracking])
+	monad = pg.Bind(monad, pg.AllRows[models.TaTracking], "Done")
 	monad = pg.Bind(monad, pg.Render[models.TaTracking])
 	_, err = monad(nil)
 	if err != nil {

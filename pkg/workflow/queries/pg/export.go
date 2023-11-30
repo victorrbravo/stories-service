@@ -68,15 +68,15 @@ style: {
 	return str, nil
 }
 
-func DummyFunc[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
-	return func(error) (*common.Workflow[T], error) {
+func DummyFunc[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		return wf, nil
 	}
 }
 
-func Render[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
+func Render[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	definition, err := GenerateGraphDefinition(wf)
-	return func(error) (*common.Workflow[T], error) {
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		if err != nil {
 			return nil, err
 		}

@@ -44,12 +44,12 @@ func getLinkFields[T db.Scanner](ctx context.Context, wf *common.Workflow[T]) (s
 	return wf.ExtractKeys(trackingKeys)
 }
 
-func TimeField[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
+func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var duration scanners.String
 	var outputBuffer bytes.Buffer
 	ctx := context.Background()
 	newQuery := wf.Query.NewQuery()
-	return func(error) (*common.Workflow[T], error) {
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
 			tmpl, err := template.New("timeSQL").Parse(SELECT_TIMEFIELD_TOKEN)
 			linkStory, linkStatus := getLinkFields(ctx, wf)
@@ -87,12 +87,12 @@ func TimeField[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 	return nil
 }
 
-func RoleField[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
+func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var role scanners.String
 	var outputBuffer bytes.Buffer
 	newQuery := wf.Query.NewQuery()
 	ctx := context.Background()
-	return func(error) (*common.Workflow[T], error) {
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
 			tmpl, err := template.New("timeSQL").Parse(SELECT_ROLEFIELD_TOKEN)
 			linkStory, linkStatus := getLinkFields(ctx, wf)
@@ -122,11 +122,11 @@ func RoleField[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 	}
 }
 
-func CountToken[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
+func CountToken[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var count scanners.Int
 	var outputBuffer bytes.Buffer
 	newQuery := wf.Query.NewQuery()
-	return func(error) (*common.Workflow[T], error) {
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
 
 			tmpl, err := template.New("roleSQL").Parse(SELECT_WHERE_TOKEN)

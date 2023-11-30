@@ -58,31 +58,31 @@ HAVING COUNT(*) = (
 
 type Any interface{}
 
-type Monad[T db.Scanner] func(error) (*common.Workflow[T], error)
+type Monad[T db.Scanner] func(error, ...interface{}) (*common.Workflow[T], error)
 
-func New[T db.Scanner](v *common.Workflow[T], query *db.PostgresQuery) Monad[T] {
-	return func(s error) (*common.Workflow[T], error) {
-		v.Query = query
-		if v.WhereClause == nil {
-			v.WhereClause = CalculateWhere[T]
+func New[T db.Scanner](wf *common.Workflow[T], query *db.PostgresQuery) Monad[T] {
+	return func(s error, v ...interface{}) (*common.Workflow[T], error) {
+		wf.Query = query
+		if wf.WhereClause == nil {
+			wf.WhereClause = CalculateWhere[T]
 		}
-		return v, s
+		return wf, s
 	}
 }
 
-func Bind[T db.Scanner](m Monad[T], f func(*common.Workflow[T]) Monad[T]) Monad[T] {
-	return func(s error) (*common.Workflow[T], error) {
+func Bind[T db.Scanner](m Monad[T], f func(*common.Workflow[T], ...interface{}) Monad[T], values ...interface{}) Monad[T] {
+	return func(s error, v ...interface{}) (*common.Workflow[T], error) {
 		a, e := m(s)
 		if e != nil {
 			return nil, e
 		}
-		return f(a)(e)
+		return f(a, values)(e)
 	}
 }
 
-func TimeStats[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
+func TimeStats[T db.Scanner](wf *common.Workflow[T], names ...interface{}) Monad[T] {
 	log.Println("time Stats")
-	return func(error) (*common.Workflow[T], error) {
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		var duration scanners.Interval
 
 		newQuery := wf.Query.NewQuery()
@@ -117,11 +117,11 @@ func TimeStats[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 	}
 }
 
-func RoleStats[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
+func RoleStats[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	log.Println("unmarshalling the file to json")
 	var roles scanners.String
 	newQuery := wf.Query.NewQuery()
-	return func(error) (*common.Workflow[T], error) {
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
 			newSQL, err := buildSQL(wf, name, STATS_ROLEFIELD)
 			if err != nil {
@@ -145,10 +145,10 @@ func RoleStats[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 	}
 }
 
-func Count[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
+func Count[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var count scanners.Int
 	newQuery := wf.Query.NewQuery()
-	return func(error) (*common.Workflow[T], error) {
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
 			newSQL, err := buildSQL(wf, name, SelectCountStats)
 			if err != nil {
@@ -170,10 +170,16 @@ func Count[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 	}
 }
 
-func AllRows[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
+func AllRows[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	newQuery := wf.Query.NewQuery()
-	return func(error) (*common.Workflow[T], error) {
+	var lookTask string
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
+		lookTask = firstParameter(parameters)
 		for name, current := range wf.Tasks {
+			if len(lookTask) > 0 && strings.Compare(name, lookTask) != 0 {
+				continue
+			}
+			log.Println("lookTask", lookTask)
 			newSQL, err := buildSQL[T](wf, name, SelectRowsStats)
 			if err != nil {
 				log.Println("Error Count err", err)
@@ -188,8 +194,27 @@ func AllRows[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 	}
 }
 
-func Total[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
-	return func(error) (*common.Workflow[T], error) {
+func firstParameter(parameters []interface{}) string {
+	var parSlice []interface{}
+	var ok bool
+	var value string
+	if len(parameters) > 0 {
+		parSlice, ok = parameters[0].([]interface{})
+		if !ok {
+			return ""
+		}
+		if len(parSlice) > 0 {
+			value, ok = parSlice[0].(string)
+			if !ok {
+				return ""
+			}
+		}
+	}
+	return value
+}
+
+func Total[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		total := 0
 		if types.IsNil(wf.Data.Total) {
 			for _, task := range wf.Tasks {
@@ -203,9 +228,9 @@ func Total[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
 	}
 }
 
-func Percentage[T db.Scanner](wf *common.Workflow[T]) Monad[T] {
+func Percentage[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 
-	return func(error) (*common.Workflow[T], error) {
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for _, task := range wf.Tasks {
 			var value float64
 			if types.IsNil(task.Report) || task.Report.ToBool() == true {
