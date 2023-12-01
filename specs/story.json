@@ -1,0 +1,38 @@
+{
+  "Model": "TaStory",
+  "Attrs": [
+    {
+      "Name": "PkStory",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Key": true,
+      "Getter": true,
+      "Title": "PkStory"
+    },
+    {
+      "Name": "Name",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "Name"
+    },
+    {
+      "Name": "Status",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "Status"
+    },
+    {
+      "Name": "Summary",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "Summary"
+    }
+  ]
+}
+

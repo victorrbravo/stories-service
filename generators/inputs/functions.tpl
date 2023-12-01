@@ -3,6 +3,7 @@ package pg
 
 import (
     "gopkg.in/yaml.v3"
+    "stories/database"
     "stories/generated/models"
 )
 
@@ -11,6 +12,7 @@ var Values{{.Name}}  []models.{{.Name}}
 {{end}}
 
 func ChooseProcessor(action string, order string, query *database.IQuery) error {
+    var err error
     {{range .Models}}
     if Values{{.Name}}  == nil {
         Values{{.Name}} = make([]models.{{.Name}}, 0)
@@ -19,11 +21,11 @@ func ChooseProcessor(action string, order string, query *database.IQuery) error 
 	switch action {
     {{range .Models}}
     			case "add_{{.Name.Simplified}}":
-    			    Insert{{.Name}}(order, query)
+    			    err = Insert{{.Name}}(order, query)
     			case "delete_{{.Name.Simplified}}":
-                    Delete{{.Name}}(order, query)
+                    err = Delete{{.Name}}(order, query)
     			case "update_{{.Name.Simplified}}":
-                    Update{{.Name}}(order, query)
+                    err = Update{{.Name}}(order, query)
                 case "all_{{.Name.Simplified}}":
                     Values{{.Name}}, _ = GetAll{{.Name}}(query)
                 case "get_{{.Name.Simplified}}_by_{{.KeyField }}":
@@ -31,6 +33,9 @@ func ChooseProcessor(action string, order string, query *database.IQuery) error 
                     Values{{.Name}} = append(Values{{.Name}}, *Value{{.Name}})
     {{end}}
 	}
+    if err != nil  {
+        return err
+    }
 	return nil
 }
 {{range .Models}}

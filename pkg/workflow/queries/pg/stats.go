@@ -87,6 +87,9 @@ func TimeStats[T db.Scanner](wf *common.Workflow[T], names ...interface{}) Monad
 
 		newQuery := wf.Query.NewQuery()
 		for name, current := range wf.Tasks {
+			if !types.IsNil(current.Report) && current.Report.ToBool() == false {
+				continue
+			}
 			nextTask := wf.NextTask(name)
 			if nextTask == nil {
 				current.Data.TimeField = types.NewString("0s")
@@ -97,7 +100,7 @@ func TimeStats[T db.Scanner](wf *common.Workflow[T], names ...interface{}) Monad
 			if err != nil {
 				return wf, err
 			}
-			err = newQuery.QueryOne(newSQL, &duration)
+			durationValue, err := newQuery.QueryOne(newSQL, &duration)
 			if err != nil {
 				if !errors.Is(err, sql.ErrNoRows) {
 					log.Println("Error TimeStats on sql task", name)
@@ -106,9 +109,11 @@ func TimeStats[T db.Scanner](wf *common.Workflow[T], names ...interface{}) Monad
 					continue
 				}
 			}
+			durationTime, ok := durationValue.(*scanners.Interval)
+			log.Println("ok", ok)
 			value := types.NewString(NA)
 			if !errors.Is(err, sql.ErrNoRows) {
-				value = types.NewString(duration.Value.String())
+				value = types.NewString(durationTime.Value.String())
 			}
 			current.Data.TimeField = value
 
@@ -123,23 +128,28 @@ func RoleStats[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 	newQuery := wf.Query.NewQuery()
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
+			if !types.IsNil(current.Report) && current.Report.ToBool() == false {
+				continue
+			}
 			newSQL, err := buildSQL(wf, name, STATS_ROLEFIELD)
 			if err != nil {
 				log.Println("Error RoleStats err", err)
 				continue
 			}
-			err = newQuery.QueryOne(newSQL, &roles)
+			rolesValue, err := newQuery.QueryOne(newSQL, &roles)
 			if err != nil {
 				if !errors.Is(err, sql.ErrNoRows) {
 					log.Println("Error query one err", err)
 					continue
 				}
 			}
+			rolesString := (rolesValue).(types.String)
+
 			if errors.Is(err, sql.ErrNoRows) {
 				current.Data.InfoField = types.NewString(NA)
 				continue
 			}
-			current.Data.InfoField = roles.Value
+			current.Data.InfoField = rolesString
 		}
 		return wf, nil
 	}
@@ -155,12 +165,13 @@ func Count[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Mona
 				log.Println("Error Count err", err)
 				continue
 			}
-			err = newQuery.QueryOne(newSQL, &count)
+			countValue, err := newQuery.QueryOne(newSQL, &count)
 			if err != nil {
 				log.Println("Error Count SQL err", err)
 				continue
 			}
-			current.Data.Count = count.Value
+			countInt := countValue.(types.Int)
+			current.Data.Count = countInt
 			if types.IsNil(current.Report) || current.Report.ToBool() == true {
 				wf.Data.Total = types.NewInt(types.AsInt(wf.Data.Total) + types.AsInt(count.Value))
 			}

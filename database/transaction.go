@@ -19,7 +19,7 @@ func (transaction *Transaction) QueryManyPaged(query string, scanner Scanner, pa
 }
 
 // QueryOne queries just one record in a table
-func (transaction *Transaction) QueryOne(statement string, scanner Scanner, values ...interface{}) error {
+func (transaction *Transaction) QueryOne(statement string, scanner Scanner, values ...interface{}) (interface{}, error) {
 	return queryOne(transaction.tx, statement, scanner, values...)
 }
 

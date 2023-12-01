@@ -26,7 +26,7 @@ type TaFlow struct {
 	FkStory types.Int `json:"fk_story"`
 }
 
-func (taFlow *TaFlow) ScanRow(rows database.RowInterface) (interface{}, error) {
+func (taFlow TaFlow) ScanRow(rows database.RowInterface) (interface{}, error) {
 	var err error
 	err = rows.Scan(
 		&taFlow.PkFlow,
@@ -37,7 +37,7 @@ func (taFlow *TaFlow) ScanRow(rows database.RowInterface) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return *taFlow, nil
+	return taFlow, nil
 }
 
 func CreateTaFlow(
@@ -49,7 +49,7 @@ func CreateTaFlow(
 	var err error
     var scanner scanners.Int
 	var taFlow *TaFlow
-	err = query.QueryOne(
+	_, err = query.QueryOne(
 	    TaFlowCreateQuery,
 	    &scanner,
 		name,
@@ -96,10 +96,12 @@ func (taFlow *TaFlow) Update(
 func GetTaFlowByPkFlow(query database.IQuery, value types.Int) (*TaFlow, error) {
 	var err error
 	var taFlow TaFlow
-	err = query.QueryOne(TaFlowByPkFlowQuery, &taFlow, value)
+	var valueTaFlow interface{}
+	valueTaFlow, err = query.QueryOne(TaFlowByPkFlowQuery, &taFlow, value)
 	if err != nil {
 		return  nil, err
 	}
+    taFlow = valueTaFlow.(TaFlow)
 	return &taFlow, nil
 }
 
@@ -108,10 +110,12 @@ func GetTaFlowByPkFlow(query database.IQuery, value types.Int) (*TaFlow, error) 
 
 func (taFlow TaFlow) GetTaFlowByFkStory(query database.IQuery, value types.Int) (interface{}, error) {
 	var err error
-	err = query.QueryOne(TaFlowByFkStoryQuery, &taFlow, value)
+	var valueTaFlow interface{}
+	valueTaFlow, err = query.QueryOne(TaFlowByFkStoryQuery, &taFlow, value)
 	if err != nil {
 		return  nil, err
 	}
+	taFlow = valueTaFlow.(TaFlow)
 	return &taFlow, nil
 }
 

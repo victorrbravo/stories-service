@@ -63,7 +63,7 @@ type {{ .Model }} struct {
 
 {{- $receiver := .Model.ToCamelCase }}
 
-func ({{ $receiver }} *{{ .Model }}) ScanRow(rows database.RowInterface) (interface{}, error) {
+func ({{ $receiver }} {{ .Model }}) ScanRow(rows database.RowInterface) (interface{}, error) {
 	var err error
 	err = rows.Scan(
 		{{- range .Attrs }}
@@ -73,7 +73,7 @@ func ({{ $receiver }} *{{ .Model }}) ScanRow(rows database.RowInterface) (interf
 	if err != nil {
 		return nil, err
 	}
-	return *{{ $receiver }}, nil
+	return {{ $receiver }}, nil
 }
 
 func Create{{ .Model }}(
@@ -85,7 +85,7 @@ func Create{{ .Model }}(
 	var err error
     var scanner scanners.{{ .KeyType }}
 	var {{ $receiver }} *{{ .Model }}
-	err = query.QueryOne(
+	_, err = query.QueryOne(
 	    {{ .Model }}CreateQuery,
 	    &scanner,
 		{{- range .Attrs }}
@@ -148,10 +148,12 @@ func ({{ $receiver }} *{{.Model}}) Update(
 func Get{{ $.Model }}By{{- .Name -}}(query database.IQuery, value {{ .Type }}) (*{{ $.Model }}, error) {
 	var err error
 	var {{ $receiver }} {{ $.Model }}
-	err = query.QueryOne({{ $.Model }}By{{ .Name }}Query, &{{ $receiver }}, value)
+	var value{{ $.Model }} interface{}
+	value{{ $.Model }}, err = query.QueryOne({{ $.Model }}By{{ .Name }}Query, &{{ $receiver }}, value)
 	if err != nil {
 		return  nil, err
 	}
+    {{ $receiver }} = value{{ $.Model }}.({{ $.Model }})
 	return &{{ $receiver }}, nil
 }
 {{- end }}
@@ -185,13 +187,15 @@ func Get{{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}An
 ) (*{{ $.Model }}, error) {
 	var err error
 	var {{ $receiver }} {{ $.Model }}
-	err = query.QueryOne({{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query, &{{ $receiver }},{{- range .Searcher }}
+	var value{{ $.Model }} interface{}
+	value{{ $.Model }}, err = query.QueryOne({{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query, &{{ $receiver }},{{- range .Searcher }}
     {{ .Name.ToCamelCase }},
 {{- end }}
 )
 	if err != nil {
 		return  nil, err
 	}
+    {{ $receiver }} = value{{ $.Model }}.({{ $.Model }})
 	return &{{ $receiver }}, nil
 }
 {{- end }}
@@ -200,10 +204,12 @@ func Get{{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}An
 {{- if .Searchable }}
 func ({{ $receiver }} {{$.Model}}) Get{{ $.Model }}By{{- .Name -}}(query database.IQuery, value {{ .Type }}) (interface{}, error) {
 	var err error
-	err = query.QueryOne({{ $.Model }}By{{ .Name }}Query, &{{ $receiver }}, value)
+	var value{{ $.Model }} interface{}
+	value{{ $.Model }}, err = query.QueryOne({{ $.Model }}By{{ .Name }}Query, &{{ $receiver }}, value)
 	if err != nil {
 		return  nil, err
 	}
+	{{ $receiver }} = value{{ $.Model }}.({{ $.Model }})
 	return &{{ $receiver }}, nil
 }
 {{- end }}

@@ -29,7 +29,7 @@ type TaUser struct {
 	Account types.String `json:"account"`
 }
 
-func (taUser *TaUser) ScanRow(rows database.RowInterface) (interface{}, error) {
+func (taUser TaUser) ScanRow(rows database.RowInterface) (interface{}, error) {
 	var err error
 	err = rows.Scan(
 		&taUser.PkUser,
@@ -42,7 +42,7 @@ func (taUser *TaUser) ScanRow(rows database.RowInterface) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return *taUser, nil
+	return taUser, nil
 }
 
 func CreateTaUser(
@@ -56,7 +56,7 @@ func CreateTaUser(
 	var err error
     var scanner scanners.Int
 	var taUser *TaUser
-	err = query.QueryOne(
+	_, err = query.QueryOne(
 	    TaUserCreateQuery,
 	    &scanner,
 		firstname,
@@ -113,10 +113,12 @@ func (taUser *TaUser) Update(
 func GetTaUserByPkUser(query database.IQuery, value types.Int) (*TaUser, error) {
 	var err error
 	var taUser TaUser
-	err = query.QueryOne(TaUserByPkUserQuery, &taUser, value)
+	var valueTaUser interface{}
+	valueTaUser, err = query.QueryOne(TaUserByPkUserQuery, &taUser, value)
 	if err != nil {
 		return  nil, err
 	}
+    taUser = valueTaUser.(TaUser)
 	return &taUser, nil
 }
 
@@ -125,18 +127,22 @@ func GetTaUserByPkUser(query database.IQuery, value types.Int) (*TaUser, error) 
 
 func (taUser TaUser) GetTaUserByEmail(query database.IQuery, value types.String) (interface{}, error) {
 	var err error
-	err = query.QueryOne(TaUserByEmailQuery, &taUser, value)
+	var valueTaUser interface{}
+	valueTaUser, err = query.QueryOne(TaUserByEmailQuery, &taUser, value)
 	if err != nil {
 		return  nil, err
 	}
+	taUser = valueTaUser.(TaUser)
 	return &taUser, nil
 }
 func (taUser TaUser) GetTaUserByAccount(query database.IQuery, value types.String) (interface{}, error) {
 	var err error
-	err = query.QueryOne(TaUserByAccountQuery, &taUser, value)
+	var valueTaUser interface{}
+	valueTaUser, err = query.QueryOne(TaUserByAccountQuery, &taUser, value)
 	if err != nil {
 		return  nil, err
 	}
+	taUser = valueTaUser.(TaUser)
 	return &taUser, nil
 }
 

@@ -11,6 +11,7 @@ import (
 	"stories/pkg/workflow/common"
 	"stories/pkg/workflow/queries"
 	"stories/scanners"
+	"stories/types"
 	"strings"
 	"text/template"
 )
@@ -74,12 +75,14 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 				log.Println("error template execution err", err)
 			}
 			newSQL := outputBuffer.String()
-			err = newQuery.QueryOne(newSQL, &duration)
-			if err != nil && err != sql.ErrNoRows {
+			durationValue, err := newQuery.QueryOne(newSQL, &duration)
+
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				log.Println("error query err", err)
 				continue
 			}
-			current.Data.TimeField = duration.Value
+			durationString := durationValue.(types.String)
+			current.Data.TimeField = durationString
 			outputBuffer.Reset()
 		}
 		return wf, nil
@@ -110,12 +113,13 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 				continue
 			}
 			newSQL := outputBuffer.String()
-			err = newQuery.QueryOne(newSQL, &role)
+			roleValue, err := newQuery.QueryOne(newSQL, &role)
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				log.Println("Error Query one err", err)
 				continue
 			}
-			current.Data.InfoField = role.Value
+			roleString := roleValue.(types.String)
+			current.Data.InfoField = roleString
 			outputBuffer.Reset()
 		}
 		return wf, nil
@@ -143,13 +147,14 @@ func CountToken[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 				continue
 			}
 			newSQL := outputBuffer.String()
-			err = newQuery.QueryOne(newSQL, &count)
+			countValue, err := newQuery.QueryOne(newSQL, &count)
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				log.Println("Error query token err", err)
 				continue
 			}
-			current.Data.Count = count.Value
-			wf.Data.Stats.Assign(count.Value)
+			countInt := countValue.(types.Int)
+			current.Data.Count = countInt
+			wf.Data.Stats.Assign(countInt)
 			outputBuffer.Reset()
 		}
 		return wf, nil

@@ -172,3 +172,79 @@ pk_flow: 1
 	fmt.Println("Flow string:", string(pg.ValuesTaFlow[0].Flow))
 
 }
+
+func TestProcessInputCreateStory(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: add_story
+name: checkKey
+summary: Check if the key field values were created autommatically
+status: ToDo
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestProcessInputCreateTracking(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: add_tracking
+fk_story: 10
+fk_status: Progress
+images: [image3]
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestProcessInputDeleteTracking(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: delete_tracking
+pk_tracking: 10
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+}

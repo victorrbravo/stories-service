@@ -50,7 +50,7 @@ func (query *Query) QueryManyPaged(statement string, scanner Scanner, page int, 
 }
 
 // QueryOne queries just one record in a table
-func (query *Query) QueryOne(statement string, scanner Scanner, values ...interface{}) error {
+func (query *Query) QueryOne(statement string, scanner Scanner, values ...interface{}) (interface{}, error) {
 	return queryOne(query.db, statement, scanner, values...)
 }
 

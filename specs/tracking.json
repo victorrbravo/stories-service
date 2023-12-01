@@ -2,12 +2,12 @@
   "Model": "TaTracking",
   "Attrs": [
     {
-      "Name": "FkStatus",
-      "Type": "types.String",
+      "Name": "PkTracking",
+      "Type": "types.Int",
       "Scannable": true,
       "Key": true,
       "Getter": true,
-      "Title": "Status"
+      "Title": "PkTracking"
     },
     {
       "Name": "FkStory",
@@ -15,7 +15,23 @@
       "Scannable": true,
       "Nullable": true,
       "Getter": true,
-      "Title": "Story"
+      "Title": "FkStory"
+    },
+    {
+      "Name": "FkStatus",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "FkStatus"
+    },
+    {
+      "Name": "Images",
+      "Type": "types.StringArray",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "Images"
     }
   ]
 }

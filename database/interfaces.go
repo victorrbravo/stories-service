@@ -29,7 +29,7 @@ var (
 // IQuery interface will help using a `Query' and a `Transaction' seamlessly
 type IQuery interface {
 	// QueryOne queries just one record in a table
-	QueryOne(query string, scanner Scanner, values ...interface{}) error
+	QueryOne(query string, scanner Scanner, values ...interface{}) (interface{}, error)
 	// QueryMany queries multiple rows in a table
 	QueryMany(query string, scanner Scanner, values ...interface{}) ([]interface{}, error)
 	// QueryManyPaged queries multiple rows in a table abd builds a page
@@ -202,30 +202,31 @@ func queryManyPaged(native NativeQuery, query string, scanner Scanner, pageNumbe
 	return page, parseSqlError(rows.Err())
 }
 
-func queryOne(native NativeQuery, query string, scanner Scanner, values ...interface{}) error {
+func queryOne(native NativeQuery, query string, scanner Scanner, values ...interface{}) (interface{}, error) {
 	var err error
 	var rows *sql.Rows
+	var value interface{}
 	// Perform the queries
 	rows, err = native.Query(query, values...)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return err
+		if errors.Is(err, sql.ErrNoRows) {
+			return value, err
 		}
-		return parseSqlError(err)
+		return value, parseSqlError(err)
 	}
 	defer func() {
 		_ = rows.Close()
 	}()
 	// We only care about 1 row
 	if !rows.Next() {
-		return sql.ErrNoRows
+		return value, sql.ErrNoRows
 	}
 	// Scan now (we ignore the return value because it's set int the scanner)
-	_, err = scanner.ScanRow(rows)
+	value, err = scanner.ScanRow(rows)
 	if rows.Next() {
-		return fmt.Errorf("oops, found more than a single row in a 1 row queries")
+		return value, fmt.Errorf("oops, found more than a single row in a 1 row queries")
 	}
-	return parseSqlError(err)
+	return value, parseSqlError(err)
 }
 
 func exec(native NativeQuery, query string, values ...interface{}) (sql.Result, error) {

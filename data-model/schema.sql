@@ -41,6 +41,7 @@
         "pk_story" serial primary key,
         "name"     varchar not null,
         "status"   varchar not null,
+        "summary"      varchar,
         constraint "story_status_unique" unique (pk_story, status)
     );
 
@@ -59,6 +60,8 @@
         "images"      varchar[],
         "videos"      varchar[],
         "roles"       varchar[],
+        "summary"      varchar,
+        "description" varchar,
         updated_at    timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
         "fk_status" varchar,
         "fk_story"    int REFERENCES "ta_story" ("pk_story"),
