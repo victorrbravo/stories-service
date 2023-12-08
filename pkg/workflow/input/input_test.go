@@ -1,10 +1,14 @@
 package input
 
 import (
+	"context"
 	"fmt"
 	"stories/database"
 	db "stories/database"
 	pg "stories/generated/inputs"
+	"stories/generated/models"
+	"stories/pkg/workflow/common"
+
 	"testing"
 )
 
@@ -289,10 +293,25 @@ func TestProcessChangeStatus(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: change_status
-ticket: 14
+ticket: 15
 status: Progress
 `
 	order := []byte(input)
+	datafile, err := getJsonDatafile(&pgQuery)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	ctx := context.Background()
+	wf := common.Workflow[models.TaTracking]{}
+	err = wf.Load(ctx, datafile)
+	statuses, _ := wf.Statuses(ctx, false)
+	fmt.Println("Statuses", statuses)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
@@ -321,4 +340,24 @@ ticket: 14
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+func getJsonDatafile(query *db.PostgresQuery) ([]byte, error) {
+	var err error
+	var value []byte
+	input := `
+action: get_flow_by_PkFlow
+pk_flow: 1
+`
+	order := []byte(input)
+	q := query.NewQuery()
+	err = ProcessInput(order, &q)
+	if err != nil {
+		return value, err
+	}
+	if len(pg.ValuesTaFlow) == 0 {
+		return value, err
+	}
+	dataFile := pg.ValuesTaFlow[0].Flow
+	return dataFile, nil
 }

@@ -91,7 +91,6 @@ func Render[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Mon
 			ThemeID: &d2themescatalog.NeutralDefault.ID,
 		})
 		_ = os.WriteFile(filepath.Join("workflow.svg"), out, 0600)
-		fmt.Println("workflow written")
 		return wf, nil
 	}
 }

@@ -22,14 +22,6 @@
       "Type": "[]byte",
       "Scannable": true,
       "Nullable": true
-    },
-    {
-      "Name": "FkStory",
-      "Type": "types.Int",
-      "Scannable": true,
-      "Nullable": true,
-      "Searchable": true,
-      "Getter": true
     }
   ]
 }
