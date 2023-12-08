@@ -15,6 +15,7 @@
       "Scannable": true,
       "Nullable": true,
       "Getter": true,
+      "KeyForMany": true,
       "Title": "FkStory"
     },
     {

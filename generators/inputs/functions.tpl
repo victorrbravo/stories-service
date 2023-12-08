@@ -11,7 +11,7 @@ import (
 var Values{{.Name}}  []models.{{.Name}}
 {{end}}
 
-func ChooseProcessor(action string, order string, query *database.IQuery) error {
+func MainProcessor(action string, order string, query *database.IQuery) error {
     var err error
     {{range .Models}}
     if Values{{.Name}}  == nil {

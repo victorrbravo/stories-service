@@ -3,6 +3,7 @@ package models
 
 import (
 	"database/sql"
+    "errors"
 	"stories/database"
 	"stories/scanners"
 	"stories/types"
@@ -56,7 +57,7 @@ func CreateTaStory(
 		summary,
 	)
 	if err != nil {
-		if err != sql.ErrNoRows {
+		if !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
 	}

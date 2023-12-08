@@ -3,7 +3,7 @@ package models
 
 import (
 	"database/sql"
-
+    "errors"
 {{- if .NeedsPostgis }}
     "github.com/cridenour/go-postgis"
 {{- end }}
@@ -35,6 +35,7 @@ const (
     {{- range .Attrs }}
     {{- if .KeyForMany }}
     {{ $.Model }}By{{ .Name }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ (checkForSelect .FieldName .Name) }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" WHERE {{ checkUpdateOrDelete  .FieldName .Name }} = $1"
+    {{ $.Model }}By{{ .Name }}DeleteQuery = "DELETE FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" WHERE {{ checkUpdateOrDelete  .FieldName .Name }} = $1"
     {{- end }}
     {{- end }}
     {{- range .Attrs }}
@@ -98,7 +99,7 @@ func Create{{ .Model }}(
 		{{- end }}
 	)
 	if err != nil {
-		if err != sql.ErrNoRows {
+		if !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
 	}
@@ -174,6 +175,15 @@ func Get{{ $.Model }}By{{- .Name -}}(query database.IQuery, value {{ .Type }}) (
 		list = append(list, row.({{ $.Model }}))
 	}
 	return list, nil
+}
+
+func Delete{{ $.Model }}By{{- .Name -}}(query database.IQuery, value {{ .Type }}) error {
+	var err error
+	err = query.Exec({{ $.Model }}By{{ .Name }}DeleteQuery, value)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 {{- end }}

@@ -3,6 +3,7 @@ package models
 
 import (
 	"database/sql"
+    "errors"
 	"stories/database"
 	"stories/scanners"
 	"stories/types"
@@ -14,6 +15,8 @@ const (
     TaTrackingCreateQuery = "INSERT INTO \"ta_tracking\" (\"fk_story\",\"fk_status\",\"images\") VALUES ($1, $2, $3) RETURNING (\"pk_tracking\")"
     AllTaTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"images\" FROM \"ta_tracking\""
     TaTrackingByPkTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"images\" FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
+    TaTrackingByFkStoryQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"images\" FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
+    TaTrackingByFkStoryDeleteQuery = "DELETE FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
     TaTrackingUpdateQuery = "UPDATE \"ta_tracking\" SET \"fk_story\" = COALESCE($1, \"fk_story\"), \"fk_status\" = COALESCE($2, \"fk_status\"), \"images\" = COALESCE($3, \"images\") WHERE \"pk_tracking\" = $4"
     TaTrackingDeleteQuery = "DELETE FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
 )
@@ -56,7 +59,7 @@ func CreateTaTracking(
 		images,
 	)
 	if err != nil {
-		if err != sql.ErrNoRows {
+		if !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
 	}
@@ -105,6 +108,29 @@ func GetTaTrackingByPkTracking(query database.IQuery, value types.Int) (*TaTrack
 }
 
 
+func GetTaTrackingByFkStory(query database.IQuery, value types.Int) ([]TaTracking, error) {
+	var err error
+	var rows []interface{}
+	var list []TaTracking
+	list = make([]TaTracking, 0)
+	rows, err = query.QueryMany(TaTrackingByFkStoryQuery, &TaTracking{}, value)
+	if err != nil {
+		return list, err
+	}
+	for _, row := range rows {
+		list = append(list, row.(TaTracking))
+	}
+	return list, nil
+}
+
+func DeleteTaTrackingByFkStory(query database.IQuery, value types.Int) error {
+	var err error
+	err = query.Exec(TaTrackingByFkStoryDeleteQuery, value)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 
 

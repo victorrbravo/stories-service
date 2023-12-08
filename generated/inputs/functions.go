@@ -17,7 +17,7 @@ var ValuesTaTracking  []models.TaTracking
 var ValuesTaUser  []models.TaUser
 
 
-func ChooseProcessor(action string, order string, query *database.IQuery) error {
+func MainProcessor(action string, order string, query *database.IQuery) error {
     var err error
     
     if ValuesTaFlow  == nil {
