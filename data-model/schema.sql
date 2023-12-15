@@ -42,6 +42,7 @@
         "name"     varchar not null,
         "status"   varchar not null,
         "summary"      varchar,
+        "user_id" int REFERENCES "ta_user" ("pk_user"),
         constraint "story_status_unique" unique (pk_story, status)
     );
 
@@ -50,8 +51,7 @@
     (
         "pk_flow"  serial primary key,
         "name"     varchar not null unique,
-        "flow"     jsonb DEFAULT '{}'::jsonb,
-        "fk_story" int REFERENCES "ta_story" ("pk_story")
+        "flow"     jsonb DEFAULT '{}'::jsonb
     );
 
     create table "ta_tracking"
@@ -85,7 +85,7 @@ insert into ta_story (name, status) values ('story1', 'Progress');
 insert into ta_story (name, status) values ('story1', 'ToDo');
 insert into ta_story (name, status) values ('story1', 'Done');
 
-insert into ta_flow (name, fk_story) values ('flow1',1);
+insert into ta_flow (pk_flow,name) values (1,'flow1');
 
 insert into ta_tracking (images, videos, roles, fk_status, fk_story) values ('{"image1", "image2"}', '{"video1"}', '{"role1"}', 'Done', 1);
 insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at) values ('{"image3", "image6"}', '{"video3"}', '{"role3"}', 'Progress', 1, '2023-10-30 12:05:12.119 -0500');

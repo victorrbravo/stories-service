@@ -180,7 +180,7 @@ pk_flow: 1
 func TestProcessInputCreateStory(t *testing.T) {
 	var err error
 	config := database.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
 		Password: "stories",
 	}
 	var pgQuery db.PostgresQuery
