@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"slices"
 	db "stories/database"
 	"stories/types"
 	"strings"
@@ -86,7 +87,6 @@ type Workflow[T db.Scanner] struct {
 	TrackingKeys      types.String      `json:"tracking_keys"`
 	Variable          Variable          `json:"variable"`
 	Tasks             map[string]*Task  `json:"tasks"`
-	initialTask       types.String      `json:"initial_task,omitempty"`
 	Data              Data              `json:"data,omitempty"`
 	CurrentIDInt      types.Int         `json:"current_id_int,omitempty"`
 	CurrentIDUUID     types.UUID        `json:"current_id_uuid,omitempty"`
@@ -94,6 +94,7 @@ type Workflow[T db.Scanner] struct {
 	Query             *db.PostgresQuery `json:"omitempty"`
 	WhereClause       WhereClause[T]    `json:"where_clause"`
 	ValueScanner      T                 `json:"omitempty"`
+	statuses          []string          `json:"omitempty"`
 }
 
 type Variable struct {
@@ -129,6 +130,7 @@ func (wf *Workflow[T]) AddTask(ctx context.Context, name string, linkTask *Task,
 	newTransition.Links = append(newTransition.Links, newLink)
 	newTask.Transition = newTransition
 	wf.Tasks[name] = newTask
+
 	return nil
 }
 
@@ -180,18 +182,36 @@ func (wf *Workflow[T]) AddLink(ctx context.Context, taskName string, linkTask *T
 	return nil
 }
 
-func (wf *Workflow[T]) Statuses(ctx context.Context, quotes bool) ([]string, error) {
+func (wf *Workflow[T]) NextStatus(current string) (string, error) {
+	var value string
+	lenStatuses := len(wf.statuses)
+	if lenStatuses == 0 {
+		ctx := context.Background()
+		_, err := wf.calculateStatuses(ctx, false)
+		if err != nil {
+			return value, err
+		}
+	}
+	index := slices.Index(wf.statuses, current)
+	if index == -1 {
+		return value, fmt.Errorf("NextStatus can't find current %s", current)
+	}
+	if index == lenStatuses-1 {
+		return value, nil
+	}
+	value = wf.statuses[index+1]
+	return value, nil
+}
+
+func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool) ([]string, error) {
 	var err error
 	var start string
 	list := []string{}
-	if types.IsNil(wf.initialTask) {
-		start, err = wf.CalculateInitialTask()
-		if err != nil {
-			return list, err
-		}
-		wf.initialTask = types.NewString(start)
+	start, err = wf.CalculateInitialTask()
+	if err != nil {
+		return list, err
 	}
-	current := wf.initialTask.String()
+	current := start
 	title := current
 	if quotes {
 		title = "'" + current + "'"
@@ -218,7 +238,16 @@ func (wf *Workflow[T]) Statuses(ctx context.Context, quotes bool) ([]string, err
 		}
 		i++
 	}
+	wf.statuses = list
 	return list, nil
+
+}
+
+func (wf *Workflow[T]) Statuses(ctx context.Context, quotes bool) ([]string, error) {
+	if wf.statuses != nil && len(wf.statuses) == 0 {
+		return wf.statuses, nil
+	}
+	return wf.calculateStatuses(ctx, quotes)
 }
 
 func (wf *Workflow[T]) CalculateInitialTask() (string, error) {

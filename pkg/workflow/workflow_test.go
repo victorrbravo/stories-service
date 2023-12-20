@@ -26,7 +26,7 @@ const jsonFile = `
   "field_token": "pk_story",
   "table_name": "ta_story",
   "initial": "fk_status='ToDo'",
-  "tasks": {
+  "tasks": [
     "ToDo": {
       "info_field": "roles[1]",
       "time_field": "updated_at",
@@ -66,7 +66,7 @@ const jsonFile = `
         ]
       }
     }
-  }
+  ]
 }
 
 `
@@ -82,12 +82,51 @@ func getPgQuery(config db.DatabaseConfig) (db.PostgresQuery, error) {
 	return query, nil
 }
 
+func TestNextStatus(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	config := database.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	jw := common.JobWorkflow[models.TaTracking]{}
+	query, err := getPgQuery(config)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	dataFile, err := getJsonDatafile(&query)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = jw.Workflow.Load(ctx, dataFile)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	var wf = jw.Workflow
+
+	statuses, _ := wf.Statuses(ctx, false)
+	fmt.Println("statuses ", statuses)
+
+	status, err := wf.NextStatus("ToDo")
+	fmt.Println("status:", status, "err", err)
+	status, err = wf.NextStatus("Progress")
+	fmt.Println("status:", status, "err", err)
+	status, err = wf.NextStatus("Done")
+	fmt.Println("status:", status, "err", err)
+	status, err = wf.NextStatus("Standby")
+	fmt.Println("no status:", status, "err", err)
+
+}
+
 // Test Read method
 func TestGenerateStats(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	config := database.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
 		Password: "stories",
 	}
 	jw := common.JobWorkflow[models.TaTracking]{}

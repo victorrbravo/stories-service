@@ -149,7 +149,7 @@ action: all_flow
 func TestProcessInputGetByPkFlow(t *testing.T) {
 	var err error
 	config := database.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
 		Password: "stories",
 	}
 	var pgQuery db.PostgresQuery
@@ -256,7 +256,7 @@ pk_tracking: 14
 func TestProcessInputAddTicket(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
 		Password: "stories",
 	}
 	var pgQuery db.PostgresQuery
@@ -281,7 +281,7 @@ summary: in1 tickets should be a field that reference to projects
 func TestProcessChangeStatus(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
 		Password: "stories",
 	}
 	var pgQuery db.PostgresQuery
@@ -293,7 +293,7 @@ func TestProcessChangeStatus(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: change_status
-ticket: 15
+ticket: 6
 status: Progress
 `
 	order := []byte(input)
@@ -318,10 +318,33 @@ status: Progress
 	}
 }
 
+func TestProcessDoAddTaskToWorkflow(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: add_task
+name: Assigned
+sentence: fk_status="Assigned"
+target: Progress
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+
+}
 func TestProcessDeleteTicket(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
 		Password: "stories",
 	}
 	var pgQuery db.PostgresQuery

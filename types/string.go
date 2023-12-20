@@ -62,6 +62,7 @@ func (str *String) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 	*str = NewString(value)
+
 	return nil
 }
 

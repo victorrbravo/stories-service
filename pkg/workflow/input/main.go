@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"stories/actions/doitall"
+	"stories/actions/workflow"
 	"stories/database"
 	pg "stories/generated/inputs"
 )
@@ -22,7 +23,8 @@ func ProcessInput(action []byte, query *database.IQuery) error {
 		return err
 	}
 	order := string(action)
-	value, err = Processor(getAction.Action, order, query, pg.MainProcessor, doitall.Processor)
+	value, err = Processor(getAction.Action, order, query, pg.MainProcessor, doitall.Processor,
+		workflow.Processor)
 	if err != nil {
 		return err
 	}

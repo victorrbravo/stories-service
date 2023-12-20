@@ -85,7 +85,63 @@ insert into ta_story (name, status) values ('story1', 'Progress');
 insert into ta_story (name, status) values ('story1', 'ToDo');
 insert into ta_story (name, status) values ('story1', 'Done');
 
-insert into ta_flow (pk_flow,name) values (1,'flow1');
+insert into ta_flow (pk_flow,name, flow) values (1,'flow1','
+{
+  "id": "3f12f5a5-57ac-4861-8771-f85de203f863",
+  "name": "Workflow1",
+  "variable": {
+    "name": "basic",
+    "queries": "pk_story,name,status"
+  },
+  "tracking_table_name": "ta_tracking",
+  "tracking_keys": "fk_story,fk_status",
+  "field_token": "pk_story",
+  "table_name": "ta_story",
+  "initial": "fk_status=''ToDo''",
+  "tasks": {
+    "ToDo": {
+      "info_field": "roles[1]",
+      "time_field": "updated_at",
+      "transition": {
+        "pattern": "none",
+        "links": [
+          {
+            "task": "Progress",
+            "queries": "fk_status=''Progress''"
+          }
+        ]
+      }
+    },
+    "Progress": {
+      "info_field": "roles[1]",
+      "time_field": "updated_at",
+      "transition": {
+        "pattern": "or",
+        "links": [
+          {
+            "task": "Done",
+            "queries": "fk_status=''Done''"
+          }
+        ]
+      }
+    },
+    "Done": {
+      "info_field": "roles[1]",
+      "time_field": "updated_at",
+      "transition": {
+        "pattern": "or",
+        "links": [
+          {
+            "task": "END",
+            "queries": "END"
+          }
+        ]
+      }
+    }
+  }
+}
+');
+insert into ta_user (first_name, last_name, email, account_type, password, activated)  values ('vbravo','vbravo', 'victorrbravo@gmail.com', 'admin', 'vbravo', 'true');
 
 insert into ta_tracking (images, videos, roles, fk_status, fk_story) values ('{"image1", "image2"}', '{"video1"}', '{"role1"}', 'Done', 1);
 insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at) values ('{"image3", "image6"}', '{"video3"}', '{"role3"}', 'Progress', 1, '2023-10-30 12:05:12.119 -0500');

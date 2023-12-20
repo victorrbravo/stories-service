@@ -143,12 +143,11 @@ func RoleStats[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 					continue
 				}
 			}
-			rolesString := (rolesValue).(types.String)
-
-			if errors.Is(err, sql.ErrNoRows) {
+			if errors.Is(err, sql.ErrNoRows) || rolesValue == nil {
 				current.Data.InfoField = types.NewString(NA)
 				continue
 			}
+			rolesString := rolesValue.(types.String)
 			current.Data.InfoField = rolesString
 		}
 		return wf, nil

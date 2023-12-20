@@ -6,8 +6,15 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ~/apps/postgres:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_PASSWORD=stories
       - POSTGRES_USER=stories
       - POSTGRES_DB=stories
+  adminer:
+    image: adminer
+    container_name: my-adminer-container
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
