@@ -318,7 +318,7 @@ status: Progress
 	}
 }
 
-func TestProcessDoAddTaskToWorkflow(t *testing.T) {
+func TestProcessDoAddTaskToWorkflowNormal(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{
 		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
@@ -334,13 +334,64 @@ func TestProcessDoAddTaskToWorkflow(t *testing.T) {
 	input := `
 action: add_task
 name: Assigned
-sentence: fk_status="Assigned"
+sentence: fk_status=''Assigned''
 target: Progress
+source: ToDo
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
 
 }
+
+func TestProcessDoAddTaskToWorkflowNoSource(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: add_task
+name: Assigned
+sentence: fk_status=''Assigned''
+report: false
+target: ToDo
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+
+}
+
+func TestProcessDoAddTaskToWorkflowNoTarget(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: add_task
+name: Assigned
+sentence: fk_status=''Assigned''
+source: Done
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+
+}
+
 func TestProcessDeleteTicket(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{
