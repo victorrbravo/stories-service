@@ -81,8 +81,13 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 				log.Println("error query err", err)
 				continue
 			}
-			durationString := durationValue.(types.String)
-			current.Data.TimeField = durationString
+			durationTime, ok := durationValue.(types.String)
+			log.Println("ok", ok)
+			value := types.NewString(NA)
+			if !errors.Is(err, sql.ErrNoRows) && ok == true {
+				value = types.NewString(durationTime.String())
+			}
+			current.Data.TimeField = value
 			outputBuffer.Reset()
 		}
 		return wf, nil
@@ -118,8 +123,12 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 				log.Println("Error Query one err", err)
 				continue
 			}
-			roleString := roleValue.(types.String)
-			current.Data.InfoField = roleString
+			roleString, ok := roleValue.(types.String)
+			value := types.NewString(NA)
+			if ok == true {
+				value = roleString
+			}
+			current.Data.InfoField = value
 			outputBuffer.Reset()
 		}
 		return wf, nil
@@ -138,7 +147,7 @@ func CountToken[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 				TableName: wf.TableName,
 				Status:    name,
 				Token:     wf.CurrentIDInt.String(),
-				PkStatus:  current.Transition.Links[0].Status,
+				PkStatus:  wf.FieldStatus,
 				PkField:   wf.FieldToken,
 			}
 			err = tmpl.Execute(&outputBuffer, data)

@@ -3,7 +3,6 @@ package workflow_test
 import (
 	"context"
 	"fmt"
-	"github.com/twinj/uuid"
 	"log"
 	"stories/database"
 	db "stories/database"
@@ -203,23 +202,28 @@ func TestGenerateToken(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	config := database.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
 		Password: "stories",
 	}
+	query, err := getPgQuery(config)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	jw := common.JobWorkflow[models.TaTracking]{}
-	newJson := fmt.Sprintf(jsonFile, uuid.NewV1().String())
-	dataFile := []byte(newJson)
+	dataFile, err := getJsonDatafile(&query)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	err = jw.Workflow.Load(ctx, dataFile)
 	if err != nil {
 		t.Error(err)
 	}
-	jw.Workflow.CurrentIDInt = types.NewInt(1)
-	query, err := getPgQuery(config)
-	if err != nil {
-		t.Error("error connecting db")
-		return
-	}
-	monad := pg.New(&jw.Workflow, &query)
+	jw.Workflow.CurrentIDInt = types.NewInt(6)
+	wf := jw.Workflow
+	monad := pg.New(&wf, &query)
 
 	monad = pg.Bind(monad, pg.TimeField[models.TaTracking])
 	monad = pg.Bind(monad, pg.RoleField[models.TaTracking])

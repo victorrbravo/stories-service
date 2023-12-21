@@ -83,6 +83,7 @@ type Workflow[T db.Scanner] struct {
 	Name              string            `json:"name"`
 	TableName         string            `json:"table_name"`
 	FieldToken        string            `json:"field_token"`
+	FieldStatus       string            `json:"field_status,omitempty"`
 	TrackingTableName types.String      `json:"tracking_table_name"`
 	TrackingKeys      types.String      `json:"tracking_keys"`
 	Variable          Variable          `json:"variable"`
