@@ -34,17 +34,27 @@ func GenerateGraphDefinition[T db.Scanner](wf *common.Workflow[T]) (string, erro
 			log.Println("Error accessing name", name)
 			continue
 		}
-		str = str + name
-		str = str + common.ARROW_TASK
-		newStyle := fmt.Sprintf(`
-		%s.style.border-radius: %s
-		%s.style.fill: "%s"
-`, name, "8", name, SelectColor(current.Data.Count, wf.Data.Stats.Min, wf.Data.Stats.Max))
-		styles = styles + newStyle
 		titleTime := current.Data.TimeField.String()
 		titleRole := current.Data.InfoField.String()
 		titleCount := current.Data.Count.String()
+		isEmpty := strings.Compare(titleTime, NA) == 0 &&
+			strings.Compare(titleRole, NA) == 0 &&
+			strings.Compare(titleCount, "0") == 0
+		str = str + name
+		str = str + common.ARROW_TASK
+		selectColor := WHITE
+		if !isEmpty {
+			selectColor = SelectColor(current.Data.Count, wf.Data.Stats.Min, wf.Data.Stats.Max)
+		}
+		newStyle := fmt.Sprintf(`
+		%s.style.border-radius: %s
+		%s.style.fill: "%s"
+`, name, "8", name, selectColor)
+		styles = styles + newStyle
 		title := titleTime + "\\n" + titleRole + "\\n" + titleCount
+		if isEmpty == true {
+			continue
+		}
 		dataForTasks += fmt.Sprintf(`
 "%s" -> %s: {
 style: {
@@ -58,8 +68,8 @@ style: {
 "%s".style.shadow: true
 
 `, title, name, title, title, title, title, title)
-
 	}
+
 	str, _ = strings.CutSuffix(str, common.ARROW_TASK)
 	str += "\n"
 	str += styles

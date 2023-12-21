@@ -17,6 +17,7 @@ import (
 
 const (
 	NA               = "n/a"
+	WHITE            = "#FFFFFF"
 	SELECT_BASIC     = "SELECT count(*) FROM %s JOIN %s ON %s=%s WHERE %s"
 	SelectCountStats = `
 SELECT count(*) FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
