@@ -177,26 +177,6 @@ func TestGenerateStats(t *testing.T) {
 
 }
 
-func getJsonDatafile(query *db.PostgresQuery) ([]byte, error) {
-	var err error
-	var value []byte
-	input := `
-action: get_flow_by_PkFlow
-pk_flow: 1
-`
-	order := []byte(input)
-	q := query.NewQuery()
-	err = input2.ProcessInput(order, &q)
-	if err != nil {
-		return value, err
-	}
-	if len(pgi.ValuesTaFlow) == 0 {
-		return value, err
-	}
-	dataFile := pgi.ValuesTaFlow[0].Flow
-	return dataFile, nil
-}
-
 // Test Read method
 func TestGenerateToken(t *testing.T) {
 	var err error
@@ -221,7 +201,7 @@ func TestGenerateToken(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	jw.Workflow.CurrentIDInt = types.NewInt(6)
+	jw.Workflow.CurrentIDInt = types.NewInt(9)
 	wf := jw.Workflow
 	monad := pg.New(&wf, &query)
 
@@ -243,6 +223,26 @@ func TestGenerateToken(t *testing.T) {
 		fmt.Println("")
 	}
 	fmt.Println("total", jw.Workflow.Data.Total)
+}
+
+func getJsonDatafile(query *db.PostgresQuery) ([]byte, error) {
+	var err error
+	var value []byte
+	input := `
+action: get_flow_by_PkFlow
+pk_flow: 1
+`
+	order := []byte(input)
+	q := query.NewQuery()
+	err = input2.ProcessInput(order, &q)
+	if err != nil {
+		return value, err
+	}
+	if len(pgi.ValuesTaFlow) == 0 {
+		return value, err
+	}
+	dataFile := pgi.ValuesTaFlow[0].Flow
+	return dataFile, nil
 }
 
 func TestWhereExpressions(t *testing.T) {

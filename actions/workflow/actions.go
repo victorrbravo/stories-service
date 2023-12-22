@@ -100,6 +100,7 @@ WHERE pk_flow={{.PkFlow}}
   "tracking_table_name": "ta_tracking",
   "tracking_keys": "fk_story,fk_status",
   "field_token": "pk_story",
+  "field_status": "status",
   "table_name": "ta_story",
   "initial": "TRUE",
 "tasks": {

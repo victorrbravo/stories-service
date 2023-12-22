@@ -51,7 +51,8 @@ func GenerateGraphDefinition[T db.Scanner](wf *common.Workflow[T]) (string, erro
 		%s.style.fill: "%s"
 `, name, "8", name, selectColor)
 		styles = styles + newStyle
-		title := titleTime + "\\n" + titleRole + "\\n" + titleCount
+		//title := titleTime + "\\n" + titleRole + "\\n" + titleCount
+		title := titleTime + "\\n" + titleRole
 		if isEmpty == true {
 			continue
 		}
