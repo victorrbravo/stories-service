@@ -294,8 +294,8 @@ func TestProcessAddPayment(t *testing.T) {
 	input := `
 action: add_payment
 ticket: 9
-status: Payment3
-amount: 18500
+status: Payment4
+amount: 25500
 type: food
 `
 	order := []byte(input)
@@ -385,9 +385,9 @@ func TestProcessDoAddTaskToWorkflowNoTarget(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_task
-name: Payment2
-sentence: fk_status=''Payment3''
-source: Payment1
+name: Payment4
+sentence: fk_status=''Payment4''
+source: Payment3
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
