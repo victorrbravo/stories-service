@@ -12,12 +12,12 @@ import (
  * Generated queries (these can be used perfectly instead of writing them by hand
  */
 const (
-    TaTrackingCreateQuery = "INSERT INTO \"ta_tracking\" (\"fk_story\",\"fk_status\",\"images\") VALUES ($1, $2, $3) RETURNING (\"pk_tracking\")"
-    AllTaTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"images\" FROM \"ta_tracking\""
-    TaTrackingByPkTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"images\" FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
-    TaTrackingByFkStoryQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"images\" FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
+    TaTrackingCreateQuery = "INSERT INTO \"ta_tracking\" (\"fk_story\",\"fk_status\",\"images\",\"roles\") VALUES ($1, $2, $3, $4) RETURNING (\"pk_tracking\")"
+    AllTaTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"images\", \"roles\" FROM \"ta_tracking\""
+    TaTrackingByPkTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"images\", \"roles\" FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
+    TaTrackingByFkStoryQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"images\", \"roles\" FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
     TaTrackingByFkStoryDeleteQuery = "DELETE FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
-    TaTrackingUpdateQuery = "UPDATE \"ta_tracking\" SET \"fk_story\" = COALESCE($1, \"fk_story\"), \"fk_status\" = COALESCE($2, \"fk_status\"), \"images\" = COALESCE($3, \"images\") WHERE \"pk_tracking\" = $4"
+    TaTrackingUpdateQuery = "UPDATE \"ta_tracking\" SET \"fk_story\" = COALESCE($1, \"fk_story\"), \"fk_status\" = COALESCE($2, \"fk_status\"), \"images\" = COALESCE($3, \"images\"), \"roles\" = COALESCE($4, \"roles\") WHERE \"pk_tracking\" = $5"
     TaTrackingDeleteQuery = "DELETE FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
 )
 
@@ -26,6 +26,7 @@ type TaTracking struct {
 	FkStory types.Int `json:"fk_story"`
 	FkStatus types.String `json:"fk_status"`
 	Images types.StringArray `json:"images"`
+	Roles types.StringArray `json:"roles"`
 }
 
 func (taTracking TaTracking) ScanRow(rows database.RowInterface) (interface{}, error) {
@@ -35,6 +36,7 @@ func (taTracking TaTracking) ScanRow(rows database.RowInterface) (interface{}, e
 		&taTracking.FkStory,
 		&taTracking.FkStatus,
 		&taTracking.Images,
+		&taTracking.Roles,
 	)
 	if err != nil {
 		return nil, err
@@ -47,6 +49,7 @@ func CreateTaTracking(
 	fkStory types.Int,
 	fkStatus types.String,
 	images types.StringArray,
+	roles types.StringArray,
 ) (*TaTracking, error) {
 	var err error
     var scanner scanners.Int
@@ -57,6 +60,7 @@ func CreateTaTracking(
 		fkStory,
 		fkStatus,
 		images,
+		roles,
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -68,6 +72,7 @@ func CreateTaTracking(
 	    FkStory: fkStory,
 	    FkStatus: fkStatus,
 	    Images: images,
+	    Roles: roles,
 	}
 	return taTracking, nil
 }
@@ -77,6 +82,7 @@ func (taTracking *TaTracking) Update(
     fkStory types.Int,
     fkStatus types.String,
     images types.StringArray,
+    roles types.StringArray,
 ) error {
     var err error
 	err = query.Exec(
@@ -84,6 +90,7 @@ func (taTracking *TaTracking) Update(
         fkStory,
         fkStatus,
         images,
+        roles,
         taTracking.PkTracking,
     )
 	if err != nil {
@@ -92,6 +99,7 @@ func (taTracking *TaTracking) Update(
     taTracking.FkStory = fkStory
     taTracking.FkStatus = fkStatus
     taTracking.Images = images
+    taTracking.Roles = roles
     return nil
 }
 
@@ -151,6 +159,10 @@ func (taTracking TaTracking) GetFkStatus() types.String {
 
 func (taTracking TaTracking) GetImages() types.StringArray {
 	return taTracking.Images}
+
+
+func (taTracking TaTracking) GetRoles() types.StringArray {
+	return taTracking.Roles}
 
 
 func (taTracking *TaTracking) Delete(query database.IQuery) error {

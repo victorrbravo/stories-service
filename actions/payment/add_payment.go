@@ -1,4 +1,4 @@
-package doitall
+package payment
 
 import (
 	"errors"
@@ -15,9 +15,11 @@ type Ticket struct {
 	Summary types.String `yaml:"summary"`
 }
 
-type ChangeStatus struct {
-	Ticket types.Int    `yaml:"ticket"`
-	Status TicketStatus `yaml:"status"`
+type AddPaymentStatus struct {
+	Ticket      types.Int    `yaml:"ticket"`
+	Status      TicketStatus `yaml:"status"`
+	Amount      types.String `yaml:"amount"`
+	PaymentType types.String `yaml:"type"`
 }
 
 type DeleteTicket struct {
@@ -30,11 +32,14 @@ const (
 	ToDo     TicketStatus = "ToDo"
 	Progress TicketStatus = "Progress"
 	Done     TicketStatus = "Done"
+	Payment1 TicketStatus = "Payment1"
+	Payment2 TicketStatus = "Payment2"
+	Payment3 TicketStatus = "Payment3"
 )
 
 func (cs TicketStatus) IsValid() bool {
 	switch cs {
-	case ToDo, Progress, Done:
+	case ToDo, Progress, Done, Payment1, Payment2, Payment3:
 		return true
 	}
 	return false
@@ -56,10 +61,10 @@ func (cs *TicketStatus) UnmarshalYAML(unmarshal func(interface{}) error) error {
 func Processor(action string, order string, query *database.IQuery) error {
 	var err error
 	switch action {
-	case "add_ticket":
-		err = AddTicket(order, query)
-	case "change_status":
-		err = ChangeTicketStatus(order, query)
+	case "new_payment_flow":
+		err = NewPaymentFlow(order, query)
+	case "add_payment":
+		err = DoAddPayment(order, query)
 	case "delete_ticket":
 		err = DoDeleteTicket(order, query)
 	}
@@ -80,8 +85,8 @@ func UnmarshallTicket(order []byte) (Ticket, error) {
 	return ticket, nil
 }
 
-func UnmarshallChangeStatus(order []byte) (ChangeStatus, error) {
-	var change ChangeStatus
+func UnmarshallAddPayment(order []byte) (AddPaymentStatus, error) {
+	var change AddPaymentStatus
 	var err error
 	err = yaml.Unmarshal(order, &change)
 	if err != nil {
@@ -90,17 +95,18 @@ func UnmarshallChangeStatus(order []byte) (ChangeStatus, error) {
 	return change, nil
 }
 
-func AddTicket(order string, query *database.IQuery) error {
+func NewPaymentFlow(order string, query *database.IQuery) error {
 	handler, err := UnmarshallTicket([]byte(order))
 	if err != nil {
 		return err
 	}
 
-	toDo := types.NewString(constants.ToDo)
+	start := types.NewString(constants.Start)
 	images := types.NewStringArray([]string{})
+	roles := types.NewStringArray([]string{})
 	taStory, err := models.CreateTaStory(*query,
 		handler.Name,
-		toDo,
+		start,
 		handler.Summary,
 	)
 	if err != nil {
@@ -108,14 +114,15 @@ func AddTicket(order string, query *database.IQuery) error {
 	}
 	models.CreateTaTracking(*query,
 		taStory.PkStory,
-		toDo,
+		start,
 		images,
+		roles,
 	)
 	return nil
 }
 
-func ChangeTicketStatus(order string, query *database.IQuery) error {
-	handler, err := UnmarshallChangeStatus([]byte(order))
+func DoAddPayment(order string, query *database.IQuery) error {
+	handler, err := UnmarshallAddPayment([]byte(order))
 	if err != nil {
 		return err
 	}
@@ -127,6 +134,7 @@ func ChangeTicketStatus(order string, query *database.IQuery) error {
 	}
 
 	images := types.NewStringArray([]string{})
+	roles := types.NewStringArray([]string{handler.Amount.String(), handler.PaymentType.String()})
 	status := types.NewString(string(handler.Status))
 	taStory.Update(*query,
 		types.NilString(),
@@ -137,13 +145,14 @@ func ChangeTicketStatus(order string, query *database.IQuery) error {
 		taStory.PkStory,
 		status,
 		images,
+		roles,
 	)
 
 	return nil
 }
 
 func DoDeleteTicket(order string, query *database.IQuery) error {
-	handler, err := UnmarshallChangeStatus([]byte(order))
+	handler, err := UnmarshallAddPayment([]byte(order))
 	if err != nil {
 		return err
 	}

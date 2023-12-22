@@ -33,6 +33,14 @@
       "Nullable": true,
       "Getter": true,
       "Title": "Images"
+    },
+    {
+      "Name": "Roles",
+      "Type": "types.StringArray",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "Roles"
     }
   ]
 }

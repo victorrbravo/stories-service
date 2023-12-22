@@ -11,6 +11,7 @@ type TaTracking struct {
 	FkStory types.Int `yaml:"fk_story"`
 	FkStatus types.String `yaml:"fk_status"`
 	Images types.StringArray `yaml:"images"`
+	Roles types.StringArray `yaml:"roles"`
 }
 
 func  InsertTaTracking(order string, query *database.IQuery) error {
@@ -22,6 +23,7 @@ func  InsertTaTracking(order string, query *database.IQuery) error {
             handler.FkStory,
             handler.FkStatus,
             handler.Images,
+            handler.Roles,
     )
     if err != nil {
         return err
@@ -77,6 +79,7 @@ func  UpdateTaTracking(order string, query *database.IQuery) error {
             handler.FkStory,
             handler.FkStatus,
             handler.Images,
+            handler.Roles,
     )
     if err != nil {
         return err

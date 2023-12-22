@@ -92,7 +92,7 @@ WHERE pk_flow={{.PkFlow}};
 UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }'
 WHERE pk_flow={{.PkFlow}}
 `
-	emptyWorkflow = `
+	EmptyWorkflow = `
 {
   "id": "3f12f5a5-57ac-4861-8771-f85de203f863",
   "name": "Workflow1",
@@ -102,8 +102,8 @@ WHERE pk_flow={{.PkFlow}}
   "field_token": "pk_story",
   "table_name": "ta_story",
   "initial": "TRUE",
-"tasks": [
-	{
+"tasks": {
+	"Start" :{
 		"report": false,
 		"info_field": "roles[1]", 
 		"time_field": "updated_at", 
@@ -116,7 +116,7 @@ WHERE pk_flow={{.PkFlow}}
 	}
   ]
 }	}
-]
+}
 }
 
 `

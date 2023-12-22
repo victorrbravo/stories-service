@@ -253,7 +253,7 @@ pk_tracking: 14
 	}
 }
 
-func TestProcessInputAddTicket(t *testing.T) {
+func TestProcessInputNewPayment(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{
 		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
@@ -267,9 +267,9 @@ func TestProcessInputAddTicket(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: add_ticket
-name: add field project1
-summary: in1 tickets should be a field that reference to projects
+action: new_payment_flow
+name: victor_bravo
+summary: payments of Victor Bravo
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
@@ -278,7 +278,7 @@ summary: in1 tickets should be a field that reference to projects
 	}
 }
 
-func TestProcessChangeStatus(t *testing.T) {
+func TestProcessAddPayment(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{
 		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
@@ -292,9 +292,11 @@ func TestProcessChangeStatus(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: change_status
-ticket: 6
-status: Done
+action: add_payment
+ticket: 9
+status: Payment1
+amount: 6700
+type: food
 `
 	order := []byte(input)
 	datafile, err := getJsonDatafile(&pgQuery)
@@ -383,9 +385,9 @@ func TestProcessDoAddTaskToWorkflowNoTarget(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_task
-name: Assigned
-sentence: fk_status=''Assigned''
-source: Done
+name: Payment2
+sentence: fk_status=''Payment2''
+source: Payment1
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
