@@ -68,6 +68,8 @@
         constraint "tracking_status_unique" unique (fk_story, fk_status)
     );
 
+    ALTER TABLE "ta_tracking" ADD column  "float_value" float default 0.0;
+
 
     CREATE TABLE IF NOT EXISTS "ta_session"
     (

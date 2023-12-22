@@ -153,12 +153,6 @@ func TestGenerateStats(t *testing.T) {
 		fmt.Println("Percentage", task.Data.Percentage)
 		fmt.Println("")
 	}
-	task := wf.Tasks["Done"]
-
-	for _, data := range task.Data.Rows {
-		record := data.(models.TaTracking)
-		fmt.Println("fkStory", record.FkStory, "fkStatus", record.FkStatus)
-	}
 	fmt.Println("total", wf.Data.Total)
 
 }

@@ -185,7 +185,7 @@ type Array struct {
 var (
 	sqlLexer = lexer.MustSimple([]lexer.SimpleRule{
 		{`Keyword`, `(?i)\b(SELECT|FROM|TOP|DISTINCT|ALL|WHERE|GROUP|BY|HAVING|UNION|MINUS|EXCEPT|INTERSECT|ORDER|LIMIT|OFFSET|TRUE|FALSE|NULL|IS|NOT|ANY|SOME|BETWEEN|AND|OR|LIKE|AS|IN)\b`},
-		{`Ident`, `[a-zA-Z_][a-zA-Z0-9_]*`},
+		{`Ident`, `[a-zA-Z_][a-zA-Z0-9_\[\]]*`},
 		{`Number`, `[-+]?\d*\.?\d+([eE][-+]?\d+)?`},
 		{`String`, `'[^']*'|"[^"]*"`},
 		{`Operators`, `<>|!=|<=|>=|[-+*/%,.()=<>]`},
