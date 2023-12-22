@@ -88,10 +88,43 @@ WHERE pk_flow={{.PkFlow}};
 UPDATE ta_flow SET flow=jsonb_set(flow, '{initial}', '"{{.Sentence}}"',true)
 WHERE pk_flow={{.PkFlow}};
 `
+	// Delete sentences for tasks
+
 	DeleteTaskInFlow = `
-UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }'
-WHERE pk_flow={{.PkFlow}}
+WITH CTE AS (
+    SELECT (flow->'tasks'->'{{.Name}}'->'transition'->'links'->0->'task')::text as task
+FROM ta_flow WHERE pk_flow={{.PkFlow}}
+)
+UPDATE ta_flow SET flow=jsonb_set(flow, '{tasks, {{.Source}},transition,links,0,task }'::text[], CTE.task::jsonb,true)
+FROM CTE WHERE pk_flow={{.PkFlow}};
+WITH CTE AS (
+    SELECT (flow->'tasks'->'{{.Name}}'->'transition'->'links'->0->'queries')::text as query
+FROM ta_flow WHERE pk_flow={{.PkFlow}} 
+)
+UPDATE ta_flow SET flow=jsonb_set(flow, '{tasks, {{.Source}},transition,links,0,queries }'::text[], CTE.query::jsonb,true)
+FROM CTE WHERE pk_flow={{.PkFlow}};
+UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }'WHERE pk_flow={{.PkFlow}};
 `
+
+	EndDeleteTaskInFlow = `
+UPDATE ta_flow SET flow=jsonb_set(flow, '{tasks, {{.Source}},transition,links,0,task }'::text[], '"END"'::jsonb,true)
+WHERE pk_flow={{.PkFlow}};
+UPDATE ta_flow SET flow=jsonb_set(flow, '{tasks, {{.Source}},transition,links,0,queries }'::text[], '"END"'::jsonb,true)
+WHERE pk_flow={{.PkFlow}};
+UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }'WHERE pk_flow={{.PkFlow}};
+
+`
+
+	StartDeleteTaskInFlow = `
+WITH CTE AS (
+    SELECT (flow->'tasks'->'{{.Name}}'->'transition'->'links'->0->'queries')::text as query
+FROM ta_flow WHERE pk_flow={{.PkFlow}}
+)
+UPDATE ta_flow SET flow=jsonb_set(flow, '{initial}'::text[], CTE.query::jsonb,true)
+FROM CTE WHERE pk_flow={{.PkFlow}};
+UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }' WHERE pk_flow={{.PkFlow}};
+`
+
 	EmptyWorkflow = `
 {
   "id": "3f12f5a5-57ac-4861-8771-f85de203f863",
@@ -155,7 +188,10 @@ func Processor(action string, order string, query *database.IQuery) error {
 	switch action {
 	case "add_task":
 		err = DoAddTask(order, query)
+	case "delete_task":
+		err = DoDeleteTask(order, query)
 	}
+
 	if err != nil {
 		return err
 	}
@@ -196,6 +232,35 @@ func DoAddTask(order string, query *database.IQuery) error {
 	}
 	fmt.Println("sqlInsert", sqlInsert)
 	err = (*query).Exec(sqlInsert)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DoDeleteTask(order string, query *database.IQuery) error {
+	var currentDelete string
+	task, err := UnmarshallAddTask([]byte(order))
+	if err != nil {
+		return err
+	}
+	fmt.Println("task struct flow", task.PkFlow, "name", task.Name)
+	switch types.IsNil(task.Source) {
+	case true:
+		currentDelete = StartDeleteTaskInFlow
+	default:
+		if types.IsNil(task.Target) {
+			currentDelete = EndDeleteTaskInFlow
+		} else {
+			currentDelete = DeleteTaskInFlow
+		}
+	}
+	sqlDelete, err := utils.ParseTemplate(currentDelete, &task)
+	if err != nil {
+		return err
+	}
+	fmt.Println("sqlDelete", sqlDelete)
+	err = (*query).Exec(sqlDelete)
 	if err != nil {
 		return err
 	}

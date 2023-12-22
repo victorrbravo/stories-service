@@ -385,9 +385,81 @@ func TestProcessDoAddTaskToWorkflowNoTarget(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_task
-name: Payment3
+name: Payment2
 sentence: fk_status=''Payment3''
+source: Payment1
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+
+}
+
+func TestProcessDoDeleteTaskToWorkflowNormal(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: delete_task
+name: Payment2
+source: Payment1
+target: Payment3
+pk_flow: 1
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+}
+
+func TestProcessDoDeleteTaskToWorkflowNoTarget(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: delete_task
+name: Payment3
 source: Payment2
+pk_flow: 1
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+
+}
+
+func TestProcessDoDeleteTaskToWorkflowNoSource(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: delete_task
+name: Start
+target: Payment1
+pk_flow: 1
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
