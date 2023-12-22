@@ -3,13 +3,10 @@ package workflow_test
 import (
 	"context"
 	"fmt"
-	"log"
 	"stories/database"
-	db "stories/database"
-	pgi "stories/generated/inputs"
 	"stories/generated/models"
+	"stories/pkg/workflow"
 	"stories/pkg/workflow/common"
-	input2 "stories/pkg/workflow/input"
 	"stories/pkg/workflow/queries/pg"
 	"stories/types"
 	"testing"
@@ -70,17 +67,6 @@ const jsonFile = `
 
 `
 
-func getPgQuery(config db.DatabaseConfig) (db.PostgresQuery, error) {
-	var query db.PostgresQuery
-	query.Initialize(&config)
-	err := query.Connect()
-	if err != nil {
-		log.Println("Db Connect error")
-		return query, err
-	}
-	return query, nil
-}
-
 func TestNextStatus(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -89,12 +75,12 @@ func TestNextStatus(t *testing.T) {
 		Password: "stories",
 	}
 	jw := common.JobWorkflow[models.TaTracking]{}
-	query, err := getPgQuery(config)
+	query, err := workflow.GetPgQuery(config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	dataFile, err := getJsonDatafile(&query)
+	dataFile, err := workflow.GetJsonDatafile(&query)
 	if err != nil {
 		t.Error(err)
 		return
@@ -129,12 +115,12 @@ func TestGenerateStats(t *testing.T) {
 		Password: "stories",
 	}
 	jw := common.JobWorkflow[models.TaTracking]{}
-	query, err := getPgQuery(config)
+	query, err := workflow.GetPgQuery(config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	dataFile, err := getJsonDatafile(&query)
+	dataFile, err := workflow.GetJsonDatafile(&query)
 	if err != nil {
 		t.Error(err)
 		return
@@ -185,14 +171,14 @@ func TestGenerateToken(t *testing.T) {
 		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
 		Password: "stories",
 	}
-	query, err := getPgQuery(config)
+	query, err := workflow.GetPgQuery(config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	jw := common.JobWorkflow[models.TaTracking]{}
-	dataFile, err := getJsonDatafile(&query)
+	dataFile, err := workflow.GetJsonDatafile(&query)
 	if err != nil {
 		t.Error(err)
 		return
@@ -225,26 +211,6 @@ func TestGenerateToken(t *testing.T) {
 	fmt.Println("total", jw.Workflow.Data.Total)
 }
 
-func getJsonDatafile(query *db.PostgresQuery) ([]byte, error) {
-	var err error
-	var value []byte
-	input := `
-action: get_flow_by_PkFlow
-pk_flow: 1
-`
-	order := []byte(input)
-	q := query.NewQuery()
-	err = input2.ProcessInput(order, &q)
-	if err != nil {
-		return value, err
-	}
-	if len(pgi.ValuesTaFlow) == 0 {
-		return value, err
-	}
-	dataFile := pgi.ValuesTaFlow[0].Flow
-	return dataFile, nil
-}
-
 func TestWhereExpressions(t *testing.T) {
 	pg.CheckWhereExpression("status='Progress'")
 }
@@ -256,13 +222,13 @@ func TestWhereClauses(t *testing.T) {
 		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
 		Password: "stories",
 	}
-	query, err := getPgQuery(config)
+	query, err := workflow.GetPgQuery(config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	jw := common.JobWorkflow[models.TaTracking]{}
-	dataFile, err := getJsonDatafile(&query)
+	dataFile, err := workflow.GetJsonDatafile(&query)
 	if err != nil {
 		t.Error(err)
 		return
