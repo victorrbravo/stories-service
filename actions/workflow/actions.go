@@ -101,9 +101,24 @@ WHERE pk_flow={{.PkFlow}}
   "tracking_keys": "fk_story,fk_status",
   "field_token": "pk_story",
   "table_name": "ta_story",
-  "initial": "fk_status='start'",
-  "tasks": []
+  "initial": "TRUE",
+"tasks": [
+	{
+		"report": false,
+		"info_field": "roles[1]", 
+		"time_field": "updated_at", 
+	"transition": {
+"links": [
+	{
+	"task": "END", 
+	"queries": "END", 
+	"pattern": "none"
+	}
+  ]
+}	}
+]
 }
+
 `
 	tmplTask = `
 {

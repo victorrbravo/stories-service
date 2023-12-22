@@ -294,7 +294,7 @@ func TestProcessChangeStatus(t *testing.T) {
 	input := `
 action: change_status
 ticket: 6
-status: Progress
+status: Done
 `
 	order := []byte(input)
 	datafile, err := getJsonDatafile(&pgQuery)
