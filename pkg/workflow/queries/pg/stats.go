@@ -16,14 +16,18 @@ import (
 )
 
 const (
-	NA               = "n/a"
 	WHITE            = "#FFFFFF"
+	NA               = "n/a"
 	SELECT_BASIC     = "SELECT count(*) FROM %s JOIN %s ON %s=%s WHERE %s"
 	SelectCountStats = `
-SELECT count(*) FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
+SELECT count(*) FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.PkField}}                
 {{if ne .Filter ""}} WHERE {{.Filter}} {{end}}
 `
 
+	SelectCountToken = `
+SELECT count(*) FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
+{{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}' AND {{.PkStatus}} = '{{.Status}}'{{end}}
+`
 	SelectRowsStats = `
 SELECT {{.Fields}} FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
 {{if ne .Filter ""}} WHERE {{.Filter}} {{end}}
@@ -282,8 +286,10 @@ func buildSQL[T db.Scanner](wf *common.Workflow[T], name string, sqlString strin
 		Statuses:      statuses,
 		Status:        name,
 		Filter:        queryValue,
-		Token:         wf.FieldToken,
+		Token:         wf.CurrentIDInt.String(),
 		Fields:        wf.Variable.Fields,
+		PkField:       wf.FieldToken,
+		PkStatus:      wf.FieldStatus,
 	}
 	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {

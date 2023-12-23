@@ -137,34 +137,25 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 
 func CountToken[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var count scanners.Int
-	var outputBuffer bytes.Buffer
 	newQuery := wf.Query.NewQuery()
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
-
-			tmpl, err := template.New("roleSQL").Parse(SELECT_WHERE_TOKEN)
-			data := queries.DataTemplate{
-				TableName: wf.TableName,
-				Status:    name,
-				Token:     wf.CurrentIDInt.String(),
-				PkStatus:  wf.FieldStatus,
-				PkField:   wf.FieldToken,
-			}
-			err = tmpl.Execute(&outputBuffer, data)
+			newSQL, err := buildSQL(wf, name, SelectCountToken)
 			if err != nil {
-				log.Println("Error execute")
+				log.Println("Error Count err", err)
 				continue
 			}
-			newSQL := outputBuffer.String()
 			countValue, err := newQuery.QueryOne(newSQL, &count)
-			if err != nil && !errors.Is(err, sql.ErrNoRows) {
-				log.Println("Error query token err", err)
+			if err != nil {
+				log.Println("Error Count SQL err", err)
 				continue
 			}
 			countInt := countValue.(types.Int)
 			current.Data.Count = countInt
-			wf.Data.Stats.Assign(countInt)
-			outputBuffer.Reset()
+			if types.IsNil(current.Report) || current.Report.ToBool() == true {
+				wf.Data.Total = types.NewInt(types.AsInt(wf.Data.Total) + types.AsInt(count.Value))
+			}
+			wf.Data.Stats.Assign(count.Value)
 		}
 		return wf, nil
 	}
