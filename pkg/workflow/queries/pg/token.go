@@ -32,7 +32,11 @@ FROM {{.TrackingTable}} tt  WHERE {{.Key1Link}}='{{.Token}}' ORDER BY {{.Key1Lin
 SELECT 
 CASE WHEN diff IS NULL THEN '0s' ELSE diff END AS maxtime
 FROM cte WHERE {{.Key2Link}}='{{.Status}}' AND  {{.Key1Link}}='{{.Token}}'  ;
+`
 
+	SelectRoleToken = `
+SELECT {{.InfoField}} FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
+{{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}{{end}}'
 `
 
 	SELECT_ROLEFIELD_TOKEN = `
@@ -97,44 +101,25 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 
 func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var role scanners.String
-	var outputBuffer bytes.Buffer
 	newQuery := wf.Query.NewQuery()
-	ctx := context.Background()
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
-			tmpl, err := template.New("timeSQL").Parse(SELECT_ROLEFIELD_TOKEN)
-			linkStory, linkStatus := getLinkFields(ctx, wf)
-			data := queries.DataTemplate{
-				Key1Link:      linkStory,
-				Key2Link:      linkStatus,
-				InfoField:     current.InfoField,
-				TrackingTable: wf.TrackingTableName.String(),
-				Status:        name,
-				Token:         wf.CurrentIDInt.String(),
-			}
-			err = tmpl.Execute(&outputBuffer, data)
+			newSQL, err := buildSQL(wf, name, SelectRoleToken)
 			if err != nil {
-				log.Println("Error template execute err", err)
+				log.Println("Error Role err", err)
 				continue
 			}
-			newSQL := outputBuffer.String()
 			roleValue, err := newQuery.QueryOne(newSQL, &role)
-			if err != nil && !errors.Is(err, sql.ErrNoRows) {
-				log.Println("Error Query one err", err)
+			if err != nil {
+				log.Println("Error Count SQL err", err)
 				continue
 			}
-			roleString, ok := roleValue.(types.String)
-			value := types.NewString(NA)
-			if ok == true {
-				value = roleString
-			}
-			current.Data.InfoField = value
-			outputBuffer.Reset()
+			roleString := roleValue.(types.String)
+			current.Data.InfoField = roleString
 		}
 		return wf, nil
 	}
 }
-
 func CountToken[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var count scanners.Int
 	newQuery := wf.Query.NewQuery()

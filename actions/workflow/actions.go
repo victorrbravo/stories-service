@@ -1,8 +1,10 @@
 package workflow
 
 import (
+	"errors"
 	"fmt"
 	"gopkg.in/yaml.v3"
+	"stories/actions/payment"
 	"stories/database"
 	"stories/pkg/utils"
 	"stories/types"
@@ -209,6 +211,33 @@ func UnmarshallAddTask(order []byte) (AddTask, error) {
 	return addTask, nil
 }
 
+func doCheckTask(task *AddTask, query *database.IQuery) error {
+	var workflowType payment.WorkflowType
+	workflowType.Query = query
+	wf, err := workflowType.LoadWorkflow()
+	if err != nil {
+		return err
+	}
+	if task.Source.IsEmpty() && task.Target.IsEmpty() {
+		return errors.New("source and target values are empty. At least one of them must have a value")
+	}
+	if task.Source.IsEmpty() {
+		prev, err := wf.PreviousStatus(task.Target.String())
+		if err != nil {
+			return err
+		}
+		task.Source = types.NewString(prev)
+	}
+	if task.Target.IsEmpty() {
+		next, err := wf.NextStatus(task.Source.String())
+		if err != nil {
+			return err
+		}
+		task.Target = types.NewString(next)
+	}
+	return nil
+}
+
 func DoAddTask(order string, query *database.IQuery) error {
 	var currentInsert string
 	task, err := UnmarshallAddTask([]byte(order))
@@ -216,11 +245,15 @@ func DoAddTask(order string, query *database.IQuery) error {
 		return err
 	}
 	fmt.Println("task struct flow", task.PkFlow, "name", task.Name)
-	switch types.IsNil(task.Source) {
+	err = doCheckTask(&task, query)
+	if err != nil {
+		return err
+	}
+	switch task.Source.IsEmpty() {
 	case true:
 		currentInsert = StartInsertTaskInFlow
 	default:
-		if types.IsNil(task.Target) {
+		if task.Target.IsEmpty() {
 			currentInsert = EndInsertTaskInFlow
 		} else {
 			currentInsert = InsertTaskInFlow

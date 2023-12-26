@@ -78,6 +78,10 @@ func (str String) MarshalJSON() ([]byte, error) {
 	return json.Marshal(str.value)
 }
 
+func (str String) IsEmpty() bool {
+	return !str.notNil || len(str.value) == 0
+}
+
 func (str String) isNil() bool {
 	return !str.notNil
 }

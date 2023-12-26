@@ -335,10 +335,9 @@ func TestProcessDoAddTaskToWorkflowNormal(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_task
-name: Assigned
-sentence: fk_status=''Assigned''
-target: Progress
-source: ToDo
+name: Payment3
+sentence: fk_status=''Payment3''
+source: Payment2
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
@@ -360,10 +359,9 @@ func TestProcessDoAddTaskToWorkflowNoSource(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_task
-name: Assigned
-sentence: fk_status=''Assigned''
-report: false
-target: ToDo
+name: PaymentStart
+sentence: fk_status=''PaymentStart''
+target: Payment1
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
@@ -385,9 +383,9 @@ func TestProcessDoAddTaskToWorkflowNoTarget(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_task
-name: Payment4
-sentence: fk_status=''Payment4''
-source: Payment3
+name: Payment2
+sentence: fk_status=''Payment2''
+source: Payment1
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)

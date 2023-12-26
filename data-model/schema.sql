@@ -87,7 +87,41 @@ insert into ta_story (name, status) values ('story1', 'Progress');
 insert into ta_story (name, status) values ('story1', 'ToDo');
 insert into ta_story (name, status) values ('story1', 'Done');
 
-insert into ta_flow (pk_flow,name, flow) values (1,'flow1','
+    insert into ta_flow (pk_flow,name, flow) values (1,'flow1','
+    {
+      "id": "3f12f5a5-57ac-4861-8771-f85de203f862",
+      "name": "Payments",
+      "variable": {
+        "name": "basic",
+        "queries": "pk_story,name,status"
+      },
+      "tracking_table_name": "ta_tracking",
+      "tracking_keys": "fk_story,fk_status",
+      "field_token": "pk_story",
+      "field_status": "status",
+      "table_name": "ta_story",
+      "initial": "fk_status=''Payment1''",
+      "tasks": {
+        "Payment1": {
+          "info_field": "roles[1]",
+          "time_field": "updated_at",
+          "transition": {
+            "pattern": "none",
+            "links": [
+              {
+                "task": "END",
+                "queries": "END"
+              }
+            ]
+          }
+        }
+      }
+    }
+    ');
+
+
+
+insert into ta_flow (pk_flow,name, flow) values (2,'flow1','
 {
   "id": "3f12f5a5-57ac-4861-8771-f85de203f863",
   "name": "Workflow1",

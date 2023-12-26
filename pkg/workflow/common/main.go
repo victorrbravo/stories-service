@@ -192,6 +192,7 @@ func (wf *Workflow[T]) NextStatus(current string) (string, error) {
 		if err != nil {
 			return value, err
 		}
+		lenStatuses = len(wf.statuses)
 	}
 	index := slices.Index(wf.statuses, current)
 	if index == -1 {
@@ -201,6 +202,27 @@ func (wf *Workflow[T]) NextStatus(current string) (string, error) {
 		return value, nil
 	}
 	value = wf.statuses[index+1]
+	return value, nil
+}
+
+func (wf *Workflow[T]) PreviousStatus(current string) (string, error) {
+	var value string
+	lenStatuses := len(wf.statuses)
+	if lenStatuses == 0 {
+		ctx := context.Background()
+		_, err := wf.calculateStatuses(ctx, false)
+		if err != nil {
+			return value, err
+		}
+	}
+	index := slices.Index(wf.statuses, current)
+	if index == -1 {
+		return value, fmt.Errorf("NextStatus can't find current %s", current)
+	}
+	if index == 0 {
+		return value, nil
+	}
+	value = wf.statuses[index-1]
 	return value, nil
 }
 

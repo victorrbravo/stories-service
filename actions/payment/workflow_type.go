@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"log"
 	"slices"
 	"stories/constants"
 	"stories/database"
@@ -17,6 +18,14 @@ type WorkflowType struct {
 	notNil bool
 	value  string
 	wf     *common.Workflow[models.TaTracking]
+	Query  *database.IQuery
+}
+
+func (wft WorkflowType) Workflow() *common.Workflow[models.TaTracking] {
+	if wft.wf == nil {
+		log.Print("worflow is nil for WorkflowType")
+	}
+	return wft.wf
 }
 
 // Value implements the sql.Valuer interface
@@ -61,26 +70,18 @@ func (str *WorkflowType) UnmarshalJSON(src []byte) error {
 	return nil
 }
 
-func (wft *WorkflowType) loadWorkflow() error {
+func (wft *WorkflowType) LoadWorkflow() (*common.Workflow[models.TaTracking], error) {
 	ctx := context.Background()
-	config := database.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
-		Password: "stories",
-	}
-	query, err := GetPgQuery(config)
+	dataFile, err := GetJsonDatafile(wft.Query)
 	if err != nil {
-		return err
-	}
-	dataFile, err := GetJsonDatafile(&query)
-	if err != nil {
-		return err
+		return nil, err
 	}
 	wft.wf = new(common.Workflow[models.TaTracking])
 	err = wft.wf.Load(ctx, dataFile)
 	if err != nil {
-		return err
+		return wft.wf, err
 	}
-	return nil
+	return wft.wf, nil
 }
 
 func (wft *WorkflowType) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -92,7 +93,7 @@ func (wft *WorkflowType) UnmarshalYAML(unmarshal func(interface{}) error) error 
 		return err
 	}
 	if wft.wf == nil {
-		err = wft.loadWorkflow()
+		wft.wf, err = wft.LoadWorkflow()
 		if err != nil {
 			return err
 		}

@@ -17,13 +17,11 @@ func GetPgQuery(config db.DatabaseConfig) (db.PostgresQuery, error) {
 	return query, nil
 }
 
-func GetJsonDatafile(query *db.PostgresQuery) ([]byte, error) {
+func GetJsonDatafile(query *db.IQuery) ([]byte, error) {
 	var err error
 	var value scanners.String
 	var dataFile []byte
-	q := query.NewQuery()
-
-	_, err = q.QueryOne("SELECT flow FROM ta_flow WHERE pk_flow=1", &value)
+	_, err = (*query).QueryOne("SELECT flow FROM ta_flow WHERE pk_flow=1", &value)
 	if err != nil {
 		return dataFile, err
 	}
