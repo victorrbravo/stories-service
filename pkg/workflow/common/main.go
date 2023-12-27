@@ -214,6 +214,7 @@ func (wf *Workflow[T]) PreviousStatus(current string) (string, error) {
 		if err != nil {
 			return value, err
 		}
+		lenStatuses = len(wf.statuses)
 	}
 	index := slices.Index(wf.statuses, current)
 	if index == -1 {
