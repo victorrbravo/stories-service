@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"slices"
+	"stories/constants"
 	db "stories/database"
 	"stories/types"
 	"strings"
@@ -183,8 +184,29 @@ func (wf *Workflow[T]) AddLink(ctx context.Context, taskName string, linkTask *T
 	return nil
 }
 
+func (wf *Workflow[T]) Contains(current string) error {
+	var err error
+	var statuses []string
+	if len(current) == 0 || strings.Compare(current, constants.GolangNil) == 0 {
+		return nil
+	}
+	ctx := context.Background()
+	statuses, err = wf.Statuses(ctx, false)
+	if err != nil {
+		return err
+	}
+	index := slices.Index(statuses, current)
+	if index == -1 {
+		return fmt.Errorf("error: value '%s' is not found in list '%v'", current, statuses)
+	}
+	return nil
+}
+
 func (wf *Workflow[T]) NextStatus(current string) (string, error) {
 	var value string
+	if len(current) == 0 || strings.Compare(current, constants.GolangNil) == 0 {
+		return value, nil
+	}
 	lenStatuses := len(wf.statuses)
 	if lenStatuses == 0 {
 		ctx := context.Background()
@@ -207,6 +229,9 @@ func (wf *Workflow[T]) NextStatus(current string) (string, error) {
 
 func (wf *Workflow[T]) PreviousStatus(current string) (string, error) {
 	var value string
+	if len(current) == 0 || strings.Compare(current, constants.GolangNil) == 0 {
+		return value, nil
+	}
 	lenStatuses := len(wf.statuses)
 	if lenStatuses == 0 {
 		ctx := context.Background()

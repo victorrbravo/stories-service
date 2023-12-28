@@ -1,11 +1,8 @@
 package workflow
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"gopkg.in/yaml.v3"
-	"slices"
 	"stories/actions/stories"
 	"stories/database"
 	"stories/pkg/utils"
@@ -213,7 +210,7 @@ func UnmarshallAddTask(order []byte) (AddTask, error) {
 	return addTask, nil
 }
 
-func doCheckTask(task *AddTask, query *database.IQuery) error {
+func doCheckAddTask(task *AddTask, query *database.IQuery) error {
 	var workflowType stories.WorkflowType
 	workflowType.Query = query
 	wf, err := workflowType.LoadWorkflow()
@@ -221,7 +218,13 @@ func doCheckTask(task *AddTask, query *database.IQuery) error {
 		return err
 	}
 	if task.Source.IsEmpty() && task.Target.IsEmpty() {
-		return errors.New("source and target values are empty. At least one of them must have a value")
+		return fmt.Errorf("target and source values can't be both empty")
+	}
+	if err = wf.Contains(task.Source.String()); err != nil {
+		return err
+	}
+	if err = wf.Contains(task.Target.String()); err != nil {
+		return err
 	}
 	if task.Source.IsEmpty() {
 		prev, err := wf.PreviousStatus(task.Target.String())
@@ -240,36 +243,27 @@ func doCheckTask(task *AddTask, query *database.IQuery) error {
 	return nil
 }
 
-func doCheckCurrentTask(task *AddTask, query *database.IQuery) error {
+func doCheckDelTask(task *AddTask, query *database.IQuery) error {
 	var workflowType stories.WorkflowType
-	var statuses []string
-	ctx := context.Background()
 	workflowType.Query = query
 	wf, err := workflowType.LoadWorkflow()
 	if err != nil {
 		return err
 	}
 	current := task.Name.String()
-	statuses, err = wf.Statuses(ctx, false)
-	if err != nil {
+	if err = wf.Contains(current); err != nil {
 		return err
-	}
-	index := slices.Index(statuses, current)
-	if index == -1 {
-		return fmt.Errorf("error: value '%s' is not found in list '%v'", current, statuses)
 	}
 	prev, err := wf.PreviousStatus(current)
 	if err != nil {
 		return err
 	}
 	task.Source = types.NewString(prev)
-
 	next, err := wf.NextStatus(current)
 	if err != nil {
 		return err
 	}
 	task.Target = types.NewString(next)
-
 	return nil
 }
 
@@ -280,7 +274,7 @@ func DoAddTask(order string, query *database.IQuery) error {
 		return err
 	}
 	fmt.Println("task struct flow", task.PkFlow, "name", task.Name)
-	err = doCheckTask(&task, query)
+	err = doCheckAddTask(&task, query)
 	if err != nil {
 		return err
 	}
@@ -312,7 +306,7 @@ func DoDeleteTask(order string, query *database.IQuery) error {
 	if err != nil {
 		return err
 	}
-	err = doCheckCurrentTask(&task, query)
+	err = doCheckDelTask(&task, query)
 	if err != nil {
 		return err
 	}

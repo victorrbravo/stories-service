@@ -317,12 +317,15 @@ func TestProcessDoAddTaskToWorkflowNormal(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_task
-name: Payment3
-sentence: fk_status=''Payment3''
-source: Payment2
+name: Step2
+sentence: fk_status=''Step2''
+source: Step1
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
+	if err != nil {
+		t.Errorf("error reported %v", err)
+	}
 
 }
 

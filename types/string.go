@@ -103,6 +103,6 @@ func (str String) String() string {
 	if str.notNil {
 		return str.value
 	} else {
-		return "nil"
+		return constants.GolangNil
 	}
 }
