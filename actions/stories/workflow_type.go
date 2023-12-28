@@ -1,4 +1,4 @@
-package payment
+package stories
 
 import (
 	"context"

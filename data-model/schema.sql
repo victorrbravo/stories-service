@@ -90,7 +90,7 @@ insert into ta_story (name, status) values ('story1', 'Done');
     insert into ta_flow (pk_flow,name, flow) values (1,'flow1','
     {
       "id": "3f12f5a5-57ac-4861-8771-f85de203f862",
-      "name": "Payments",
+      "name": "Stories",
       "variable": {
         "name": "basic",
         "queries": "pk_story,name,status"
@@ -100,9 +100,9 @@ insert into ta_story (name, status) values ('story1', 'Done');
       "field_token": "pk_story",
       "field_status": "status",
       "table_name": "ta_story",
-      "initial": "fk_status=''Payment1''",
+      "initial": "fk_status=''Step1''",
       "tasks": {
-        "Payment1": {
+        "Step1": {
           "info_field": "roles[1]",
           "time_field": "updated_at",
           "transition": {

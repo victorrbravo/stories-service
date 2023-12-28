@@ -1,14 +1,10 @@
 package input
 
 import (
-	"context"
 	"fmt"
 	"stories/database"
 	db "stories/database"
 	pg "stories/generated/inputs"
-	"stories/generated/models"
-	"stories/pkg/workflow/common"
-
 	"testing"
 )
 
@@ -267,9 +263,9 @@ func TestProcessInputNewPayment(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: new_payment_flow
+action: new_story_flow
 name: victor_bravo
-summary: payments of Victor Bravo
+summary: an afternoon in Merida
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
@@ -278,7 +274,7 @@ summary: payments of Victor Bravo
 	}
 }
 
-func TestProcessAddPayment(t *testing.T) {
+func TestProcessAddStep(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{
 		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
@@ -292,28 +288,14 @@ func TestProcessAddPayment(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: add_payment
-ticket: 9
-status: Payment4
-amount: 25500
-type: food
+action: add_step
+ticket: 10
+status: Step2
+image: home2
+amount: 20000
+type: new_thing
 `
 	order := []byte(input)
-	datafile, err := getJsonDatafile(&pgQuery)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	ctx := context.Background()
-	wf := common.Workflow[models.TaTracking]{}
-	err = wf.Load(ctx, datafile)
-	statuses, _ := wf.Statuses(ctx, false)
-	fmt.Println("Statuses", statuses)
-	if err != nil {
-		t.Error(err)
-		return
-	}
 	err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
@@ -359,9 +341,9 @@ func TestProcessDoAddTaskToWorkflowNoSource(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_task
-name: PaymentStart
-sentence: fk_status=''PaymentStart''
-target: Payment1
+name: Step2
+sentence: fk_status=''Step2''
+source: Step1
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
@@ -407,9 +389,7 @@ func TestProcessDoDeleteTaskToWorkflowNormal(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: delete_task
-name: Payment2
-source: Payment1
-target: Payment3
+name: Step2
 pk_flow: 1
 `
 	order := []byte(input)
@@ -431,8 +411,7 @@ func TestProcessDoDeleteTaskToWorkflowNoTarget(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: delete_task
-name: Payment3
-source: Payment2
+name: Step2
 pk_flow: 1
 `
 	order := []byte(input)

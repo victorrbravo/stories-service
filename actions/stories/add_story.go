@@ -1,4 +1,4 @@
-package payment
+package stories
 
 import (
 	"gopkg.in/yaml.v3"
@@ -13,11 +13,12 @@ type Ticket struct {
 	Summary types.String `yaml:"summary"`
 }
 
-type AddPaymentStatus struct {
-	Ticket      types.Int    `yaml:"ticket"`
-	Status      WorkflowType `yaml:"status"`
-	Amount      types.String `yaml:"amount"`
-	PaymentType types.String `yaml:"type"`
+type AddStoryStatus struct {
+	Ticket   types.Int    `yaml:"ticket"`
+	Status   WorkflowType `yaml:"status"`
+	Amount   types.String `yaml:"amount"`
+	Image1   types.String `yaml:"image"`
+	StepType types.String `yaml:"type"`
 }
 
 type DeleteTicket struct {
@@ -27,12 +28,12 @@ type DeleteTicket struct {
 func Processor(action string, order string, query *database.IQuery) error {
 	var err error
 	switch action {
-	case "new_payment_flow":
-		err = NewPaymentFlow(order, query)
-	case "add_payment":
-		err = DoAddPayment(order, query)
+	case "new_story_flow":
+		err = NewStoryFlow(order, query)
+	case "add_step":
+		err = DoAddStep(order, query)
 	case "delete_ticket":
-		err = DoDeleteTicket(order, query)
+		err = DoDeleteStep(order, query)
 	}
 	if err != nil {
 		return err
@@ -51,9 +52,10 @@ func UnmarshallTicket(order []byte) (Ticket, error) {
 	return ticket, nil
 }
 
-func UnmarshallAddPayment(order []byte) (AddPaymentStatus, error) {
-	var change AddPaymentStatus
+func UnmarshallAddStep(order []byte, query *database.IQuery) (AddStoryStatus, error) {
+	var change AddStoryStatus
 	var err error
+	change.Status.Query = query
 	err = yaml.Unmarshal(order, &change)
 	if err != nil {
 		return change, err
@@ -61,7 +63,7 @@ func UnmarshallAddPayment(order []byte) (AddPaymentStatus, error) {
 	return change, nil
 }
 
-func NewPaymentFlow(order string, query *database.IQuery) error {
+func NewStoryFlow(order string, query *database.IQuery) error {
 	handler, err := UnmarshallTicket([]byte(order))
 	if err != nil {
 		return err
@@ -87,8 +89,8 @@ func NewPaymentFlow(order string, query *database.IQuery) error {
 	return nil
 }
 
-func DoAddPayment(order string, query *database.IQuery) error {
-	handler, err := UnmarshallAddPayment([]byte(order))
+func DoAddStep(order string, query *database.IQuery) error {
+	handler, err := UnmarshallAddStep([]byte(order), query)
 	if err != nil {
 		return err
 	}
@@ -100,7 +102,7 @@ func DoAddPayment(order string, query *database.IQuery) error {
 	}
 
 	images := types.NewStringArray([]string{})
-	roles := types.NewStringArray([]string{handler.Amount.String(), handler.PaymentType.String()})
+	roles := types.NewStringArray([]string{handler.Amount.String(), handler.StepType.String()})
 	status := types.NewString(handler.Status.String())
 	taStory.Update(*query,
 		types.NilString(),
@@ -117,8 +119,8 @@ func DoAddPayment(order string, query *database.IQuery) error {
 	return nil
 }
 
-func DoDeleteTicket(order string, query *database.IQuery) error {
-	handler, err := UnmarshallAddPayment([]byte(order))
+func DoDeleteStep(order string, query *database.IQuery) error {
+	handler, err := UnmarshallAddStep([]byte(order), query)
 	if err != nil {
 		return err
 	}

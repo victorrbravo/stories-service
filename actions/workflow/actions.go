@@ -1,10 +1,12 @@
 package workflow
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"gopkg.in/yaml.v3"
-	"stories/actions/payment"
+	"slices"
+	"stories/actions/stories"
 	"stories/database"
 	"stories/pkg/utils"
 	"stories/types"
@@ -212,7 +214,7 @@ func UnmarshallAddTask(order []byte) (AddTask, error) {
 }
 
 func doCheckTask(task *AddTask, query *database.IQuery) error {
-	var workflowType payment.WorkflowType
+	var workflowType stories.WorkflowType
 	workflowType.Query = query
 	wf, err := workflowType.LoadWorkflow()
 	if err != nil {
@@ -235,6 +237,39 @@ func doCheckTask(task *AddTask, query *database.IQuery) error {
 		}
 		task.Target = types.NewString(next)
 	}
+	return nil
+}
+
+func doCheckCurrentTask(task *AddTask, query *database.IQuery) error {
+	var workflowType stories.WorkflowType
+	var statuses []string
+	ctx := context.Background()
+	workflowType.Query = query
+	wf, err := workflowType.LoadWorkflow()
+	if err != nil {
+		return err
+	}
+	current := task.Name.String()
+	statuses, err = wf.Statuses(ctx, false)
+	if err != nil {
+		return err
+	}
+	index := slices.Index(statuses, current)
+	if index == -1 {
+		return fmt.Errorf("error: value '%s' is not found in list '%v'", current, statuses)
+	}
+	prev, err := wf.PreviousStatus(current)
+	if err != nil {
+		return err
+	}
+	task.Source = types.NewString(prev)
+
+	next, err := wf.NextStatus(current)
+	if err != nil {
+		return err
+	}
+	task.Target = types.NewString(next)
+
 	return nil
 }
 
@@ -277,7 +312,10 @@ func DoDeleteTask(order string, query *database.IQuery) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("task struct flow", task.PkFlow, "name", task.Name)
+	err = doCheckCurrentTask(&task, query)
+	if err != nil {
+		return err
+	}
 	switch types.IsNil(task.Source) {
 	case true:
 		currentDelete = StartDeleteTaskInFlow
