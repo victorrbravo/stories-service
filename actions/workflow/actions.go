@@ -140,7 +140,7 @@ UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }' WHERE pk_flow={{.PkFlow}};
 "tasks": {
 	"Start" :{
 		"report": false,
-		"info_field": "roles[1]", 
+		"info_field": "images[1]", 
 		"time_field": "updated_at", 
 	"transition": {
 "links": [
@@ -219,6 +219,9 @@ func doCheckAddTask(task *AddTask, query *database.IQuery) error {
 	}
 	if task.Source.IsEmpty() && task.Target.IsEmpty() {
 		return fmt.Errorf("target and source values can't be both empty")
+	}
+	if err = wf.Contains(task.Name.String()); err == nil {
+		return fmt.Errorf("task called '%v' already exists on workflow", task.Name.String())
 	}
 	if err = wf.Contains(task.Source.String()); err != nil {
 		return err

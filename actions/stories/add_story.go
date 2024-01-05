@@ -101,7 +101,7 @@ func DoAddStep(order string, query *database.IQuery) error {
 		return err
 	}
 
-	images := types.NewStringArray([]string{})
+	images := types.NewStringArray([]string{handler.Image1.String()})
 	roles := types.NewStringArray([]string{handler.Amount.String(), handler.StepType.String()})
 	status := types.NewString(handler.Status.String())
 	taStory.Update(*query,

@@ -291,8 +291,8 @@ func TestProcessAddStep(t *testing.T) {
 action: add_step
 ticket: 10
 status: Step2
-image: home2
-amount: 20000
+image: imageBakery
+amount: 25000
 type: new_thing
 `
 	order := []byte(input)
@@ -344,12 +344,15 @@ func TestProcessDoAddTaskToWorkflowNoSource(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_task
-name: Step2
-sentence: fk_status=''Step2''
-source: Step1
+name: Step4
+sentence: fk_status=''Step4''
+source: Step3
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
+	if err != nil {
+		t.Errorf("Error reported to add task %v", err.Error())
+	}
 
 }
 
@@ -392,11 +395,14 @@ func TestProcessDoDeleteTaskToWorkflowNormal(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: delete_task
-name: Step2
+name: Step10
 pk_flow: 1
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
+	if err != nil {
+		t.Errorf("error reported '%v'", err.Error())
+	}
 }
 
 func TestProcessDoDeleteTaskToWorkflowNoTarget(t *testing.T) {
