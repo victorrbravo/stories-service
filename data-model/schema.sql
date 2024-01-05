@@ -100,9 +100,9 @@ insert into ta_story (name, status) values ('story1', 'Done');
       "field_token": "pk_story",
       "field_status": "status",
       "table_name": "ta_story",
-      "initial": "fk_status=''Step1''",
+      "initial": "fk_status=''Start''",
       "tasks": {
-        "Step1": {
+        "Start": {
           "info_field": "images[1]",
           "time_field": "updated_at",
           "transition": {

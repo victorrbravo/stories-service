@@ -181,7 +181,7 @@ func TestGenerateToken(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	jw.Workflow.CurrentIDInt = types.NewInt(10)
+	jw.Workflow.CurrentIDInt = types.NewInt(11)
 	wf := jw.Workflow
 	monad := pg.New(&wf, &query)
 

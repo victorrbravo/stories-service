@@ -25,7 +25,7 @@ SELECT count(*) FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={
 `
 
 	SelectCountToken = `
-SELECT count(*) FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
+SELECT count(*) FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.PkField}}                
 {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}' AND {{.PkStatus}} = '{{.Status}}'{{end}}
 `
 	SelectRowsStats = `

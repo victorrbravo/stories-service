@@ -48,6 +48,9 @@ func rgbToHexString(red, green, blue int) string {
 func SelectColor(intensity types.Int, min types.Int, max types.Int) string {
 	// Example intensity value for yellow
 
+	if types.AsInt(min) == types.AsInt(max) {
+		min = types.NewInt(0)
+	}
 	// Calculate the RGB values for yellow based on the intensity
 	red, green, blue := calculateYellowRGB(types.AsInt(intensity),
 		types.AsInt(min),
