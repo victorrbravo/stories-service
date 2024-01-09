@@ -45,8 +45,7 @@ SELECT {{.InfoField}}  FROM {{.TrackingTable}} tt WHERE {{.Key2Link}} = '{{.Stat
 )
 
 func getLinkFields[T db.Scanner](ctx context.Context, wf *common.Workflow[T]) (string, string) {
-	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
-	return wf.ExtractKeys(trackingKeys)
+	return wf.ExtractKeys()
 }
 
 func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {

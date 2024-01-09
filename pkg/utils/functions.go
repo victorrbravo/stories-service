@@ -24,6 +24,14 @@ func ParseTemplate[T any](tmpls string, data *T) (string, error) {
 	return value, nil
 }
 
+func Map[T, U any](ts []T, f func(T) U) []U {
+	us := make([]U, len(ts))
+	for i := range ts {
+		us[i] = f(ts[i])
+	}
+	return us
+}
+
 func SetDefaults[T any](p *T) {
 	for i := 0; i < reflect.TypeOf(*p).NumField(); i++ {
 		field := reflect.TypeOf(*p).Field(i)
