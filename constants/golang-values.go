@@ -2,5 +2,6 @@ package constants
 
 // Special json values
 const (
-	GolangNil = "nil"
+	GolangNil   = "nil"
+	EndTaskName = "END"
 )

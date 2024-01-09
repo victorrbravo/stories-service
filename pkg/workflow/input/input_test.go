@@ -302,6 +302,34 @@ type: new_thing
 	}
 }
 
+func TestProcessAddFlowStep(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: add_flow_step
+ticket: 11
+status: Step2
+image: imageBakery
+amount: 25000
+type: new_thing
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestProcessDoAddTaskToWorkflowNormal(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{

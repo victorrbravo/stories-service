@@ -264,8 +264,7 @@ func buildSQL[T db.Scanner](wf *common.Workflow[T], name string, sqlString strin
 	var outputBuffer bytes.Buffer
 	ctx := context.Background()
 	tmpl, err := template.New("timeSQL").Parse(sqlString)
-	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
-	linkStory, linkStatus := wf.ExtractKeys(trackingKeys)
+	linkStory, linkStatus := wf.ExtractKeys()
 	list, err := wf.Statuses(ctx, true)
 	if err != nil {
 		return "", err

@@ -1,11 +1,12 @@
-package workflow
+package stories
 
 import (
 	"fmt"
 	"gopkg.in/yaml.v3"
-	"stories/actions/stories"
 	"stories/database"
+	"stories/generated/models"
 	"stories/pkg/utils"
+	"stories/pkg/workflow/common"
 	"stories/types"
 )
 
@@ -174,21 +175,21 @@ UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }' WHERE pk_flow={{.PkFlow}};
 
 type AddTask struct {
 	PkFlow    int          `yaml:"flow" default:"1"`
-	Name      types.String `yaml:"name" default:"newtask"`
-	Sentence  types.String `yaml:"sentence"`
-	Target    types.String `yaml:"target"`
-	RoleField types.String `yaml:"role_field" default:"roles[1]"`
+	Name      types.String `yaml:"name" default:"Newtask"`
+	Sentence  types.String `yaml:"sentence" default:"END"`
+	Target    types.String `yaml:"target" default:"END"`
+	RoleField types.String `yaml:"role_field" default:"images[1]"`
 	TimeField types.String `yaml:"time_field" default:"updated_at"`
 	Pattern   types.String `yaml:"pattern" default:"none"`
 	Report    types.String `yaml:"report" default:"true"`
 	Source    types.String `yaml:"source"`
 }
 
-func Processor(action string, order string, query *database.IQuery) error {
+func TaskProcessor(action string, order string, query *database.IQuery) error {
 	var err error
 	switch action {
 	case "add_task":
-		err = DoAddTask(order, query)
+		_, err = DoAddTask(order, query)
 	case "delete_task":
 		err = DoDeleteTask(order, query)
 	}
@@ -210,44 +211,44 @@ func UnmarshallAddTask(order []byte) (AddTask, error) {
 	return addTask, nil
 }
 
-func doCheckAddTask(task *AddTask, query *database.IQuery) error {
-	var workflowType stories.WorkflowType
+func doCheckAddTask(task *AddTask, query *database.IQuery) (*common.Workflow[models.TaTracking], error) {
+	var workflowType WorkflowType
 	workflowType.Query = query
 	wf, err := workflowType.LoadWorkflow()
 	if err != nil {
-		return err
+		return wf, err
 	}
 	if task.Source.IsEmpty() && task.Target.IsEmpty() {
-		return fmt.Errorf("target and source values can't be both empty")
+		return wf, fmt.Errorf("target and source values can't be both empty")
 	}
 	if err = wf.Contains(task.Name.String()); err == nil {
-		return fmt.Errorf("task called '%v' already exists on workflow", task.Name.String())
+		return wf, fmt.Errorf("task called '%v' already exists on workflow", task.Name.String())
 	}
 	if err = wf.Contains(task.Source.String()); err != nil {
-		return err
+		return wf, err
 	}
 	if err = wf.Contains(task.Target.String()); err != nil {
-		return err
+		return wf, err
 	}
 	if task.Source.IsEmpty() {
 		prev, err := wf.PreviousStatus(task.Target.String())
 		if err != nil {
-			return err
+			return wf, err
 		}
 		task.Source = types.NewString(prev)
 	}
 	if task.Target.IsEmpty() {
 		next, err := wf.NextStatus(task.Source.String())
 		if err != nil {
-			return err
+			return wf, err
 		}
 		task.Target = types.NewString(next)
 	}
-	return nil
+	return wf, nil
 }
 
 func doCheckDelTask(task *AddTask, query *database.IQuery) error {
-	var workflowType stories.WorkflowType
+	var workflowType WorkflowType
 	workflowType.Query = query
 	wf, err := workflowType.LoadWorkflow()
 	if err != nil {
@@ -270,16 +271,22 @@ func doCheckDelTask(task *AddTask, query *database.IQuery) error {
 	return nil
 }
 
-func DoAddTask(order string, query *database.IQuery) error {
-	var currentInsert string
-	task, err := UnmarshallAddTask([]byte(order))
+func GetWorkflow(pkFlow int, query *database.IQuery) (*common.Workflow[models.TaTracking], error) {
+	var workflowType WorkflowType
+	workflowType.Query = query
+	wf, err := workflowType.LoadWorkflow()
 	if err != nil {
-		return err
+		return wf, err
 	}
+	return wf, nil
+}
+
+func DoAddTaskIntl(task AddTask, query *database.IQuery) (*common.Workflow[models.TaTracking], error) {
+	var currentInsert string
 	fmt.Println("task struct flow", task.PkFlow, "name", task.Name)
-	err = doCheckAddTask(&task, query)
+	wf, err := doCheckAddTask(&task, query)
 	if err != nil {
-		return err
+		return wf, err
 	}
 	switch task.Source.IsEmpty() {
 	case true:
@@ -293,14 +300,23 @@ func DoAddTask(order string, query *database.IQuery) error {
 	}
 	sqlInsert, err := utils.ParseTemplate(currentInsert, &task)
 	if err != nil {
-		return err
+		return wf, err
 	}
 	fmt.Println("sqlInsert", sqlInsert)
 	err = (*query).Exec(sqlInsert)
 	if err != nil {
-		return err
+		return wf, err
 	}
-	return nil
+	return wf, nil
+}
+
+func DoAddTask(order string, query *database.IQuery) (*common.Workflow[models.TaTracking], error) {
+	task, err := UnmarshallAddTask([]byte(order))
+	if err != nil {
+		return nil, err
+	}
+	return DoAddTaskIntl(task, query)
+
 }
 
 func DoDeleteTask(order string, query *database.IQuery) error {

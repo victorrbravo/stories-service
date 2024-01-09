@@ -8,6 +8,7 @@ import (
 	"slices"
 	"stories/constants"
 	db "stories/database"
+	"stories/pkg/utils"
 	"stories/types"
 	"strings"
 )
@@ -23,6 +24,16 @@ const (
 	OR_OPERATOR       = " OR "
 	TablePrefix       = "ta_"
 )
+
+const QueryStep = "{{.FieldName}}{{.Operator}}''{{.NameTask}}''"
+
+const EqualOperator = "="
+
+type QueryStepTemplate struct {
+	FieldName string
+	Operator  string
+	NameTask  string
+}
 
 type FillType string
 
@@ -187,7 +198,7 @@ func (wf *Workflow[T]) AddLink(ctx context.Context, taskName string, linkTask *T
 func (wf *Workflow[T]) Contains(current string) error {
 	var err error
 	var statuses []string
-	if len(current) == 0 || strings.Compare(current, constants.GolangNil) == 0 {
+	if len(current) == 0 || strings.Compare(current, constants.GolangNil) == 0 || strings.Compare(current, constants.EndTaskName) == 0 {
 		return nil
 	}
 	ctx := context.Background()
@@ -292,8 +303,41 @@ func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool) ([]st
 
 }
 
+func (wf *Workflow[T]) Sentence(name string) string {
+	_, linkStatus := wf.ExtractKeys()
+	queryStepTmpl := QueryStepTemplate{
+		NameTask:  name,
+		Operator:  EqualOperator,
+		FieldName: linkStatus,
+	}
+	sentence, err := utils.ParseTemplate(QueryStep, &queryStepTmpl)
+	if err != nil {
+		log.Print("error building sentence err:%v", err)
+		return ""
+	}
+	return sentence
+}
+
+func (wf *Workflow[T]) Last(ctx context.Context) (*Task, error) {
+	var task *Task
+	statuses, err := wf.Statuses(ctx, false)
+	if err != nil {
+		return task, err
+	}
+	nLast := len(statuses)
+	if nLast == 0 {
+		return task, fmt.Errorf("statuses length is equal to zero (0)")
+	}
+	name := statuses[nLast-1]
+	task, ok := wf.Tasks[name]
+	if ok == false {
+		return task, fmt.Errorf("task '%s' not found in statuses", name)
+	}
+	return task, nil
+}
+
 func (wf *Workflow[T]) Statuses(ctx context.Context, quotes bool) ([]string, error) {
-	if wf.statuses != nil && len(wf.statuses) == 0 {
+	if wf.statuses != nil && len(wf.statuses) > 0 {
 		return wf.statuses, nil
 	}
 	return wf.calculateStatuses(ctx, quotes)
@@ -327,9 +371,10 @@ func (wf Workflow[T]) Marshal(ctx context.Context) ([]byte, error) {
 	return value, err
 }
 
-func (wf Workflow[T]) ExtractKeys(trackingKeys []string) (string, string) {
+func (wf Workflow[T]) ExtractKeys() (string, string) {
 	linkStory := ""
 	linkStatus := ""
+	trackingKeys := strings.Split(wf.TrackingKeys.String(), ",")
 	if len(trackingKeys) > 0 {
 		linkStory = trackingKeys[0]
 	}
