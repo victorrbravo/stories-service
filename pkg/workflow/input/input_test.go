@@ -318,10 +318,10 @@ func TestProcessAddFlowStep(t *testing.T) {
 	input := `
 action: add_flow_step
 ticket: 11
-status: Step2
-image: imageBakery
-amount: 25000
-type: new_thing
+status: Step4
+image: imageCopos
+amount: 20000
+type: new_thing1
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
@@ -372,9 +372,9 @@ func TestProcessDoAddTaskToWorkflowNoSource(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_task
-name: Step4
-sentence: fk_status=''Step4''
-source: Step3
+name: Filter
+sentence: roles[1]::int>26000
+target: Start
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)

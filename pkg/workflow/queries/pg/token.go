@@ -5,15 +5,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"log"
 	db "stories/database"
 	"stories/pkg/workflow/common"
-	"stories/pkg/workflow/queries"
 	"stories/scanners"
 	"stories/types"
-	"strings"
-	"text/template"
 )
 
 const (
@@ -34,13 +30,23 @@ CASE WHEN diff IS NULL THEN '0s' ELSE diff END AS maxtime
 FROM cte WHERE {{.Key2Link}}='{{.Status}}' AND  {{.Key1Link}}='{{.Token}}'  ;
 `
 
-	SelectRoleToken = `
-SELECT {{.InfoField}} FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
-{{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}{{end}}'
+	SelectTimeFieldToken = `
+WITH cte AS (
+SELECT {{.Key2Link}} ,{{.Key1Link}} , {{.TimeField}},{{.PkField}},roles,images,
+CASE
+	WHEN EXTRACT (epoch from (LEAD({{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})) - {{.TimeField}})) < 0 then INTERVAL '0 hour'
+	ELSE LEAD({{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})) - {{.TimeField}}
+END AS diff
+FROM {{.TrackingTable}} JOIN {{.TableName}} ON {{.Key1Link}}={{.Token}} ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})  
+)
+SELECT 
+CASE WHEN diff IS NULL THEN '0s' ELSE diff END AS maxtime
+FROM cte {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}};
 `
 
-	SELECT_ROLEFIELD_TOKEN = `
-SELECT {{.InfoField}}  FROM {{.TrackingTable}} tt WHERE {{.Key2Link}} = '{{.Status}}' AND {{.Key1Link}} = {{.Token}};
+	SelectRoleToken = `
+SELECT {{.InfoField}} FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
+{{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}}
 `
 )
 
@@ -51,35 +57,15 @@ func getLinkFields[T db.Scanner](ctx context.Context, wf *common.Workflow[T]) (s
 func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var duration scanners.String
 	var outputBuffer bytes.Buffer
-	ctx := context.Background()
 	newQuery := wf.Query.NewQuery()
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
-			tmpl, err := template.New("timeSQL").Parse(SELECT_TIMEFIELD_TOKEN)
-			linkStory, linkStatus := getLinkFields(ctx, wf)
-			list, err := wf.Statuses(ctx, true)
+			newSQL, err := buildSQL(wf, name, SelectTimeFieldToken)
 			if err != nil {
-				log.Println("Error statuses err", err)
+				log.Println("Error Role err", err)
 				continue
 			}
-			statuses := strings.Join(list, ",")
-			fmt.Println("...statuses", statuses)
-			data := queries.DataTemplate{
-				Key1Link:      linkStory,
-				Key2Link:      linkStatus,
-				TimeField:     current.TimeField,
-				TrackingTable: wf.TrackingTableName.String(),
-				Status:        name,
-				Statuses:      statuses,
-				Token:         wf.CurrentIDInt.String(),
-			}
-			err = tmpl.Execute(&outputBuffer, data)
-			if err != nil {
-				log.Println("error template execution err", err)
-			}
-			newSQL := outputBuffer.String()
 			durationValue, err := newQuery.QueryOne(newSQL, &duration)
-
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				log.Println("error query err", err)
 				continue
