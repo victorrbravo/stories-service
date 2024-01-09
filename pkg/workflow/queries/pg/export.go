@@ -37,9 +37,9 @@ func GenerateGraphDefinition[T db.Scanner](wf *common.Workflow[T]) (string, erro
 		titleTime := current.Data.TimeField.String()
 		titleRole := current.Data.InfoField.String()
 		titleCount := current.Data.Count.String()
-		isEmpty := strings.Compare(titleTime, NA) == 0 &&
+		isEmpty := (strings.Compare(titleTime, NA) == 0 &&
 			strings.Compare(titleRole, NA) == 0 &&
-			strings.Compare(titleCount, "0") == 0
+			strings.Compare(titleCount, "0") == 0) || current.Report.ToBool() == false
 		str = str + name
 		str = str + common.ARROW_TASK
 		selectColor := WHITE
