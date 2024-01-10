@@ -30,7 +30,7 @@ email: solazver3@gmail.com
 action: add_user
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -55,7 +55,7 @@ action: delete_user
 pk_user: 39
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -81,7 +81,7 @@ pk_user: 42
 firstname: Hecmair
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -105,7 +105,7 @@ func TestProcessInputGetAll(t *testing.T) {
 action: all_user
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -132,7 +132,7 @@ func TestProcessInputGetAllFLow(t *testing.T) {
 action: all_flow
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -160,7 +160,7 @@ action: get_flow_by_PkFlow
 pk_flow: 1
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -193,7 +193,7 @@ summary: Check if the key field values were created autommatically
 status: ToDo
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -219,7 +219,7 @@ fk_status: Progress
 images: [image3]
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -243,7 +243,7 @@ action: delete_tracking
 pk_tracking: 14
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -268,7 +268,7 @@ name: victor_bravo
 summary: an afternoon in Merida
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -296,7 +296,7 @@ amount: 25000
 type: new_thing
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -324,7 +324,7 @@ amount: 28000
 type: tourist
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -348,7 +348,33 @@ action: show_flow
 ticket: 11
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	response, err := ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("reponse", response)
+}
+
+func TestProcessShowDataFlow(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: show_data_flow
+ticket: 11
+`
+	order := []byte(input)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -374,7 +400,7 @@ sentence: fk_status=''Step2''
 source: Step1
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Errorf("error reported %v", err)
 	}
@@ -401,7 +427,7 @@ sentence: roles[1]::int>26000
 target: Start
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Errorf("Error reported to add task %v", err.Error())
 	}
@@ -428,7 +454,7 @@ sentence: fk_status=''Payment2''
 source: Payment1
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 
 }
 
@@ -451,7 +477,7 @@ name: Step10
 pk_flow: 1
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Errorf("error reported '%v'", err.Error())
 	}
@@ -476,7 +502,7 @@ name: Step2
 pk_flow: 1
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 
 }
 
@@ -500,7 +526,7 @@ target: Payment1
 pk_flow: 1
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 
 }
 
@@ -522,7 +548,7 @@ action: delete_ticket
 ticket: 14
 `
 	order := []byte(input)
-	err = ProcessInput(order, &query)
+	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -537,7 +563,7 @@ pk_flow: 1
 `
 	order := []byte(input)
 	q := query.NewQuery()
-	err = ProcessInput(order, &q)
+	_, err = ProcessInput(order, &q)
 	if err != nil {
 		return value, err
 	}

@@ -46,6 +46,7 @@ const (
 	VerifyMailTemplate                                 = "VerifyEmail"
 	OrganizationAddedAUtomatically                     = "Organization added automatically"
 	EmptyJsonArray                                     = "[]"
+	EmptyJson                                          = "{}"
 	HighlightName                                      = "highlights"
 	OperationName                                      = "operation"
 	IndustryPrefix                                     = "industry-"

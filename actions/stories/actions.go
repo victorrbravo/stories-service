@@ -175,7 +175,7 @@ UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }' WHERE pk_flow={{.PkFlow}};
 `
 )
 
-type GetFlow struct {
+type ShowFlowInput struct {
 	PkFlow         int       `yaml:"flow" default:"1"`
 	Ticket         types.Int `yaml:"ticket"`
 	ShowEmptyTasks bool      `yaml:"show_empty_tasks" default:"false"`
@@ -193,24 +193,25 @@ type AddTask struct {
 	Source    types.String `yaml:"source"`
 }
 
-func WorkflowProcessor(action string, order string, query *database.IQuery) error {
+func WorkflowProcessor(action string, order string, query *database.IQuery) (string, error) {
 	var err error
+	var value string
 	switch action {
 	case "add_task":
 		_, err = DoAddTask(order, query)
 	case "delete_task":
 		err = DoDeleteTask(order, query)
 	case "show_flow":
-		err = DoGetWorkflow(order, query)
+		value, err = DoGetWorkflow(order, query)
 	}
 	if err != nil {
-		return err
+		return value, err
 	}
-	return nil
+	return value, nil
 }
 
-func UnmarshallGetFlow(order []byte) (GetFlow, error) {
-	var getFlow GetFlow
+func UnmarshallGetFlow(order []byte) (ShowFlowInput, error) {
+	var getFlow ShowFlowInput
 	var err error
 	err = yaml.Unmarshal(order, &getFlow)
 	if err != nil {
@@ -220,15 +221,16 @@ func UnmarshallGetFlow(order []byte) (GetFlow, error) {
 	return getFlow, nil
 }
 
-func DoGetWorkflow(order string, query *database.IQuery) error {
+func DoGetWorkflow(order string, query *database.IQuery) (string, error) {
+	var value string
 	getFlow, err := UnmarshallGetFlow([]byte(order))
 	if err != nil {
-		return err
+		return value, err
 	}
 	log.Println("getFlow", getFlow)
 	wf, err := GetWorkflow(getFlow.PkFlow, query)
 	if err != nil {
-		return err
+		return value, err
 	}
 	wf.CurrentIDInt = getFlow.Ticket
 	monad := pg.New(wf, query)
@@ -239,10 +241,11 @@ func DoGetWorkflow(order string, query *database.IQuery) error {
 	_, err = monad(nil)
 	if err != nil {
 		log.Print("monad error", err)
-		return err
+		return value, err
 	}
+	value = wf.JsonResponse
 	log.Print("wf rendered successfully")
-	return nil
+	return value, nil
 }
 
 func UnmarshallAddTask(order []byte) (AddTask, error) {

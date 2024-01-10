@@ -27,8 +27,9 @@ type DeleteTicket struct {
 	Ticket types.Int `yaml:"ticket"`
 }
 
-func FlowProcessor(action string, order string, query *database.IQuery) error {
+func FlowProcessor(action string, order string, query *database.IQuery) (string, error) {
 	var err error
+	var value string
 	ctx := context.Background()
 	switch action {
 	case "new_story_flow":
@@ -41,9 +42,9 @@ func FlowProcessor(action string, order string, query *database.IQuery) error {
 		err = DoDeleteStep(order, query)
 	}
 	if err != nil {
-		return err
+		return value, err
 	}
-	return nil
+	return value, nil
 }
 
 func UnmarshallTicket(order []byte) (Ticket, error) {

@@ -17,8 +17,9 @@ var ValuesTaTracking  []models.TaTracking
 var ValuesTaUser  []models.TaUser
 
 
-func MainProcessor(action string, order string, query *database.IQuery) error {
+func MainProcessor(action string, order string, query *database.IQuery) (string, error) {
     var err error
+    var value string
     
     if ValuesTaFlow  == nil {
         ValuesTaFlow = make([]models.TaFlow, 0)
@@ -88,9 +89,9 @@ func MainProcessor(action string, order string, query *database.IQuery) error {
     
 	}
     if err != nil  {
-        return err
+        return value, err
     }
-	return nil
+	return value, nil
 }
 
 

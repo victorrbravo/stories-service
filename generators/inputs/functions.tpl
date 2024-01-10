@@ -11,8 +11,9 @@ import (
 var Values{{.Name}}  []models.{{.Name}}
 {{end}}
 
-func MainProcessor(action string, order string, query *database.IQuery) error {
+func MainProcessor(action string, order string, query *database.IQuery) (string, error) {
     var err error
+    var value string
     {{range .Models}}
     if Values{{.Name}}  == nil {
         Values{{.Name}} = make([]models.{{.Name}}, 0)
@@ -34,9 +35,9 @@ func MainProcessor(action string, order string, query *database.IQuery) error {
     {{end}}
 	}
     if err != nil  {
-        return err
+        return value, err
     }
-	return nil
+	return value, nil
 }
 {{range .Models}}
 

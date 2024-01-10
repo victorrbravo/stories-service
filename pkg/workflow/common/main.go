@@ -108,6 +108,7 @@ type Workflow[T db.Scanner] struct {
 	WhereClause       WhereClause[T]   `json:"where_clause"`
 	ValueScanner      T                `json:"omitempty"`
 	statuses          []string         `json:"omitempty"`
+	JsonResponse      string           `json:"json_response"`
 }
 
 type Variable struct {

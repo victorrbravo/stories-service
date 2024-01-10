@@ -2,6 +2,7 @@ package pg
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -16,6 +17,10 @@ import (
 	"stories/pkg/workflow/common"
 	"strings"
 )
+
+type ShowFlowResponse struct {
+	OutputURL string `yaml:"output_url" default:"1"`
+}
 
 func GenerateGraphDefinition[T db.Scanner](wf *common.Workflow[T]) (string, error) {
 	var str string
@@ -104,11 +109,18 @@ func Render[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Mon
 			ThemeID: &d2themescatalog.NeutralDefault.ID,
 		})
 		path := settings.WorflowURL()
-		log.Print("path ", path)
 		err = os.WriteFile(path, out, 0600)
 		if err != nil {
 			return wf, err
 		}
+		response := ShowFlowResponse{
+			OutputURL: path,
+		}
+		data, err := json.Marshal(response)
+		if err != nil {
+			return wf, err
+		}
+		wf.JsonResponse = string(data)
 		return wf, nil
 	}
 }
