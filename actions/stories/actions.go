@@ -3,6 +3,7 @@ package stories
 import (
 	"fmt"
 	"gopkg.in/yaml.v3"
+	"log"
 	"stories/database"
 	"stories/generated/models"
 	"stories/pkg/utils"
@@ -173,6 +174,12 @@ UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }' WHERE pk_flow={{.PkFlow}};
 `
 )
 
+type GetFlow struct {
+	PkFlow         int  `yaml:"flow" default:"1"`
+	Ticket         int  `yaml:"ticket"`
+	ShowEmptyTasks bool `yaml:"show_empty_tasks" default:"false"`
+}
+
 type AddTask struct {
 	PkFlow    int          `yaml:"flow" default:"1"`
 	Name      types.String `yaml:"name" default:"Newtask"`
@@ -185,18 +192,44 @@ type AddTask struct {
 	Source    types.String `yaml:"source"`
 }
 
-func TaskProcessor(action string, order string, query *database.IQuery) error {
+func WorkflowProcessor(action string, order string, query *database.IQuery) error {
 	var err error
 	switch action {
 	case "add_task":
 		_, err = DoAddTask(order, query)
 	case "delete_task":
 		err = DoDeleteTask(order, query)
+	case "show_flow":
+		err = DoGetWorkflow(order, query)
 	}
-
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func UnmarshallGetFlow(order []byte) (GetFlow, error) {
+	var getFlow GetFlow
+	var err error
+	err = yaml.Unmarshal(order, &getFlow)
+	if err != nil {
+		return getFlow, err
+	}
+	utils.SetDefaults(&getFlow)
+	return getFlow, nil
+}
+
+func DoGetWorkflow(order string, query *database.IQuery) error {
+	getFlow, err := UnmarshallGetFlow([]byte(order))
+	if err != nil {
+		return err
+	}
+	log.Println("getFlow", getFlow)
+	wf, err := GetWorkflow(getFlow.PkFlow, query)
+	if err != nil {
+		return err
+	}
+	log.Println("wf", wf.Name)
 	return nil
 }
 

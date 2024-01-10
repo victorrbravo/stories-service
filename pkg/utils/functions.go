@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"reflect"
+	"regexp"
 	"stories/types"
 	"strconv"
 	"strings"
@@ -56,4 +57,28 @@ func SetDefaults[T any](p *T) {
 			}
 		}
 	}
+}
+
+func FormatYaml(input string) string {
+	// Define the regular expression pattern
+	pattern := `(\r?\n)?\w+:`
+
+	// Compile the regular expression
+	regexpPattern := regexp.MustCompile(pattern)
+
+	// Find the matching expression in the input string
+	results := regexpPattern.FindAll([]byte(input), -1)
+	fReplace := func(x []byte) string {
+		pattern := `^\r?\n`
+		regexpPattern := regexp.MustCompile(pattern)
+		value := regexpPattern.ReplaceAllString(string(x), "")
+		value = "\r\n" + value
+		return value
+	}
+	values := Map(results, fReplace)
+	for i, v := range results {
+		input = strings.ReplaceAll(input, string(v), values[i])
+	}
+
+	return input
 }

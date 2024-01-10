@@ -23,7 +23,7 @@ func ProcessInput(action []byte, query *database.IQuery) error {
 	}
 	order := string(action)
 	value, err = Processor(getAction.Action, order, query, pg.MainProcessor, stories.FlowProcessor,
-		stories.TaskProcessor)
+		stories.WorkflowProcessor)
 	if err != nil {
 		return err
 	}

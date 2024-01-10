@@ -91,23 +91,23 @@ type Exportable struct {
 }
 
 type Workflow[T db.Scanner] struct {
-	ID                types.UUID        `json:"id"`
-	Name              string            `json:"name"`
-	TableName         string            `json:"table_name"`
-	FieldToken        string            `json:"field_token"`
-	FieldStatus       string            `json:"field_status,omitempty"`
-	TrackingTableName types.String      `json:"tracking_table_name"`
-	TrackingKeys      types.String      `json:"tracking_keys"`
-	Variable          Variable          `json:"variable"`
-	Tasks             map[string]*Task  `json:"tasks"`
-	Data              Data              `json:"data,omitempty"`
-	CurrentIDInt      types.Int         `json:"current_id_int,omitempty"`
-	CurrentIDUUID     types.UUID        `json:"current_id_uuid,omitempty"`
-	Initial           types.String      `json:"initial"`
-	Query             *db.PostgresQuery `json:"omitempty"`
-	WhereClause       WhereClause[T]    `json:"where_clause"`
-	ValueScanner      T                 `json:"omitempty"`
-	statuses          []string          `json:"omitempty"`
+	ID                types.UUID       `json:"id"`
+	Name              string           `json:"name"`
+	TableName         string           `json:"table_name"`
+	FieldToken        string           `json:"field_token"`
+	FieldStatus       string           `json:"field_status,omitempty"`
+	TrackingTableName types.String     `json:"tracking_table_name"`
+	TrackingKeys      types.String     `json:"tracking_keys"`
+	Variable          Variable         `json:"variable"`
+	Tasks             map[string]*Task `json:"tasks"`
+	Data              Data             `json:"data,omitempty"`
+	CurrentIDInt      types.Int        `json:"current_id_int,omitempty"`
+	CurrentIDUUID     types.UUID       `json:"current_id_uuid,omitempty"`
+	Initial           types.String     `json:"initial"`
+	Query             *db.IQuery       `json:"omitempty"`
+	WhereClause       WhereClause[T]   `json:"where_clause"`
+	ValueScanner      T                `json:"omitempty"`
+	statuses          []string         `json:"omitempty"`
 }
 
 type Variable struct {

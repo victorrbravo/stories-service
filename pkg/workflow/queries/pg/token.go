@@ -57,21 +57,23 @@ func getLinkFields[T db.Scanner](ctx context.Context, wf *common.Workflow[T]) (s
 func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var duration scanners.String
 	var outputBuffer bytes.Buffer
-	newQuery := wf.Query.NewQuery()
+	newQuery := wf.Query
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
-			newSQL, err := buildSQL(wf, name, SelectTimeFieldToken)
-			if err != nil {
-				log.Println("Error Role err", err)
+			if types.AsBool(current.Report) == false {
 				continue
 			}
-			durationValue, err := newQuery.QueryOne(newSQL, &duration)
+			newSQL, err := buildSQL(wf, name, SelectTimeFieldToken)
+			if err != nil {
+				log.Println("Error TimeField err", err)
+				continue
+			}
+			durationValue, err := (*newQuery).QueryOne(newSQL, &duration)
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
-				log.Println("error query err", err)
+				log.Println("error query err", err, "newSQL", newSQL)
 				continue
 			}
 			durationTime, ok := durationValue.(types.String)
-			log.Println("ok", ok)
 			value := types.NewString(NA)
 			if !errors.Is(err, sql.ErrNoRows) && ok == true {
 				value = types.NewString(durationTime.String())
@@ -86,17 +88,22 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 
 func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var role scanners.String
-	newQuery := wf.Query.NewQuery()
+	newQuery := wf.Query
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
+			if types.AsBool(current.Report) == false {
+				continue
+			}
 			newSQL, err := buildSQL(wf, name, SelectRoleToken)
 			if err != nil {
 				log.Println("Error Role err", err)
 				continue
 			}
-			roleValue, err := newQuery.QueryOne(newSQL, &role)
+			roleValue, err := (*newQuery).QueryOne(newSQL, &role)
 			if err != nil {
-				log.Println("Error Count SQL err", err)
+				if !errors.Is(err, sql.ErrNoRows) {
+					log.Println("Error Count SQL err", err)
+				}
 				continue
 			}
 			roleString := roleValue.(types.String)
@@ -107,17 +114,21 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 }
 func CountToken[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var count scanners.Int
-	newQuery := wf.Query.NewQuery()
+	newQuery := wf.Query
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
 			newSQL, err := buildSQL(wf, name, SelectCountToken)
 			if err != nil {
-				log.Println("Error Count err", err)
+				if !errors.Is(err, sql.ErrNoRows) {
+					log.Println("Error Count err", err)
+				}
 				continue
 			}
-			countValue, err := newQuery.QueryOne(newSQL, &count)
+			countValue, err := (*newQuery).QueryOne(newSQL, &count)
 			if err != nil {
-				log.Println("Error Count SQL err", err)
+				if !errors.Is(err, sql.ErrNoRows) {
+					log.Println("Error Count SQL err", err)
+				}
 				continue
 			}
 			countInt := countValue.(types.Int)

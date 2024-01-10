@@ -3,10 +3,10 @@ package workflow_test
 import (
 	"context"
 	"fmt"
+	"stories/actions/stories"
 	"stories/database"
 	"stories/generated/models"
 	"stories/pkg/workflow"
-	"stories/pkg/workflow/common"
 	"stories/pkg/workflow/queries/pg"
 	"stories/types"
 	"testing"
@@ -74,24 +74,13 @@ func TestNextStatus(t *testing.T) {
 		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
 		Password: "stories",
 	}
-	jw := common.JobWorkflow[models.TaTracking]{}
 	query, err := workflow.GetPgQuery(config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	dataFile, err := workflow.GetJsonDatafile(&query)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	err = jw.Workflow.Load(ctx, dataFile)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	var wf = jw.Workflow
-
+	q := query.NewQuery()
+	wf, err := stories.GetWorkflow(1, &q)
 	statuses, _ := wf.Statuses(ctx, false)
 	fmt.Println("statuses ", statuses)
 
@@ -109,29 +98,22 @@ func TestNextStatus(t *testing.T) {
 // Test Read method
 func TestGenerateStats(t *testing.T) {
 	var err error
-	ctx := context.Background()
 	config := database.DatabaseConfig{
 		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
 		Password: "stories",
 	}
-	jw := common.JobWorkflow[models.TaTracking]{}
 	query, err := workflow.GetPgQuery(config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	dataFile, err := workflow.GetJsonDatafile(&query)
+	q := query.NewQuery()
+	wf, err := stories.GetWorkflow(1, &q)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = jw.Workflow.Load(ctx, dataFile)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	var wf = jw.Workflow
-	monad := pg.New[models.TaTracking](&wf, &query)
+	monad := pg.New[models.TaTracking](wf, &q)
 
 	monad = pg.Bind(monad, pg.TimeStats[models.TaTracking])
 	monad = pg.Bind(monad, pg.RoleStats[models.TaTracking])
@@ -160,7 +142,6 @@ func TestGenerateStats(t *testing.T) {
 // Test Read method
 func TestGenerateToken(t *testing.T) {
 	var err error
-	ctx := context.Background()
 	config := database.DatabaseConfig{
 		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
 		Password: "stories",
@@ -171,20 +152,10 @@ func TestGenerateToken(t *testing.T) {
 		return
 	}
 
-	jw := common.JobWorkflow[models.TaTracking]{}
-	dataFile, err := workflow.GetJsonDatafile(&query)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	err = jw.Workflow.Load(ctx, dataFile)
-	if err != nil {
-		t.Error(err)
-	}
-	jw.Workflow.CurrentIDInt = types.NewInt(11)
-	wf := jw.Workflow
-	monad := pg.New(&wf, &query)
-
+	q := query.NewQuery()
+	wf, err := stories.GetWorkflow(1, &q)
+	wf.CurrentIDInt = types.NewInt(11)
+	monad := pg.New(wf, &q)
 	monad = pg.Bind(monad, pg.TimeField[models.TaTracking])
 	monad = pg.Bind(monad, pg.RoleField[models.TaTracking])
 	monad = pg.Bind(monad, pg.CountToken[models.TaTracking])
@@ -194,7 +165,7 @@ func TestGenerateToken(t *testing.T) {
 		t.Error(err)
 	}
 
-	for key, task := range jw.Workflow.Tasks {
+	for key, task := range wf.Tasks {
 		fmt.Println("===", key, "===")
 		fmt.Println("Count", task.Data.Count)
 		fmt.Println("TimeField", task.Data.TimeField)
@@ -202,7 +173,7 @@ func TestGenerateToken(t *testing.T) {
 		fmt.Println("Percentage", task.Data.Percentage)
 		fmt.Println("")
 	}
-	fmt.Println("total", jw.Workflow.Data.Total)
+	fmt.Println("total", wf.Data.Total)
 }
 
 func TestWhereExpressions(t *testing.T) {
@@ -211,7 +182,6 @@ func TestWhereExpressions(t *testing.T) {
 
 func TestWhereClauses(t *testing.T) {
 	var err error
-	ctx := context.Background()
 	config := database.DatabaseConfig{
 		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
 		Password: "stories",
@@ -221,18 +191,9 @@ func TestWhereClauses(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	jw := common.JobWorkflow[models.TaTracking]{}
-	dataFile, err := workflow.GetJsonDatafile(&query)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	err = jw.Workflow.Load(ctx, dataFile)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	wheres := pg.ClausesWheres(jw.Workflow)
+	q := query.NewQuery()
+	wf, err := stories.GetWorkflow(1, &q)
+	wheres := pg.ClausesWheres[models.TaTracking](*wf)
 	if len(wheres) == 0 {
 		t.Logf("len wheres is zero")
 	}

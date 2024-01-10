@@ -65,9 +65,9 @@ type Any interface{}
 
 type Monad[T db.Scanner] func(error, ...interface{}) (*common.Workflow[T], error)
 
-func New[T db.Scanner](wf *common.Workflow[T], query *db.PostgresQuery) Monad[T] {
+func New[T db.Scanner](wf *common.Workflow[T], q *db.IQuery) Monad[T] {
 	return func(s error, v ...interface{}) (*common.Workflow[T], error) {
-		wf.Query = query
+		wf.Query = q
 		if wf.WhereClause == nil {
 			wf.WhereClause = CalculateWhere[T]
 		}
@@ -90,7 +90,7 @@ func TimeStats[T db.Scanner](wf *common.Workflow[T], names ...interface{}) Monad
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		var duration scanners.Interval
 
-		newQuery := wf.Query.NewQuery()
+		newQuery := wf.Query
 		for name, current := range wf.Tasks {
 			if !types.IsNil(current.Report) && current.Report.ToBool() == false {
 				continue
@@ -105,7 +105,7 @@ func TimeStats[T db.Scanner](wf *common.Workflow[T], names ...interface{}) Monad
 			if err != nil {
 				return wf, err
 			}
-			durationValue, err := newQuery.QueryOne(newSQL, &duration)
+			durationValue, err := (*newQuery).QueryOne(newSQL, &duration)
 			if err != nil {
 				if !errors.Is(err, sql.ErrNoRows) {
 					log.Println("Error TimeStats on sql task", name)
@@ -130,7 +130,7 @@ func TimeStats[T db.Scanner](wf *common.Workflow[T], names ...interface{}) Monad
 func RoleStats[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	log.Println("unmarshalling the file to json")
 	var roles scanners.String
-	newQuery := wf.Query.NewQuery()
+	newQuery := wf.Query
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
 			if !types.IsNil(current.Report) && current.Report.ToBool() == false {
@@ -141,7 +141,7 @@ func RoleStats[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 				log.Println("Error RoleStats err", err)
 				continue
 			}
-			rolesValue, err := newQuery.QueryOne(newSQL, &roles)
+			rolesValue, err := (*newQuery).QueryOne(newSQL, &roles)
 			if err != nil {
 				if !errors.Is(err, sql.ErrNoRows) {
 					log.Println("Error query one err", err)
@@ -161,17 +161,21 @@ func RoleStats[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 
 func Count[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var count scanners.Int
-	newQuery := wf.Query.NewQuery()
+	newQuery := wf.Query
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
 			newSQL, err := buildSQL(wf, name, SelectCountStats)
 			if err != nil {
-				log.Println("Error Count err", err)
+				if !errors.Is(err, sql.ErrNoRows) {
+					log.Println("Error Count err", err)
+				}
 				continue
 			}
-			countValue, err := newQuery.QueryOne(newSQL, &count)
+			countValue, err := (*newQuery).QueryOne(newSQL, &count)
 			if err != nil {
-				log.Println("Error Count SQL err", err)
+				if !errors.Is(err, sql.ErrNoRows) {
+					log.Println("Error Count SQL err", err)
+				}
 				continue
 			}
 			countInt := countValue.(types.Int)
@@ -186,7 +190,7 @@ func Count[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Mona
 }
 
 func AllRows[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
-	newQuery := wf.Query.NewQuery()
+	newQuery := wf.Query
 	var lookTask string
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		lookTask = firstParameter(parameters)
@@ -194,13 +198,14 @@ func AllRows[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Mo
 			if len(lookTask) > 0 && strings.Compare(name, lookTask) != 0 {
 				continue
 			}
-			log.Println("lookTask", lookTask)
 			newSQL, err := buildSQL[T](wf, name, SelectRowsStats)
 			if err != nil {
-				log.Println("Error Count err", err)
+				if !errors.Is(err, sql.ErrNoRows) {
+					log.Println("Error Count err", err)
+				}
 				continue
 			}
-			current.Data.Rows, err = newQuery.QueryMany(newSQL, wf.ValueScanner)
+			current.Data.Rows, err = (*newQuery).QueryMany(newSQL, wf.ValueScanner)
 			if err != nil {
 				log.Println("Error Rows SQL err", err)
 			}
