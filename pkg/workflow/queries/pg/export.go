@@ -11,7 +11,6 @@ import (
 	"oss.terrastruct.com/d2/d2renderers/d2svg"
 	"oss.terrastruct.com/d2/d2themes/d2themescatalog"
 	"oss.terrastruct.com/d2/lib/textmeasure"
-	"path/filepath"
 	"stories/actions/settings"
 	db "stories/database"
 	"stories/pkg/workflow/common"
@@ -104,7 +103,12 @@ func Render[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Mon
 		out, _ := d2svg.Render(diagram, &d2svg.RenderOpts{
 			ThemeID: &d2themescatalog.NeutralDefault.ID,
 		})
-		_ = os.WriteFile(filepath.Join("workflow.svg"), out, 0600)
+		path := settings.WorflowURL()
+		log.Print("path ", path)
+		err = os.WriteFile(path, out, 0600)
+		if err != nil {
+			return wf, err
+		}
 		return wf, nil
 	}
 }

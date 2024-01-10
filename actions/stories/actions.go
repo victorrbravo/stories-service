@@ -8,6 +8,7 @@ import (
 	"stories/generated/models"
 	"stories/pkg/utils"
 	"stories/pkg/workflow/common"
+	"stories/pkg/workflow/queries/pg"
 	"stories/types"
 )
 
@@ -175,9 +176,9 @@ UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }' WHERE pk_flow={{.PkFlow}};
 )
 
 type GetFlow struct {
-	PkFlow         int  `yaml:"flow" default:"1"`
-	Ticket         int  `yaml:"ticket"`
-	ShowEmptyTasks bool `yaml:"show_empty_tasks" default:"false"`
+	PkFlow         int       `yaml:"flow" default:"1"`
+	Ticket         types.Int `yaml:"ticket"`
+	ShowEmptyTasks bool      `yaml:"show_empty_tasks" default:"false"`
 }
 
 type AddTask struct {
@@ -229,7 +230,18 @@ func DoGetWorkflow(order string, query *database.IQuery) error {
 	if err != nil {
 		return err
 	}
-	log.Println("wf", wf.Name)
+	wf.CurrentIDInt = getFlow.Ticket
+	monad := pg.New(wf, query)
+	monad = pg.Bind(monad, pg.TimeField[models.TaTracking])
+	monad = pg.Bind(monad, pg.RoleField[models.TaTracking])
+	monad = pg.Bind(monad, pg.CountToken[models.TaTracking])
+	monad = pg.Bind(monad, pg.Render[models.TaTracking])
+	_, err = monad(nil)
+	if err != nil {
+		log.Print("monad error", err)
+		return err
+	}
+	log.Print("wf rendered successfully")
 	return nil
 }
 

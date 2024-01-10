@@ -318,10 +318,34 @@ func TestProcessAddFlowStep(t *testing.T) {
 	input := `
 action: add_flow_step
 ticket: 11
-status: Step4
-image: imageCopos
-amount: 20000
-type: new_thing1
+status: Step5
+image: imageTeleferico
+amount: 28000
+type: tourist
+`
+	order := []byte(input)
+	err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestProcessShowFlow(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: show_flow
+ticket: 11
 `
 	order := []byte(input)
 	err = ProcessInput(order, &query)
