@@ -37,7 +37,7 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 	case "add_step":
 		_, err = DoAddStep(order, query)
 	case "add_flow_step":
-		err = DoAddStepFlowAtEnd(ctx, order, query)
+		err = DoAddStepFlowAtEnd[models.TaTracking](ctx, order, query)
 	case "delete_ticket":
 		err = DoDeleteStep(order, query)
 	}
@@ -93,13 +93,13 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 	return nil
 }
 
-func DoAddStepFlowAtEnd(ctx context.Context, order string, query *database.IQuery) error {
+func DoAddStepFlowAtEnd[T database.Scanner](ctx context.Context, order string, query *database.IQuery) error {
 	addStep, err := UnmarshallAddStep([]byte(order), query)
 	if err != nil {
 		return err
 	}
 	var addTask AddTask
-	wf, err := GetWorkflow(1, query)
+	wf, err := GetWorkflow[T](1, query)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func DoAddStepFlowAtEnd(ctx context.Context, order string, query *database.IQuer
 	addTask.Source = types.NewString(lastTask.Name)
 	addTask.Sentence = types.NewString(wf.Sentence(addTask.Name.String()))
 	utils.SetDefaults(&addTask)
-	wf, err = DoAddTaskIntl(addTask, query)
+	wf, err = DoAddTaskIntl[T](addTask, query)
 	if err != nil {
 		return err
 	}

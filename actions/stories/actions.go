@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"log"
-	"stories/database"
+	db "stories/database"
 	"stories/generated/models"
 	"stories/pkg/utils"
 	"stories/pkg/workflow/common"
@@ -193,20 +193,37 @@ type AddTask struct {
 	Source    types.String `yaml:"source"`
 }
 
-func WorkflowProcessor(action string, order string, query *database.IQuery) (string, error) {
+func WorkflowProcessor(action string, order string, query *db.IQuery) (string, error) {
 	var err error
 	var value string
 	switch action {
 	case "add_task":
-		_, err = DoAddTask(order, query)
+		_, err = DoAddTask[models.TaTracking](order, query)
 	case "delete_task":
-		err = DoDeleteTask(order, query)
-	case "show_flow":
-		value, err = DoGetWorkflow(order, query)
+		err = DoDeleteTask[models.TaTracking](order, query)
+	case "show_flow_graph":
+		value, err = DoShowWorkflowGraph[models.TaTracking](order, query)
+	case "show_flow_data":
+		value, err = DoShowWorkflowData[models.TaTracking](order, query)
 	}
 	if err != nil {
 		return value, err
 	}
+	return value, nil
+}
+
+func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, error) {
+	var value string
+	getFlow, err := UnmarshallGetFlow([]byte(order))
+	if err != nil {
+		return value, err
+	}
+	fmt.Println("getFlow", getFlow)
+	wf, err := UpdateWorkflow[T](getFlow, query)
+	if err != nil {
+		return value, err
+	}
+	value = wf.JsonResponse
 	return value, nil
 }
 
@@ -221,30 +238,37 @@ func UnmarshallGetFlow(order []byte) (ShowFlowInput, error) {
 	return getFlow, nil
 }
 
-func DoGetWorkflow(order string, query *database.IQuery) (string, error) {
+func UpdateWorkflow[T db.Scanner](getFlow ShowFlowInput, query *db.IQuery) (*common.Workflow[T], error) {
+	wf, err := GetWorkflow[T](getFlow.PkFlow, query)
+	if err != nil {
+		return wf, err
+	}
+	wf.CurrentIDInt = getFlow.Ticket
+	monad := pg.New[T](wf, query)
+	monad = pg.Bind[T](monad, pg.TimeField[T])
+	monad = pg.Bind[T](monad, pg.RoleField[T])
+	monad = pg.Bind[T](monad, pg.CountToken[T])
+	monad = pg.Bind[T](monad, pg.Render[T])
+	_, err = monad(nil)
+	if err != nil {
+		log.Print("update workflow monad error", err)
+		return wf, err
+	}
+	return wf, nil
+}
+
+func DoShowWorkflowGraph[T db.Scanner](order string, query *db.IQuery) (string, error) {
 	var value string
 	getFlow, err := UnmarshallGetFlow([]byte(order))
 	if err != nil {
 		return value, err
 	}
 	log.Println("getFlow", getFlow)
-	wf, err := GetWorkflow(getFlow.PkFlow, query)
+	wf, err := UpdateWorkflow[T](getFlow, query)
 	if err != nil {
-		return value, err
-	}
-	wf.CurrentIDInt = getFlow.Ticket
-	monad := pg.New(wf, query)
-	monad = pg.Bind(monad, pg.TimeField[models.TaTracking])
-	monad = pg.Bind(monad, pg.RoleField[models.TaTracking])
-	monad = pg.Bind(monad, pg.CountToken[models.TaTracking])
-	monad = pg.Bind(monad, pg.Render[models.TaTracking])
-	_, err = monad(nil)
-	if err != nil {
-		log.Print("monad error", err)
 		return value, err
 	}
 	value = wf.JsonResponse
-	log.Print("wf rendered successfully")
 	return value, nil
 }
 
@@ -259,8 +283,8 @@ func UnmarshallAddTask(order []byte) (AddTask, error) {
 	return addTask, nil
 }
 
-func doCheckAddTask(task *AddTask, query *database.IQuery) (*common.Workflow[models.TaTracking], error) {
-	var workflowType WorkflowType
+func doCheckAddTask[T db.Scanner](task *AddTask, query *db.IQuery) (*common.Workflow[T], error) {
+	var workflowType WorkflowType[T]
 	workflowType.Query = query
 	wf, err := workflowType.LoadWorkflow()
 	if err != nil {
@@ -295,8 +319,8 @@ func doCheckAddTask(task *AddTask, query *database.IQuery) (*common.Workflow[mod
 	return wf, nil
 }
 
-func doCheckDelTask(task *AddTask, query *database.IQuery) error {
-	var workflowType WorkflowType
+func doCheckDelTask[T db.Scanner](task *AddTask, query *db.IQuery) error {
+	var workflowType WorkflowType[T]
 	workflowType.Query = query
 	wf, err := workflowType.LoadWorkflow()
 	if err != nil {
@@ -319,8 +343,8 @@ func doCheckDelTask(task *AddTask, query *database.IQuery) error {
 	return nil
 }
 
-func GetWorkflow(pkFlow int, query *database.IQuery) (*common.Workflow[models.TaTracking], error) {
-	var workflowType WorkflowType
+func GetWorkflow[T db.Scanner](pkFlow int, query *db.IQuery) (*common.Workflow[T], error) {
+	var workflowType WorkflowType[T]
 	workflowType.Query = query
 	wf, err := workflowType.LoadWorkflow()
 	if err != nil {
@@ -329,10 +353,10 @@ func GetWorkflow(pkFlow int, query *database.IQuery) (*common.Workflow[models.Ta
 	return wf, nil
 }
 
-func DoAddTaskIntl(task AddTask, query *database.IQuery) (*common.Workflow[models.TaTracking], error) {
+func DoAddTaskIntl[T db.Scanner](task AddTask, query *db.IQuery) (*common.Workflow[T], error) {
 	var currentInsert string
 	fmt.Println("task struct flow", task.PkFlow, "name", task.Name)
-	wf, err := doCheckAddTask(&task, query)
+	wf, err := doCheckAddTask[T](&task, query)
 	if err != nil {
 		return wf, err
 	}
@@ -358,22 +382,22 @@ func DoAddTaskIntl(task AddTask, query *database.IQuery) (*common.Workflow[model
 	return wf, nil
 }
 
-func DoAddTask(order string, query *database.IQuery) (*common.Workflow[models.TaTracking], error) {
+func DoAddTask[T db.Scanner](order string, query *db.IQuery) (*common.Workflow[T], error) {
 	task, err := UnmarshallAddTask([]byte(order))
 	if err != nil {
 		return nil, err
 	}
-	return DoAddTaskIntl(task, query)
+	return DoAddTaskIntl[T](task, query)
 
 }
 
-func DoDeleteTask(order string, query *database.IQuery) error {
+func DoDeleteTask[T db.Scanner](order string, query *db.IQuery) error {
 	var currentDelete string
 	task, err := UnmarshallAddTask([]byte(order))
 	if err != nil {
 		return err
 	}
-	err = doCheckDelTask(&task, query)
+	err = doCheckDelTask[T](&task, query)
 	if err != nil {
 		return err
 	}

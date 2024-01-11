@@ -344,7 +344,7 @@ func TestProcessShowFlow(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: show_flow
+action: show_flow_graph
 ticket: 11
 `
 	order := []byte(input)

@@ -9,19 +9,18 @@ import (
 	"slices"
 	"stories/constants"
 	"stories/database"
-	"stories/generated/models"
 	"stories/pkg/workflow/common"
 )
 
 // String a boolean type that understands jsons `null'
-type WorkflowType struct {
+type WorkflowType[T database.Scanner] struct {
 	notNil bool
 	value  string
-	wf     *common.Workflow[models.TaTracking]
+	wf     *common.Workflow[T]
 	Query  *database.IQuery
 }
 
-func (wft WorkflowType) Workflow() *common.Workflow[models.TaTracking] {
+func (wft WorkflowType[T]) Workflow() *common.Workflow[T] {
 	if wft.wf == nil {
 		log.Print("worflow is nil for WorkflowType")
 	}
@@ -29,7 +28,7 @@ func (wft WorkflowType) Workflow() *common.Workflow[models.TaTracking] {
 }
 
 // Value implements the sql.Valuer interface
-func (str WorkflowType) Value() (driver.Value, error) {
+func (str WorkflowType[T]) Value() (driver.Value, error) {
 	if !str.notNil {
 		return nil, nil
 	}
@@ -37,7 +36,7 @@ func (str WorkflowType) Value() (driver.Value, error) {
 }
 
 // Scan implements the sql.Scanner interface
-func (str *WorkflowType) Scan(src interface{}) error {
+func (str *WorkflowType[T]) Scan(src interface{}) error {
 	switch value := src.(type) {
 	case nil:
 		str.notNil = false
@@ -57,7 +56,7 @@ func (str *WorkflowType) Scan(src interface{}) error {
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface
-func (str *WorkflowType) UnmarshalJSON(src []byte) error {
+func (str *WorkflowType[T]) UnmarshalJSON(src []byte) error {
 	strValue := string(src)
 	if strValue != constants.JSONNil {
 		var err error
@@ -70,13 +69,13 @@ func (str *WorkflowType) UnmarshalJSON(src []byte) error {
 	return nil
 }
 
-func (wft *WorkflowType) LoadWorkflow() (*common.Workflow[models.TaTracking], error) {
+func (wft *WorkflowType[T]) LoadWorkflow() (*common.Workflow[T], error) {
 	ctx := context.Background()
 	dataFile, err := GetJsonDatafile(wft.Query)
 	if err != nil {
 		return nil, err
 	}
-	wft.wf = new(common.Workflow[models.TaTracking])
+	wft.wf = new(common.Workflow[T])
 	err = wft.wf.Load(ctx, dataFile)
 	if err != nil {
 		return wft.wf, err
@@ -84,7 +83,7 @@ func (wft *WorkflowType) LoadWorkflow() (*common.Workflow[models.TaTracking], er
 	return wft.wf, nil
 }
 
-func (wft *WorkflowType) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (wft *WorkflowType[T]) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var value string
 	var err error
 	ctx := context.Background()
@@ -106,40 +105,40 @@ func (wft *WorkflowType) UnmarshalYAML(unmarshal func(interface{}) error) error 
 	if index == -1 {
 		return fmt.Errorf("error: value '%s' is not found in list '%v'", value, statuses)
 	}
-	*wft = NewWorkflowType(value)
+	*wft = NewWorkflowType[T](value)
 	return nil
 }
 
-func (str WorkflowType) MarshalYAML() (interface{}, error) {
+func (str WorkflowType[T]) MarshalYAML() (interface{}, error) {
 	return str.value, nil
 }
 
 // MarshalJSON implements the json.Marshaler interface
-func (str WorkflowType) MarshalJSON() ([]byte, error) {
+func (str WorkflowType[T]) MarshalJSON() ([]byte, error) {
 	if !str.notNil {
 		return json.Marshal(nil)
 	}
 	return json.Marshal(str.value)
 }
 
-func (str WorkflowType) isNil() bool {
+func (str WorkflowType[T]) isNil() bool {
 	return !str.notNil
 }
 
-func (str WorkflowType) get() string {
+func (str WorkflowType[T]) get() string {
 	return str.value
 }
 
 // NewString builds a nullable string from a native string
-func NewWorkflowType(str string) WorkflowType {
-	return WorkflowType{value: str, notNil: true}
+func NewWorkflowType[T database.Scanner](str string) WorkflowType[T] {
+	return WorkflowType[T]{value: str, notNil: true}
 }
 
-func NilWorkflowType() WorkflowType {
-	return WorkflowType{value: "", notNil: false}
+func NilWorkflowType[T database.Scanner]() WorkflowType[T] {
+	return WorkflowType[T]{value: "", notNil: false}
 }
 
-func (str WorkflowType) String() string {
+func (str WorkflowType[T]) String() string {
 	if str.notNil {
 		return str.value
 	} else {
