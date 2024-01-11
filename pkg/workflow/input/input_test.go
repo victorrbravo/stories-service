@@ -318,10 +318,10 @@ func TestProcessAddFlowStep(t *testing.T) {
 	input := `
 action: add_flow_step
 ticket: 11
-status: Step5
-image: imageTeleferico
-amount: 28000
-type: tourist
+status: Step6
+image: imageRodeoMall
+amount: 32000
+type: shopping
 `
 	order := []byte(input)
 	_, err = ProcessInput(order, &query)
@@ -353,7 +353,7 @@ ticket: 11
 		t.Error(err)
 	}
 
-	fmt.Println("reponse", response)
+	fmt.Println("response", response)
 }
 
 func TestProcessShowFlowData(t *testing.T) {
@@ -379,7 +379,7 @@ ticket: 11
 		t.Error(err)
 	}
 
-	fmt.Println("reponse", response)
+	fmt.Println("value data response", response)
 }
 
 func TestProcessDoAddTaskToWorkflowNormal(t *testing.T) {

@@ -1,6 +1,7 @@
 package stories
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"gopkg.in/yaml.v3"
@@ -194,6 +195,17 @@ type AddTask struct {
 	Source    types.String `yaml:"source"`
 }
 
+type WorkflowData struct {
+	Name  string      `json:"name"`
+	Data  common.Data `json:"data"`
+	Tasks []TaskData  `json:"tasks"`
+}
+type TaskData struct {
+	Name       string            `json:"name"`
+	Data       common.Data       `json:"data"`
+	Transition common.Transition `json:"transition"`
+}
+
 func WorkflowProcessor(action string, order string, query *db.IQuery) (string, error) {
 	var err error
 	var value string
@@ -225,7 +237,34 @@ func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, e
 	if err != nil {
 		return value, err
 	}
-	data, err := json.Marshal(wf)
+	value, err = updateWorkflowData[T](wf)
+	if err != nil {
+		return value, err
+	}
+	return value, nil
+}
+
+func updateWorkflowData[T db.Scanner](wf *common.Workflow[T]) (string, error) {
+	var err error
+	var value string
+	ctx := context.Background()
+	statuses, _ := wf.Statuses(ctx, false)
+	wfData := WorkflowData{Name: wf.Name}
+	wfData.Data = wf.Data
+	wfData.Tasks = make([]TaskData, 0)
+	for _, status := range statuses {
+		current := wf.Tasks[status]
+		if types.AsBool(current.Report) == false {
+			continue
+		}
+		taskData := TaskData{
+			Name:       current.Name,
+			Transition: current.Transition,
+			Data:       current.Data,
+		}
+		wfData.Tasks = append(wfData.Tasks, taskData)
+	}
+	data, err := json.Marshal(wfData)
 	if err != nil {
 		return value, err
 	}
