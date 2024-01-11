@@ -330,7 +330,7 @@ type: tourist
 	}
 }
 
-func TestProcessShowFlow(t *testing.T) {
+func TestProcessShowFlowGraph(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{
 		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
@@ -356,7 +356,7 @@ ticket: 11
 	fmt.Println("reponse", response)
 }
 
-func TestProcessShowDataFlow(t *testing.T) {
+func TestProcessShowFlowData(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{
 		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
@@ -370,14 +370,16 @@ func TestProcessShowDataFlow(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: show_data_flow
+action: show_flow_data
 ticket: 11
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	response, err := ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
+
+	fmt.Println("reponse", response)
 }
 
 func TestProcessDoAddTaskToWorkflowNormal(t *testing.T) {

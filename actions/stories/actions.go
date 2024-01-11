@@ -1,6 +1,7 @@
 package stories
 
 import (
+	"encoding/json"
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"log"
@@ -219,11 +220,16 @@ func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, e
 		return value, err
 	}
 	fmt.Println("getFlow", getFlow)
-	wf, err := UpdateWorkflow[T](getFlow, query)
+	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{}, pg.TimeField[T], pg.RoleField[T],
+		pg.CountToken[T])
 	if err != nil {
 		return value, err
 	}
-	value = wf.JsonResponse
+	data, err := json.Marshal(wf)
+	if err != nil {
+		return value, err
+	}
+	value = string(data)
 	return value, nil
 }
 
@@ -238,17 +244,16 @@ func UnmarshallGetFlow(order []byte) (ShowFlowInput, error) {
 	return getFlow, nil
 }
 
-func UpdateWorkflow[T db.Scanner](getFlow ShowFlowInput, query *db.IQuery) (*common.Workflow[T], error) {
+func UpdateWorkflow[T db.Scanner](getFlow ShowFlowInput, query *db.IQuery, values []interface{}, funcs ...func(*common.Workflow[T], ...interface{}) pg.Monad[T]) (*common.Workflow[T], error) {
 	wf, err := GetWorkflow[T](getFlow.PkFlow, query)
 	if err != nil {
 		return wf, err
 	}
 	wf.CurrentIDInt = getFlow.Ticket
 	monad := pg.New[T](wf, query)
-	monad = pg.Bind[T](monad, pg.TimeField[T])
-	monad = pg.Bind[T](monad, pg.RoleField[T])
-	monad = pg.Bind[T](monad, pg.CountToken[T])
-	monad = pg.Bind[T](monad, pg.Render[T])
+	for _, f := range funcs {
+		monad = pg.Bind[T](monad, f)
+	}
 	_, err = monad(nil)
 	if err != nil {
 		log.Print("update workflow monad error", err)
@@ -264,7 +269,8 @@ func DoShowWorkflowGraph[T db.Scanner](order string, query *db.IQuery) (string, 
 		return value, err
 	}
 	log.Println("getFlow", getFlow)
-	wf, err := UpdateWorkflow[T](getFlow, query)
+	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{}, pg.TimeField[T], pg.RoleField[T],
+		pg.CountToken[T], pg.Render[T])
 	if err != nil {
 		return value, err
 	}
