@@ -18,6 +18,7 @@ type WorkflowType[T database.Scanner] struct {
 	value  string
 	wf     *common.Workflow[T]
 	Query  *database.IQuery
+	PkFlow int
 }
 
 func (wft WorkflowType[T]) Workflow() *common.Workflow[T] {
@@ -69,9 +70,9 @@ func (str *WorkflowType[T]) UnmarshalJSON(src []byte) error {
 	return nil
 }
 
-func (wft *WorkflowType[T]) LoadWorkflow() (*common.Workflow[T], error) {
+func (wft *WorkflowType[T]) LoadWorkflow(pkFlow int) (*common.Workflow[T], error) {
 	ctx := context.Background()
-	dataFile, err := GetJsonDatafile(wft.Query)
+	dataFile, err := GetJsonDatafile(pkFlow, wft.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -86,13 +87,14 @@ func (wft *WorkflowType[T]) LoadWorkflow() (*common.Workflow[T], error) {
 func (wft *WorkflowType[T]) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var value string
 	var err error
+	wft.PkFlow = 1
 	ctx := context.Background()
 	value = wft.value
 	if err := unmarshal(&value); err != nil {
 		return err
 	}
 	if wft.wf == nil {
-		wft.wf, err = wft.LoadWorkflow()
+		wft.wf, err = wft.LoadWorkflow(wft.PkFlow)
 		if err != nil {
 			return err
 		}

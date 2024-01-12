@@ -1,6 +1,7 @@
 package stories
 
 import (
+	"fmt"
 	"log"
 	db "stories/database"
 	"stories/scanners"
@@ -17,11 +18,12 @@ func GetPgQuery(config db.DatabaseConfig) (db.PostgresQuery, error) {
 	return query, nil
 }
 
-func GetJsonDatafile(query *db.IQuery) ([]byte, error) {
+func GetJsonDatafile(pkFlow int, query *db.IQuery) ([]byte, error) {
 	var err error
 	var value scanners.String
 	var dataFile []byte
-	_, err = (*query).QueryOne("SELECT flow FROM ta_flow WHERE pk_flow=1", &value)
+	newSQL := fmt.Sprintf("SELECT flow FROM ta_flow WHERE pk_flow=%d", pkFlow)
+	_, err = (*query).QueryOne(newSQL, &value)
 	if err != nil {
 		return dataFile, err
 	}

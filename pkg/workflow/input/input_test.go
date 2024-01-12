@@ -321,7 +321,7 @@ ticket: 11
 status: Step6
 image: imageRodeoMall
 amount: 32000
-type: shopping
+type: tourist
 `
 	order := []byte(input)
 	_, err = ProcessInput(order, &query)

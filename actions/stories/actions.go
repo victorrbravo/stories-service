@@ -178,9 +178,10 @@ UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }' WHERE pk_flow={{.PkFlow}};
 )
 
 type ShowFlowInput struct {
-	PkFlow         int       `yaml:"flow" default:"1"`
-	Ticket         types.Int `yaml:"ticket"`
-	ShowEmptyTasks bool      `yaml:"show_empty_tasks" default:"false"`
+	PkFlow         int                             `yaml:"flow" default:"1"`
+	Ticket         types.Int                       `yaml:"ticket"`
+	ShowEmptyTasks bool                            `yaml:"show_empty_tasks" default:"false"`
+	Task           WorkflowType[models.TaTracking] `yaml:"task,omitempty"`
 }
 
 type AddTask struct {
@@ -218,11 +219,20 @@ func WorkflowProcessor(action string, order string, query *db.IQuery) (string, e
 		value, err = DoShowWorkflowGraph[models.TaTracking](order, query)
 	case "show_flow_data":
 		value, err = DoShowWorkflowData[models.TaTracking](order, query)
+	case "show_task_data":
+		value, err = DoShowWorkflowTaskData[models.TaTracking](order, query)
 	}
 	if err != nil {
 		return value, err
 	}
 	return value, nil
+}
+
+func DoShowWorkflowTaskData[T db.Scanner](order string, query *db.IQuery) (string, error) {
+	var value string
+
+	return value, nil
+
 }
 
 func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, error) {
@@ -330,8 +340,9 @@ func UnmarshallAddTask(order []byte) (AddTask, error) {
 
 func doCheckAddTask[T db.Scanner](task *AddTask, query *db.IQuery) (*common.Workflow[T], error) {
 	var workflowType WorkflowType[T]
+	workflowType.PkFlow = 1
 	workflowType.Query = query
-	wf, err := workflowType.LoadWorkflow()
+	wf, err := workflowType.LoadWorkflow(workflowType.PkFlow)
 	if err != nil {
 		return wf, err
 	}
@@ -367,7 +378,8 @@ func doCheckAddTask[T db.Scanner](task *AddTask, query *db.IQuery) (*common.Work
 func doCheckDelTask[T db.Scanner](task *AddTask, query *db.IQuery) error {
 	var workflowType WorkflowType[T]
 	workflowType.Query = query
-	wf, err := workflowType.LoadWorkflow()
+	workflowType.PkFlow = 1
+	wf, err := workflowType.LoadWorkflow(workflowType.PkFlow)
 	if err != nil {
 		return err
 	}
@@ -391,7 +403,8 @@ func doCheckDelTask[T db.Scanner](task *AddTask, query *db.IQuery) error {
 func GetWorkflow[T db.Scanner](pkFlow int, query *db.IQuery) (*common.Workflow[T], error) {
 	var workflowType WorkflowType[T]
 	workflowType.Query = query
-	wf, err := workflowType.LoadWorkflow()
+	workflowType.PkFlow = 1
+	wf, err := workflowType.LoadWorkflow(workflowType.PkFlow)
 	if err != nil {
 		return wf, err
 	}

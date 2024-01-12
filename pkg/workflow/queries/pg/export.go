@@ -82,16 +82,16 @@ style: {
 	stroke-dash: 3
 }
 }
+"%s".shape: none
 "%s".style.stroke: gray
 "%s".style.fill: white
 "%s".style.font-size: 12
 "%s".style.font-color: gray
-"%s".style.shadow: true
-
 `, title, name, title, title, title, title, title)
 	return valueData, valueStyle
 }
 func Render[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
+	var sketch = true
 	definition, err := GenerateGraphDefinition(wf)
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		if err != nil {
@@ -106,7 +106,8 @@ func Render[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Mon
 		diagram, _ := d2exporter.Export(context.Background(), graph, nil)
 		diagram.Config = config
 		out, _ := d2svg.Render(diagram, &d2svg.RenderOpts{
-			ThemeID: &d2themescatalog.NeutralDefault.ID,
+			ThemeID: &d2themescatalog.Origami.ID,
+			Sketch:  &sketch,
 		})
 		path := settings.WorflowURL()
 		err = os.WriteFile(path, out, 0600)
