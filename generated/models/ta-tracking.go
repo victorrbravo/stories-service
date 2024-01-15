@@ -12,22 +12,30 @@ import (
  * Generated queries (these can be used perfectly instead of writing them by hand
  */
 const (
-    TaTrackingCreateQuery = "INSERT INTO \"ta_tracking\" (\"fk_story\",\"fk_status\",\"images\",\"roles\") VALUES ($1, $2, $3, $4) RETURNING (\"pk_tracking\")"
-    AllTaTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"images\", \"roles\" FROM \"ta_tracking\""
-    TaTrackingByPkTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"images\", \"roles\" FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
-    TaTrackingByFkStoryQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"images\", \"roles\" FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
+    TaTrackingCreateQuery = "INSERT INTO \"ta_tracking\" (\"fk_story\",\"fk_status\",\"summary\",\"images\",\"videos\",\"roles\") VALUES ($1, $2, $3, $4, $5, $6) RETURNING (\"pk_tracking\")"
+    AllTaTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"images\", \"videos\", \"roles\" FROM \"ta_tracking\""
+    TaTrackingByPkTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"images\", \"videos\", \"roles\" FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
+    TaTrackingByFkStoryQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"images\", \"videos\", \"roles\" FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
     TaTrackingByFkStoryDeleteQuery = "DELETE FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
-    TaTrackingUpdateQuery = "UPDATE \"ta_tracking\" SET \"fk_story\" = COALESCE($1, \"fk_story\"), \"fk_status\" = COALESCE($2, \"fk_status\"), \"images\" = COALESCE($3, \"images\"), \"roles\" = COALESCE($4, \"roles\") WHERE \"pk_tracking\" = $5"
+    TaTrackingUpdateQuery = "UPDATE \"ta_tracking\" SET \"fk_story\" = COALESCE($1, \"fk_story\"), \"fk_status\" = COALESCE($2, \"fk_status\"), \"summary\" = COALESCE($3, \"summary\"), \"images\" = COALESCE($4, \"images\"), \"videos\" = COALESCE($5, \"videos\"), \"roles\" = COALESCE($6, \"roles\") WHERE \"pk_tracking\" = $7"
     TaTrackingDeleteQuery = "DELETE FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
+    TaTrackingListOfFields = " ta_tracking.\"pk_tracking\", ta_tracking.\"fk_story\", ta_tracking.\"fk_status\", ta_tracking.\"summary\", ta_tracking.\"images\", ta_tracking.\"videos\", ta_tracking.\"roles\""
 )
 
 type TaTracking struct {
 	PkTracking types.Int `json:"pk_tracking"`
 	FkStory types.Int `json:"fk_story"`
 	FkStatus types.String `json:"fk_status"`
+	Summary types.String `json:"summary"`
 	Images types.StringArray `json:"images"`
+	Videos types.StringArray `json:"videos"`
 	Roles types.StringArray `json:"roles"`
 }
+
+func (taTracking TaTracking) ListOfFields() string {
+	return TaTrackingListOfFields
+}
+
 
 func (taTracking TaTracking) ScanRow(rows database.RowInterface) (interface{}, error) {
 	var err error
@@ -35,7 +43,9 @@ func (taTracking TaTracking) ScanRow(rows database.RowInterface) (interface{}, e
 		&taTracking.PkTracking,
 		&taTracking.FkStory,
 		&taTracking.FkStatus,
+		&taTracking.Summary,
 		&taTracking.Images,
+		&taTracking.Videos,
 		&taTracking.Roles,
 	)
 	if err != nil {
@@ -48,7 +58,9 @@ func CreateTaTracking(
     query database.IQuery,
 	fkStory types.Int,
 	fkStatus types.String,
+	summary types.String,
 	images types.StringArray,
+	videos types.StringArray,
 	roles types.StringArray,
 ) (*TaTracking, error) {
 	var err error
@@ -59,7 +71,9 @@ func CreateTaTracking(
 	    &scanner,
 		fkStory,
 		fkStatus,
+		summary,
 		images,
+		videos,
 		roles,
 	)
 	if err != nil {
@@ -71,7 +85,9 @@ func CreateTaTracking(
 	    PkTracking: scanner.Value,
 	    FkStory: fkStory,
 	    FkStatus: fkStatus,
+	    Summary: summary,
 	    Images: images,
+	    Videos: videos,
 	    Roles: roles,
 	}
 	return taTracking, nil
@@ -81,7 +97,9 @@ func (taTracking *TaTracking) Update(
     query database.IQuery,
     fkStory types.Int,
     fkStatus types.String,
+    summary types.String,
     images types.StringArray,
+    videos types.StringArray,
     roles types.StringArray,
 ) error {
     var err error
@@ -89,7 +107,9 @@ func (taTracking *TaTracking) Update(
 	    TaTrackingUpdateQuery,
         fkStory,
         fkStatus,
+        summary,
         images,
+        videos,
         roles,
         taTracking.PkTracking,
     )
@@ -98,7 +118,9 @@ func (taTracking *TaTracking) Update(
 	}
     taTracking.FkStory = fkStory
     taTracking.FkStatus = fkStatus
+    taTracking.Summary = summary
     taTracking.Images = images
+    taTracking.Videos = videos
     taTracking.Roles = roles
     return nil
 }
@@ -157,8 +179,16 @@ func (taTracking TaTracking) GetFkStatus() types.String {
 	return taTracking.FkStatus}
 
 
+func (taTracking TaTracking) GetSummary() types.String {
+	return taTracking.Summary}
+
+
 func (taTracking TaTracking) GetImages() types.StringArray {
 	return taTracking.Images}
+
+
+func (taTracking TaTracking) GetVideos() types.StringArray {
+	return taTracking.Videos}
 
 
 func (taTracking TaTracking) GetRoles() types.StringArray {

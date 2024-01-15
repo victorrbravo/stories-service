@@ -10,7 +10,9 @@ type TaTracking struct {
 	PkTracking types.Int `yaml:"pk_tracking"`
 	FkStory types.Int `yaml:"fk_story"`
 	FkStatus types.String `yaml:"fk_status"`
+	Summary types.String `yaml:"summary"`
 	Images types.StringArray `yaml:"images"`
+	Videos types.StringArray `yaml:"videos"`
 	Roles types.StringArray `yaml:"roles"`
 }
 
@@ -22,7 +24,9 @@ func  InsertTaTracking(order string, query *database.IQuery) error {
     _, err = models.CreateTaTracking(*query,
             handler.FkStory,
             handler.FkStatus,
+            handler.Summary,
             handler.Images,
+            handler.Videos,
             handler.Roles,
     )
     if err != nil {
@@ -78,7 +82,9 @@ func  UpdateTaTracking(order string, query *database.IQuery) error {
     err = taTracking.Update(*query,
             handler.FkStory,
             handler.FkStatus,
+            handler.Summary,
             handler.Images,
+            handler.Videos,
             handler.Roles,
     )
     if err != nil {

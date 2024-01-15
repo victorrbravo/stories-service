@@ -7,6 +7,7 @@ import (
 	"errors"
 	"log"
 	db "stories/database"
+	"stories/generated/models"
 	"stories/pkg/workflow/common"
 	"stories/scanners"
 	"stories/types"
@@ -46,6 +47,11 @@ FROM cte {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{
 
 	SelectRoleToken = `
 SELECT {{.InfoField}} FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
+{{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}}
+`
+
+	SelectFieldsToken = `
+SELECT {{.Fields}} FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
 {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}}
 `
 )
@@ -112,6 +118,41 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		return wf, nil
 	}
 }
+
+func VariableField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
+	newQuery := wf.Query
+	if len(parameters) == 0 {
+		return func(error, ...interface{}) (*common.Workflow[T], error) {
+			return wf, errors.New("error not specified 'task name' in parameters")
+		}
+	}
+	nameTask := ""
+	names := parameters[0].([]interface{})
+	nameTask = names[0].(string)
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
+		fields := models.TaTracking{}.ListOfFields()
+		wf.Variable.Queries = fields
+		newSQL, err := buildSQL(wf, nameTask, SelectFieldsToken)
+		if err != nil {
+			log.Println("Error Role err", err)
+			return wf, err
+		}
+
+		var rows interface{}
+		var scanner models.TaTracking
+		rows, err = (*newQuery).QueryOne(newSQL, &scanner)
+		if err != nil {
+			if !errors.Is(err, sql.ErrNoRows) {
+				log.Println("Error Count SQL err", err)
+			}
+			return wf, err
+		}
+		wf.Data.Rows = make([]interface{}, 1)
+		wf.Data.Rows[0] = rows
+		return wf, nil
+	}
+}
+
 func CountToken[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var count scanners.Int
 	newQuery := wf.Query

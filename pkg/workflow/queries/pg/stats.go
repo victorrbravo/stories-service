@@ -291,7 +291,7 @@ func buildSQL[T db.Scanner](wf *common.Workflow[T], name string, sqlString strin
 		Status:        name,
 		Filter:        queryValue,
 		Token:         wf.CurrentIDInt.String(),
-		Fields:        wf.Variable.Fields,
+		Fields:        wf.Variable.Queries,
 		PkField:       wf.FieldToken,
 		PkStatus:      wf.FieldStatus,
 	}

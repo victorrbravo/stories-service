@@ -84,9 +84,12 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 	if err != nil {
 		return err
 	}
+	stringArr := []string{}
 	models.CreateTaTracking(*query,
 		taStory.PkStory,
 		start,
+		types.NilString(),
+		types.NewStringArray(stringArr),
 		images,
 		roles,
 	)
@@ -146,6 +149,8 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 	models.CreateTaTracking(*query,
 		taStory.PkStory,
 		status,
+		types.NilString(),
+		types.NewStringArray([]string{}),
 		images,
 		roles,
 	)
@@ -171,6 +176,8 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) error {
 	models.CreateTaTracking(*query,
 		taStory.PkStory,
 		statusStr,
+		types.NilString(),
+		types.NewStringArray([]string{}),
 		images,
 		roles,
 	)

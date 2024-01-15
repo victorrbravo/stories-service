@@ -54,6 +54,7 @@ const (
     {{- if .Searcher }}
     {{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" WHERE {{- $count := 0 -}} {{ range $index, $attr := .Searcher }} {{- if $index }} AND {{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = ${{ add $index $count 1 }} {{- end }}"
     {{- end }}
+    {{ $.Model }}ListOfFields = "{{- range $index, $attr := .Attrs }} {{- if $index }},{{- end }} {{ $.TableName.ToSnakeCase }}.{{ checkForSelect .FieldName .Name }} {{- end }}"
 )
 
 type {{ .Model }} struct {
@@ -63,6 +64,11 @@ type {{ .Model }} struct {
 }
 
 {{- $receiver := .Model.ToCamelCase }}
+
+func ({{ $receiver }} {{ .Model }}) ListOfFields() string {
+	return {{ $.Model }}ListOfFields
+}
+
 
 func ({{ $receiver }} {{ .Model }}) ScanRow(rows database.RowInterface) (interface{}, error) {
 	var err error

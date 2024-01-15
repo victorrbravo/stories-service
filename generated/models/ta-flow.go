@@ -17,6 +17,7 @@ const (
     TaFlowByPkFlowQuery = "SELECT \"pk_flow\", \"name\", \"flow\" FROM \"ta_flow\" WHERE \"pk_flow\" = $1"
     TaFlowUpdateQuery = "UPDATE \"ta_flow\" SET \"name\" = COALESCE($1, \"name\"), \"flow\" = COALESCE($2, \"flow\") WHERE \"pk_flow\" = $3"
     TaFlowDeleteQuery = "DELETE FROM \"ta_flow\" WHERE \"pk_flow\" = $1"
+    TaFlowListOfFields = " ta_flow.\"pk_flow\", ta_flow.\"name\", ta_flow.\"flow\""
 )
 
 type TaFlow struct {
@@ -24,6 +25,11 @@ type TaFlow struct {
 	Name types.String `json:"name"`
 	Flow []byte `json:"flow"`
 }
+
+func (taFlow TaFlow) ListOfFields() string {
+	return TaFlowListOfFields
+}
+
 
 func (taFlow TaFlow) ScanRow(rows database.RowInterface) (interface{}, error) {
 	var err error

@@ -230,14 +230,27 @@ func WorkflowProcessor(action string, order string, query *db.IQuery) (string, e
 
 func DoShowWorkflowTaskData[T db.Scanner](order string, query *db.IQuery) (string, error) {
 	var value string
-
+	getFlow, err := UnmarshallGetFlow([]byte(order), query)
+	if err != nil {
+		return value, err
+	}
+	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{getFlow.Task.String()}, pg.VariableField[T])
+	if err != nil {
+		return value, err
+	}
+	data, err := json.Marshal(wf.Data.Rows)
+	if err != nil {
+		return value, err
+	}
+	value = string(data)
+	fmt.Println("wf", wf.ID)
 	return value, nil
 
 }
 
 func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, error) {
 	var value string
-	getFlow, err := UnmarshallGetFlow([]byte(order))
+	getFlow, err := UnmarshallGetFlow([]byte(order), query)
 	if err != nil {
 		return value, err
 	}
@@ -282,9 +295,10 @@ func updateWorkflowData[T db.Scanner](wf *common.Workflow[T]) (string, error) {
 	return value, nil
 }
 
-func UnmarshallGetFlow(order []byte) (ShowFlowInput, error) {
+func UnmarshallGetFlow(order []byte, query *db.IQuery) (ShowFlowInput, error) {
 	var getFlow ShowFlowInput
 	var err error
+	getFlow.Task.Query = query
 	err = yaml.Unmarshal(order, &getFlow)
 	if err != nil {
 		return getFlow, err
@@ -301,7 +315,7 @@ func UpdateWorkflow[T db.Scanner](getFlow ShowFlowInput, query *db.IQuery, value
 	wf.CurrentIDInt = getFlow.Ticket
 	monad := pg.New[T](wf, query)
 	for _, f := range funcs {
-		monad = pg.Bind[T](monad, f)
+		monad = pg.Bind[T](monad, f, values...)
 	}
 	_, err = monad(nil)
 	if err != nil {
@@ -313,7 +327,7 @@ func UpdateWorkflow[T db.Scanner](getFlow ShowFlowInput, query *db.IQuery, value
 
 func DoShowWorkflowGraph[T db.Scanner](order string, query *db.IQuery) (string, error) {
 	var value string
-	getFlow, err := UnmarshallGetFlow([]byte(order))
+	getFlow, err := UnmarshallGetFlow([]byte(order), query)
 	if err != nil {
 		return value, err
 	}

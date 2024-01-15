@@ -27,12 +27,28 @@
       "Title": "FkStatus"
     },
     {
+      "Name": "Summary",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "Summary"
+    },
+    {
       "Name": "Images",
       "Type": "types.StringArray",
       "Scannable": true,
       "Nullable": true,
       "Getter": true,
       "Title": "Images"
+    },
+    {
+      "Name": "Videos",
+      "Type": "types.StringArray",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "Videos"
     },
     {
       "Name": "Roles",

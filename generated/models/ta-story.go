@@ -17,6 +17,7 @@ const (
     TaStoryByPkStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\" FROM \"ta_story\" WHERE \"pk_story\" = $1"
     TaStoryUpdateQuery = "UPDATE \"ta_story\" SET \"name\" = COALESCE($1, \"name\"), \"status\" = COALESCE($2, \"status\"), \"summary\" = COALESCE($3, \"summary\") WHERE \"pk_story\" = $4"
     TaStoryDeleteQuery = "DELETE FROM \"ta_story\" WHERE \"pk_story\" = $1"
+    TaStoryListOfFields = " ta_story.\"pk_story\", ta_story.\"name\", ta_story.\"status\", ta_story.\"summary\""
 )
 
 type TaStory struct {
@@ -25,6 +26,11 @@ type TaStory struct {
 	Status types.String `json:"status"`
 	Summary types.String `json:"summary"`
 }
+
+func (taStory TaStory) ListOfFields() string {
+	return TaStoryListOfFields
+}
+
 
 func (taStory TaStory) ScanRow(rows database.RowInterface) (interface{}, error) {
 	var err error

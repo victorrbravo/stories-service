@@ -112,8 +112,8 @@ type Workflow[T db.Scanner] struct {
 }
 
 type Variable struct {
-	Name   string `json:"name"`
-	Fields string `json:"fields"`
+	Name    string `json:"name"`
+	Queries string `json:"queries"`
 }
 
 type Task struct {

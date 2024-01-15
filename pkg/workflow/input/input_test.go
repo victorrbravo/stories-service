@@ -382,6 +382,33 @@ ticket: 11
 	fmt.Println("value data response", response)
 }
 
+func TestProcessShowFlowTaskData(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: show_task_data
+ticket: 11
+task: Step4
+`
+	order := []byte(input)
+	response, err := ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response", response)
+}
+
 func TestProcessDoAddTaskToWorkflowNormal(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{
