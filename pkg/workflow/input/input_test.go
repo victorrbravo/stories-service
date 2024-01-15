@@ -30,10 +30,12 @@ email: solazver3@gmail.com
 action: add_user
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	response, err := ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
 	}
+
+	fmt.Println("response:", response)
 
 }
 
@@ -346,6 +348,32 @@ func TestProcessShowFlowGraph(t *testing.T) {
 	input := `
 action: show_flow_graph
 ticket: 11
+`
+	order := []byte(input)
+	response, err := ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("response", response)
+}
+
+func TestProcessGeneratePresign(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: presign_image
+name: coffe.jpg
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)

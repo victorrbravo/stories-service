@@ -2,12 +2,28 @@ package stories
 
 import (
 	"context"
+	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"gopkg.in/yaml.v3"
+	"log"
 	"stories/actions/constants"
 	"stories/database"
 	"stories/generated/models"
 	"stories/pkg/utils"
 	"stories/types"
+	"time"
+)
+
+const (
+	awsRegion       = "us-east-1"
+	bucketName      = "mystoriesbucket"
+	objectKey       = "icecream"
+	durationInSec   = 3600 // Duration for which the URL will be valid (in seconds)
+	JsonUrlTemplate = `
+	{ "url": "%s" }
+`
 )
 
 type Ticket struct {
@@ -40,11 +56,56 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		err = DoAddStepFlowAtEnd[models.TaTracking](ctx, order, query)
 	case "delete_ticket":
 		err = DoDeleteStep(order, query)
+	case "presign_image":
+		value, err = DoPresignImage(order, query)
 	}
 	if err != nil {
 		return value, err
 	}
 	return value, nil
+}
+
+func DoPresignImage(order string, query *database.IQuery) (string, error) {
+	log.Println("DoPresignImage executing")
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(awsRegion),
+	})
+	if err != nil {
+		fmt.Println("Error creating session:", err)
+		return "", err
+	}
+
+	// Create an S3 client
+	s3Client := s3.New(sess)
+
+	// Generate a pre-signed URL for uploading the file
+	presignedURL, err := generatePresignedURL(s3Client, bucketName, objectKey, durationInSec)
+	if err != nil {
+		fmt.Println("Error generating pre-signed URL:", err)
+		return "", err
+	}
+	value := fmt.Sprintf(JsonUrlTemplate, presignedURL)
+	return value, nil
+}
+
+// generatePresignedURL generates a pre-signed URL for uploading a file to S3.
+func generatePresignedURL(s3Client *s3.S3, bucket, key string, seconds int) (string, error) {
+	req, _ := s3Client.PutObjectRequest(&s3.PutObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+
+	// Set the expiration time for the pre-signed URL
+	duration, err := time.ParseDuration(fmt.Sprintf("%ds", seconds))
+	if err != nil {
+		return "", err
+	}
+	url, err := req.Presign(duration)
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
 }
 
 func UnmarshallTicket(order []byte) (Ticket, error) {
