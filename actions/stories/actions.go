@@ -207,10 +207,34 @@ type TaskData struct {
 	Transition common.Transition `json:"transition"`
 }
 
+func DoGetWorkflowSchema(order string, query *db.IQuery) (string, error) {
+	var value = `
+ {
+	"actions" : {
+		"add_task": {
+			"description" : "create a new flow",
+			"fields": [
+				{ "name": "name", "type": "string", "validator" : "" },
+				{ "name": "summary", "type": "string", "validator" : "" }
+			]
+		},
+		"delete_task": {},
+		"show_flow_graph": {},
+		"show_flow_data": {},
+		"show_task_data": {}
+ 	}
+}
+`
+
+	return value, nil
+}
+
 func WorkflowProcessor(action string, order string, query *db.IQuery) (string, error) {
 	var err error
 	var value string
 	switch action {
+	case "workflow_schema":
+		value, err = DoGetWorkflowSchema(order, query)
 	case "add_task":
 		_, err = DoAddTask[models.TaTracking](order, query)
 	case "delete_task":

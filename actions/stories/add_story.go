@@ -48,6 +48,8 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 	var value string
 	ctx := context.Background()
 	switch action {
+	case "steps_schema":
+		value, err = DoGetStepsSchema(order, query)
 	case "new_story_flow":
 		err = NewStoryFlow(order, query)
 	case "add_step":
@@ -58,10 +60,64 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		err = DoDeleteStep(order, query)
 	case "presign_image":
 		value, err = DoPresignImage(order, query)
+	case "get_presigned_image":
+		value, err = DoGetPresignedImage(order, query)
+
 	}
 	if err != nil {
 		return value, err
 	}
+	return value, nil
+}
+
+func DoGetStepsSchema(order string, query *database.IQuery) (string, error) {
+	var value = `
+ {
+	"actions" : {
+		"new_story_flow": {
+			"description" : "create a new flow",
+			"fields": [
+				{ "name": "name", "type": "string", "validator" : "" },
+				{ "name": "summary", "type": "string", "validator" : "" }
+			]
+		},
+		"add_step": {},
+		"add_flow_step": {},
+		"delete_ticket": {},
+		"presign_image": {},
+		"get_presigned_image" : {}
+ 	}
+}
+`
+
+	return value, nil
+}
+
+func DoGetPresignedImage(order string, query *database.IQuery) (string, error) {
+	keyName := "icecream"
+	fmt.Println("DoGetPresignedImage keyName", keyName)
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(awsRegion),
+	})
+	if err != nil {
+		return "", err
+	}
+	// Create an S3 service client
+	svc := s3.New(sess)
+
+	// Specify the duration for which the URL should be valid (e.g., 1 hour)
+	duration := time.Hour
+
+	// Generate the pre-signed URL
+	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(keyName),
+	})
+	url, err := req.Presign(duration)
+	if err != nil {
+		return "", err
+	}
+	value := fmt.Sprintf(JsonUrlTemplate, url)
 	return value, nil
 }
 

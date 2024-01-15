@@ -2,6 +2,8 @@ package utils
 
 import (
 	"bytes"
+	"encoding/base64"
+	"io/ioutil"
 	"reflect"
 	"regexp"
 	"stories/types"
@@ -81,4 +83,14 @@ func FormatYaml(input string) string {
 	}
 
 	return input
+}
+
+func EncodeImageBase64(path string) (string, error) {
+	imageData, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	// Convert the image data to base64
+	base64String := base64.StdEncoding.EncodeToString(imageData)
+	return base64String, nil
 }
