@@ -15,7 +15,7 @@ action: update_user pk_user: 42 firstname: Hecmair
 	fmt.Println("value", value)
 
 	input1 := `
-action: update_user 
+action:update_user 
 pk_user: 42 firstname: Hecmair
 `
 	value1 := FormatYaml(input1)

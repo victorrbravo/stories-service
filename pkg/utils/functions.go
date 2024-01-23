@@ -63,7 +63,7 @@ func SetDefaults[T any](p *T) {
 
 func FormatYaml(input string) string {
 	// Define the regular expression pattern
-	pattern := `(\r?\n)?\w+:`
+	pattern := `(\r?\n)?\w+:\s*`
 
 	// Compile the regular expression
 	regexpPattern := regexp.MustCompile(pattern)
@@ -75,13 +75,16 @@ func FormatYaml(input string) string {
 		regexpPattern := regexp.MustCompile(pattern)
 		value := regexpPattern.ReplaceAllString(string(x), "")
 		value = "\r\n" + value
+		if !strings.HasSuffix(value, " ") {
+			value = value + " "
+		}
 		return value
 	}
 	values := Map(results, fReplace)
 	for i, v := range results {
 		input = strings.ReplaceAll(input, string(v), values[i])
 	}
-
+	input = strings.TrimLeft(input, "\r\n")
 	return input
 }
 

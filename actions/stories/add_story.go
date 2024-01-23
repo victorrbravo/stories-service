@@ -81,11 +81,41 @@ func DoGetStepsSchema(order string, query *database.IQuery) (string, error) {
 				{ "name": "summary", "type": "string", "validator" : "" }
 			]
 		},
-		"add_step": {},
-		"add_flow_step": {},
-		"delete_ticket": {},
-		"presign_image": {},
-		"get_presigned_image" : {}
+		"add_step": {
+		"description" : "add step",
+			"fields": [
+				{ "name": "name", "type": "string", "validator" : "" },
+				{ "name": "summary", "type": "string", "validator" : "" }
+			]
+		},
+		"add_flow_step": {
+			"description" : "add flow step",
+			"fields": [
+				{ "name": "name", "type": "string", "validator" : "" },
+				{ "name": "summary", "type": "string", "validator" : "" }
+			]
+		},
+		"delete_ticket": {
+			"description" : "delete",
+			"fields": [
+				{ "name": "ticket", "type": "string", "validator" : "" },
+				{ "name": "summary", "type": "string", "validator" : "" }
+			]
+		},
+		"presign_image": {
+		"description" : "presign",
+			"fields": [
+				{ "name": "image", "type": "string", "validator" : "" },
+				{ "name": "summary", "type": "string", "validator" : "" }
+			]
+		},
+		"get_presigned_image" : {
+			"description" : "get presigned image",
+			"fields": [
+				{ "name": "image", "type": "string", "validator" : "" },
+				{ "name": "summary", "type": "string", "validator" : "" }
+			]
+	}
  	}
 }
 `
