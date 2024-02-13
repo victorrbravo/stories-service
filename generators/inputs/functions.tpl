@@ -2,6 +2,7 @@ package pg
 
 
 import (
+    {{if .HasJson}}"encoding/json"{{end}}
     "gopkg.in/yaml.v3"
     "stories/database"
     "stories/generated/models"
@@ -15,6 +16,7 @@ var Values{{.Name}}  []models.{{.Name}}
 func MainProcessor(action string, order string, query *database.IQuery) (string, error) {
     var err error
     var value string
+    var data []byte
     {{range .Models}}
     if Values{{.Name}}  == nil {
         Values{{.Name}} = make([]models.{{.Name}}, 0)
@@ -35,10 +37,12 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
                     Values{{.Name}} = append(Values{{.Name}}, *Value{{.Name}})
                 {{if len .Searchables}}
                 case "get_{{.Name.Simplified}}_by_{{ (index .Searchables 0).Name.Simplified}}":
-                    Value{{.Name}}, _ := Get{{.Name}}By{{ (index .Searchables 0).Name}}(order, query)
-                    Values{{.Name}} = append(Values{{.Name}}, *Value{{.Name}})
-                {{end}}
-    {{end}}
+                    Value{{.Name.Plural}}, errSearch := Get{{.Name}}By{{ (index .Searchables 0).Name}}(order, query)
+                    if errSearch != nil  {
+                            return value, errSearch
+                    }
+                    data, err = json.Marshal( Value{{.Name.Plural}} )
+                    value = string(data){{end}}{{end}}
 	}
     if err != nil  {
         return value, err

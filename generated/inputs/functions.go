@@ -2,6 +2,7 @@ package pg
 
 
 import (
+    "encoding/json"
     "gopkg.in/yaml.v3"
     "stories/database"
     "stories/generated/models"
@@ -21,6 +22,7 @@ var ValuesTaUser  []models.TaUser
 func MainProcessor(action string, order string, query *database.IQuery) (string, error) {
     var err error
     var value string
+    var data []byte
     
     if ValuesTaFlow  == nil {
         ValuesTaFlow = make([]models.TaFlow, 0)
@@ -52,7 +54,6 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
                     ValueTaFlow, _ := GetTaFlowByPkFlow(order, query)
                     ValuesTaFlow = append(ValuesTaFlow, *ValueTaFlow)
                 
-    
     			case "add_story":
     			    err = InsertTaStory(order, query)
     			case "delete_story":
@@ -66,10 +67,12 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
                     ValuesTaStory = append(ValuesTaStory, *ValueTaStory)
                 
                 case "get_story_by_user_id":
-                    ValueTaStory, _ := GetTaStoryByUserID(order, query)
-                    ValuesTaStory = append(ValuesTaStory, *ValueTaStory)
-                
-    
+                    ValueTaStories, errSearch := GetTaStoryByUserID(order, query)
+                    if errSearch != nil  {
+                            return value, errSearch
+                    }
+                    data, err = json.Marshal( ValueTaStories )
+                    value = string(data)
     			case "add_tracking":
     			    err = InsertTaTracking(order, query)
     			case "delete_tracking":
@@ -82,7 +85,6 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
                     ValueTaTracking, _ := GetTaTrackingByPkTracking(order, query)
                     ValuesTaTracking = append(ValuesTaTracking, *ValueTaTracking)
                 
-    
     			case "add_user":
     			    err = InsertTaUser(order, query)
     			case "delete_user":
@@ -95,7 +97,6 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
                     ValueTaUser, _ := GetTaUserByPkUser(order, query)
                     ValuesTaUser = append(ValuesTaUser, *ValueTaUser)
                 
-    
 	}
     if err != nil  {
         return value, err

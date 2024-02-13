@@ -33,6 +33,7 @@ type entity struct {
 	Order        CustomString
 	AddPaging    bool
 	Models       []Description
+	HasJson      bool
 }
 
 type Description struct {
@@ -227,6 +228,16 @@ func onlyKeys(attrs []attr) []attr {
 	}
 	return array
 }
+func onlySearchables(attrs []attr) []attr {
+	var array []attr = make([]attr, 0)
+	for _, each := range attrs {
+		if !each.Searchable {
+			continue
+		}
+		array = append(array, each)
+	}
+	return array
+}
 
 func (str CustomString) Plural() string {
 	var lastIndex int = len(str) - 1
@@ -253,6 +264,12 @@ func (str CustomString) ToYamlTag() string {
 
 func (str CustomString) ToJsonTag() string {
 	return fmt.Sprintf("`json:\"%s\"`", str.ToSnakeCase())
+}
+
+func (str CustomString) ToCamelCasePlural() string {
+	value := CustomString(str.ToCamelCase())
+	strPlural := value.Plural()
+	return strPlural
 }
 
 func (str CustomString) ToCamelCase() string {
@@ -345,6 +362,7 @@ func (context *generatorContext) Prepare() {
 		"checkForSelect":      checkIfHasFieldNameForSelect,
 		"checkUpdateOrDelete": checkIfHasFieldNameForUpdateOrDelete,
 		"onlyKeys":            onlyKeys,
+		"onlySearchables":     onlySearchables,
 		"checkIsNotEmpty":     checkStringIsNotEmpty,
 	}
 	parser2 := template.New("functions")
@@ -411,6 +429,15 @@ func (context *generatorContext) Write() error {
 	return nil
 }
 
+func HasJson(models []Description) bool {
+	for _, model := range models {
+		if len(model.Searchables) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func (context *generatorContext) WriteFunctionsFile() error {
 	var file *os.File
 	var name string
@@ -425,6 +452,7 @@ func (context *generatorContext) WriteFunctionsFile() error {
 	if len(context.tableName) == 0 {
 		context.tableName = context.model
 	}
+	hasJson := HasJson(context.models)
 	err = context.functions.Execute(file, entity{
 		Model:     CustomString(context.model),
 		TableName: CustomString(context.tableName),
@@ -434,6 +462,7 @@ func (context *generatorContext) WriteFunctionsFile() error {
 		Attrs:     context.attrs,
 		Searcher:  context.searcher,
 		Models:    context.models,
+		HasJson:   hasJson,
 	})
 	if err != nil {
 		return err

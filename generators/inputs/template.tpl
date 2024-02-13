@@ -104,3 +104,21 @@ func  GetAll{{ .Model }}(query *database.IQuery) ([]models.{{ .Model }}, error) 
     return {{ .Model.ToCamelCase }}, nil
 }
 
+
+
+{{- range $index, $value := onlySearchables .Attrs }}
+func  Get{{ $.Model }}By{{ $value.Name }}(order string, query *database.IQuery) ([]models.{{ $.Model }}, error) {
+    handler, err := Unmarshall{{ $.Model }}([]byte(order))
+    if err != nil {
+        return nil, err
+    }
+    {{ $.Model.ToCamelCasePlural }}, err := models.Get{{ $.Model }}By{{ $value.Name }}(*query,
+            handler.{{ $value.Name }},
+    )
+    if err != nil {
+        return {{ $.Model.ToCamelCasePlural }}, err
+    }
+    return {{ $.Model.ToCamelCasePlural }}, nil
+}
+{{- end }}
+

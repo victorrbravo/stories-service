@@ -227,6 +227,7 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 		handler.Name,
 		start,
 		handler.Summary,
+		types.NewInt(0),
 	)
 	if err != nil {
 		return err
@@ -291,7 +292,8 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 	taStory.Update(*query,
 		types.NilString(),
 		status,
-		types.NilString())
+		types.NilString(),
+		types.NilInt)
 
 	models.CreateTaTracking(*query,
 		taStory.PkStory,
@@ -318,7 +320,8 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) error {
 	taStory.Update(*query,
 		types.NilString(),
 		statusStr,
-		types.NilString())
+		types.NilString(),
+		types.NilInt)
 
 	models.CreateTaTracking(*query,
 		taStory.PkStory,

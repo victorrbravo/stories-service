@@ -96,4 +96,17 @@ func  GetAllTaStory(query *database.IQuery) ([]models.TaStory, error) {
     }
     return taStory, nil
 }
+func  GetTaStoryByUserID(order string, query *database.IQuery) ([]models.TaStory, error) {
+    handler, err := UnmarshallTaStory([]byte(order))
+    if err != nil {
+        return nil, err
+    }
+    taStories, err := models.GetTaStoryByUserID(*query,
+            handler.UserID,
+    )
+    if err != nil {
+        return taStories, err
+    }
+    return taStories, nil
+}
 
