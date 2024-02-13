@@ -32,6 +32,15 @@
       "Nullable": true,
       "Getter": true,
       "Title": "Summary"
+    },
+    {
+      "Name": "UserID",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Searchable": true,
+      "Title": "UserID"
     }
   ]
 }

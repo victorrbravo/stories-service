@@ -36,8 +36,9 @@ type entity struct {
 }
 
 type Description struct {
-	Name     CustomString
-	KeyField CustomString
+	Name        CustomString
+	KeyField    CustomString
+	Searchables []attr
 }
 
 type attr struct {
@@ -474,10 +475,16 @@ func (context *generatorContext) HandleFile(file os.FileInfo) error {
 	context.orderBy = string(entity.OrderBy)
 	context.order = string(entity.Order)
 	context.addPaging = entity.AddPaging
-	for _, attr := range entity.Attrs {
-		context.attrs = append(context.attrs, attr)
-		if attr.Key {
-			desc := Description{entity.Model, attr.Name}
+	searchables := []attr{}
+	for _, curAttr := range entity.Attrs {
+		if curAttr.Searchable {
+			searchables = append(searchables, curAttr)
+		}
+	}
+	for _, curAttr := range entity.Attrs {
+		context.attrs = append(context.attrs, curAttr)
+		if curAttr.Key {
+			desc := Description{entity.Model, curAttr.Name, searchables}
 			context.models = append(context.models, desc)
 		}
 	}

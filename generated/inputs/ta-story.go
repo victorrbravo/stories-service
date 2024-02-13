@@ -11,6 +11,7 @@ type TaStory struct {
 	Name types.String `yaml:"name"`
 	Status types.String `yaml:"status"`
 	Summary types.String `yaml:"summary"`
+	UserID types.Int `yaml:"user_id"`
 }
 
 func  InsertTaStory(order string, query *database.IQuery) error {
@@ -22,6 +23,7 @@ func  InsertTaStory(order string, query *database.IQuery) error {
             handler.Name,
             handler.Status,
             handler.Summary,
+            handler.UserID,
     )
     if err != nil {
         return err
@@ -77,6 +79,7 @@ func  UpdateTaStory(order string, query *database.IQuery) error {
             handler.Name,
             handler.Status,
             handler.Summary,
+            handler.UserID,
     )
     if err != nil {
         return err

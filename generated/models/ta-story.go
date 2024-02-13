@@ -12,12 +12,13 @@ import (
  * Generated queries (these can be used perfectly instead of writing them by hand
  */
 const (
-    TaStoryCreateQuery = "INSERT INTO \"ta_story\" (\"name\",\"status\",\"summary\") VALUES ($1, $2, $3) RETURNING (\"pk_story\")"
-    AllTaStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\" FROM \"ta_story\""
-    TaStoryByPkStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\" FROM \"ta_story\" WHERE \"pk_story\" = $1"
-    TaStoryUpdateQuery = "UPDATE \"ta_story\" SET \"name\" = COALESCE($1, \"name\"), \"status\" = COALESCE($2, \"status\"), \"summary\" = COALESCE($3, \"summary\") WHERE \"pk_story\" = $4"
+    TaStoryCreateQuery = "INSERT INTO \"ta_story\" (\"name\",\"status\",\"summary\",\"user_id\") VALUES ($1, $2, $3, $4) RETURNING (\"pk_story\")"
+    AllTaStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\" FROM \"ta_story\""
+    TaStoryByPkStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\" FROM \"ta_story\" WHERE \"pk_story\" = $1"
+    TaStoryByUserIDQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\" FROM \"ta_story\" WHERE \"user_id\" = $1"
+    TaStoryUpdateQuery = "UPDATE \"ta_story\" SET \"name\" = COALESCE($1, \"name\"), \"status\" = COALESCE($2, \"status\"), \"summary\" = COALESCE($3, \"summary\"), \"user_id\" = COALESCE($4, \"user_id\") WHERE \"pk_story\" = $5"
     TaStoryDeleteQuery = "DELETE FROM \"ta_story\" WHERE \"pk_story\" = $1"
-    TaStoryListOfFields = " ta_story.\"pk_story\", ta_story.\"name\", ta_story.\"status\", ta_story.\"summary\""
+    TaStoryListOfFields = " ta_story.\"pk_story\", ta_story.\"name\", ta_story.\"status\", ta_story.\"summary\", ta_story.\"user_id\""
 )
 
 type TaStory struct {
@@ -25,6 +26,7 @@ type TaStory struct {
 	Name types.String `json:"name"`
 	Status types.String `json:"status"`
 	Summary types.String `json:"summary"`
+	UserID types.Int `json:"user_id"`
 }
 
 func (taStory TaStory) ListOfFields() string {
@@ -39,6 +41,7 @@ func (taStory TaStory) ScanRow(rows database.RowInterface) (interface{}, error) 
 		&taStory.Name,
 		&taStory.Status,
 		&taStory.Summary,
+		&taStory.UserID,
 	)
 	if err != nil {
 		return nil, err
@@ -51,6 +54,7 @@ func CreateTaStory(
 	name types.String,
 	status types.String,
 	summary types.String,
+	userID types.Int,
 ) (*TaStory, error) {
 	var err error
     var scanner scanners.Int
@@ -61,6 +65,7 @@ func CreateTaStory(
 		name,
 		status,
 		summary,
+		userID,
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -72,6 +77,7 @@ func CreateTaStory(
 	    Name: name,
 	    Status: status,
 	    Summary: summary,
+	    UserID: userID,
 	}
 	return taStory, nil
 }
@@ -81,6 +87,7 @@ func (taStory *TaStory) Update(
     name types.String,
     status types.String,
     summary types.String,
+    userID types.Int,
 ) error {
     var err error
 	err = query.Exec(
@@ -88,6 +95,7 @@ func (taStory *TaStory) Update(
         name,
         status,
         summary,
+        userID,
         taStory.PkStory,
     )
 	if err != nil {
@@ -96,6 +104,7 @@ func (taStory *TaStory) Update(
     taStory.Name = name
     taStory.Status = status
     taStory.Summary = summary
+    taStory.UserID = userID
     return nil
 }
 
@@ -114,6 +123,22 @@ func GetTaStoryByPkStory(query database.IQuery, value types.Int) (*TaStory, erro
 
 
 
+func GetTaStoryByUserID(query database.IQuery, value types.Int) ([]TaStory, error) {
+	    var err error
+    	var rows []interface{}
+    	var list []TaStory
+    	rows, err = query.QueryMany(TaStoryByUserIDQuery, &TaStory{}, value)
+    	if err != nil {
+    		if err == sql.ErrNoRows {
+    			return make([]TaStory, 0), nil
+    		}
+    		return nil, err
+    	}
+    	for _, row := range rows {
+    		list = append(list, row.(TaStory))
+    	}
+    	return list, nil
+}
 
 
 
@@ -132,6 +157,10 @@ func (taStory TaStory) GetStatus() types.String {
 
 func (taStory TaStory) GetSummary() types.String {
 	return taStory.Summary}
+
+
+func (taStory TaStory) GetUserID() types.Int {
+	return taStory.UserID}
 
 
 func (taStory *TaStory) Delete(query database.IQuery) error {

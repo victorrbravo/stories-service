@@ -15,8 +15,6 @@ const (
     TaUserCreateQuery = "INSERT INTO \"ta_user\" (\"firstname\",\"lastname\",\"email\",\"password\",\"account\") VALUES ($1, $2, $3, $4, $5) RETURNING (\"pk_user\")"
     AllTaUserQuery = "SELECT \"pk_user\", \"firstname\", \"lastname\", \"email\", \"password\", \"account\" FROM \"ta_user\""
     TaUserByPkUserQuery = "SELECT \"pk_user\", \"firstname\", \"lastname\", \"email\", \"password\", \"account\" FROM \"ta_user\" WHERE \"pk_user\" = $1"
-    TaUserByEmailQuery = "SELECT \"pk_user\", \"firstname\", \"lastname\", \"email\", \"password\", \"account\" FROM \"ta_user\" WHERE \"email\" = $1"
-    TaUserByAccountQuery = "SELECT \"pk_user\", \"firstname\", \"lastname\", \"email\", \"password\", \"account\" FROM \"ta_user\" WHERE \"account\" = $1"
     TaUserUpdateQuery = "UPDATE \"ta_user\" SET \"firstname\" = COALESCE($1, \"firstname\"), \"lastname\" = COALESCE($2, \"lastname\"), \"email\" = COALESCE($3, \"email\"), \"password\" = COALESCE($4, \"password\"), \"account\" = COALESCE($5, \"account\") WHERE \"pk_user\" = $6"
     TaUserDeleteQuery = "DELETE FROM \"ta_user\" WHERE \"pk_user\" = $1"
     TaUserListOfFields = " ta_user.\"pk_user\", ta_user.\"firstname\", ta_user.\"lastname\", ta_user.\"email\", ta_user.\"password\", ta_user.\"account\""
@@ -132,26 +130,6 @@ func GetTaUserByPkUser(query database.IQuery, value types.Int) (*TaUser, error) 
 
 
 
-func (taUser TaUser) GetTaUserByEmail(query database.IQuery, value types.String) (interface{}, error) {
-	var err error
-	var valueTaUser interface{}
-	valueTaUser, err = query.QueryOne(TaUserByEmailQuery, &taUser, value)
-	if err != nil {
-		return  nil, err
-	}
-	taUser = valueTaUser.(TaUser)
-	return &taUser, nil
-}
-func (taUser TaUser) GetTaUserByAccount(query database.IQuery, value types.String) (interface{}, error) {
-	var err error
-	var valueTaUser interface{}
-	valueTaUser, err = query.QueryOne(TaUserByAccountQuery, &taUser, value)
-	if err != nil {
-		return  nil, err
-	}
-	taUser = valueTaUser.(TaUser)
-	return &taUser, nil
-}
 
 
 

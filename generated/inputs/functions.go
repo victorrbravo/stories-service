@@ -17,6 +17,7 @@ var ValuesTaTracking  []models.TaTracking
 var ValuesTaUser  []models.TaUser
 
 
+
 func MainProcessor(action string, order string, query *database.IQuery) (string, error) {
     var err error
     var value string
@@ -50,6 +51,7 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
                 case "get_flow_by_PkFlow":
                     ValueTaFlow, _ := GetTaFlowByPkFlow(order, query)
                     ValuesTaFlow = append(ValuesTaFlow, *ValueTaFlow)
+                
     
     			case "add_story":
     			    err = InsertTaStory(order, query)
@@ -62,6 +64,11 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
                 case "get_story_by_PkStory":
                     ValueTaStory, _ := GetTaStoryByPkStory(order, query)
                     ValuesTaStory = append(ValuesTaStory, *ValueTaStory)
+                
+                case "get_story_by_user_id":
+                    ValueTaStory, _ := GetTaStoryByUserID(order, query)
+                    ValuesTaStory = append(ValuesTaStory, *ValueTaStory)
+                
     
     			case "add_tracking":
     			    err = InsertTaTracking(order, query)
@@ -74,6 +81,7 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
                 case "get_tracking_by_PkTracking":
                     ValueTaTracking, _ := GetTaTrackingByPkTracking(order, query)
                     ValuesTaTracking = append(ValuesTaTracking, *ValueTaTracking)
+                
     
     			case "add_user":
     			    err = InsertTaUser(order, query)
@@ -86,6 +94,7 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
                 case "get_user_by_PkUser":
                     ValueTaUser, _ := GetTaUserByPkUser(order, query)
                     ValuesTaUser = append(ValuesTaUser, *ValueTaUser)
+                
     
 	}
     if err != nil  {

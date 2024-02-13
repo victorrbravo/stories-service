@@ -11,6 +11,7 @@ import (
 var Values{{.Name}}  []models.{{.Name}}
 {{end}}
 
+
 func MainProcessor(action string, order string, query *database.IQuery) (string, error) {
     var err error
     var value string
@@ -32,6 +33,11 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
                 case "get_{{.Name.Simplified}}_by_{{.KeyField }}":
                     Value{{.Name}}, _ := Get{{.Name}}By{{.KeyField }}(order, query)
                     Values{{.Name}} = append(Values{{.Name}}, *Value{{.Name}})
+                {{if len .Searchables}}
+                case "get_{{.Name.Simplified}}_by_{{ (index .Searchables 0).Name.Simplified}}":
+                    Value{{.Name}}, _ := Get{{.Name}}By{{ (index .Searchables 0).Name}}(order, query)
+                    Values{{.Name}} = append(Values{{.Name}}, *Value{{.Name}})
+                {{end}}
     {{end}}
 	}
     if err != nil  {

@@ -218,15 +218,21 @@ func Get{{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}An
 
 {{ range .Attrs }}
 {{- if .Searchable }}
-func ({{ $receiver }} {{$.Model}}) Get{{ $.Model }}By{{- .Name -}}(query database.IQuery, value {{ .Type }}) (interface{}, error) {
-	var err error
-	var value{{ $.Model }} interface{}
-	value{{ $.Model }}, err = query.QueryOne({{ $.Model }}By{{ .Name }}Query, &{{ $receiver }}, value)
-	if err != nil {
-		return  nil, err
-	}
-	{{ $receiver }} = value{{ $.Model }}.({{ $.Model }})
-	return &{{ $receiver }}, nil
+func Get{{ $.Model }}By{{- .Name -}}(query database.IQuery, value {{ .Type }}) ([]{{ $.Model }}, error) {
+	    var err error
+    	var rows []interface{}
+    	var list []{{ $.Model }}
+    	rows, err = query.QueryMany({{ $.Model }}By{{ .Name }}Query, &{{ $.Model }}{}, value)
+    	if err != nil {
+    		if err == sql.ErrNoRows {
+    			return make([]{{ $.Model }}, 0), nil
+    		}
+    		return nil, err
+    	}
+    	for _, row := range rows {
+    		list = append(list, row.({{ $.Model }}))
+    	}
+    	return list, nil
 }
 {{- end }}
 {{- end }}
