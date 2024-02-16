@@ -60,18 +60,18 @@ func (obj *Values) Assign(v types.Int) types.Int {
 }
 
 type Data struct {
-	Count      types.Int    // checked
-	TimeField  types.String // checked
-	InfoField  types.String
-	Roles      []types.String // checked
-	Percentage float64
-	Total      types.Int
-	FillValue  types.Int // Measure progress in time, money or other type of value
-	FillSelect FillType
-	Rows       []interface{}
-	IDCurrent  types.Int
-	ToExport   Exportable
-	Stats      Values
+	Count      types.Int      `json:"count"` // checked
+	TimeField  types.String   `json:"time_field"`
+	InfoField  types.String   `json:"info_field"`
+	Roles      []types.String `json:"roles"`
+	Percentage float64        `json:"percentage"`
+	Total      types.Int      `json:"total"`
+	FillValue  types.Int      `json:"fill_value"` // Measure progress in time, money or other type of value
+	FillSelect FillType       `json:"fill_select"`
+	Rows       []interface{}  `json:"rows"`
+	IDCurrent  types.Int      `json:"id_current"`
+	ToExport   Exportable     `json:"to_export"`
+	Stats      Values         `json:"stats"`
 }
 
 type JobWorkflow[T db.Scanner] struct {

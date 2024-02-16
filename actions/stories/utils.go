@@ -2,6 +2,7 @@ package stories
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"log"
 	db "stories/database"
 	"stories/scanners"
@@ -16,6 +17,16 @@ func GetPgQuery(config db.DatabaseConfig) (db.PostgresQuery, error) {
 		return query, err
 	}
 	return query, nil
+}
+
+func Unmarshall[T any](order []byte) (T, error) {
+	var value T
+	var err error
+	err = yaml.Unmarshal(order, &value)
+	if err != nil {
+		return value, err
+	}
+	return value, nil
 }
 
 func GetJsonDatafile(pkFlow int, query *db.IQuery) ([]byte, error) {

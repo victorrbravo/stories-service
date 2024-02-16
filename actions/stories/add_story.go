@@ -19,13 +19,15 @@ import (
 const (
 	awsRegion       = "us-east-1"
 	bucketName      = "mystoriesbucket"
-	objectKey       = "icecream"
 	durationInSec   = 3600 // Duration for which the URL will be valid (in seconds)
 	JsonUrlTemplate = `
 	{ "url": "%s" }
 `
 )
 
+type PresignAction struct {
+	Name types.String `yaml:"name"`
+}
 type Ticket struct {
 	Name    types.String `yaml:"name"`
 	Summary types.String `yaml:"summary"`
@@ -124,48 +126,63 @@ func DoGetStepsSchema(order string, query *database.IQuery) (string, error) {
 }
 
 func DoGetPresignedImage(order string, query *database.IQuery) (string, error) {
-	keyName := "icecream"
-	fmt.Println("DoGetPresignedImage keyName", keyName)
+	var presignedURL string
+	log.Println("DoPresigned Imaaged ")
+	handler, err := Unmarshall[PresignAction]([]byte(order))
+	if err != nil {
+		log.Println("error unmarshalling")
+		return presignedURL, err
+	}
+
+	log.Printf("DoGetPresignedImage keyName |%s|", handler.Name)
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(awsRegion),
 	})
 	if err != nil {
-		return "", err
+		return presignedURL, err
 	}
 	// Create an S3 service client
 	svc := s3.New(sess)
 
 	// Specify the duration for which the URL should be valid (e.g., 1 hour)
-	duration := time.Hour
+	duration := time.Hour * 1
 
 	// Generate the pre-signed URL
 	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
 		Bucket: aws.String(bucketName),
-		Key:    aws.String(keyName),
+		Key:    aws.String(handler.Name.String()),
 	})
 	url, err := req.Presign(duration)
 	if err != nil {
-		return "", err
+		return presignedURL, err
 	}
+
+	fmt.Println("url", url)
 	value := fmt.Sprintf(JsonUrlTemplate, url)
 	return value, nil
 }
 
 func DoPresignImage(order string, query *database.IQuery) (string, error) {
-	log.Println("DoPresignImage executing")
+	var presignedURL string
+	log.Println("DoPresignImage was exectuted")
+	handler, err := Unmarshall[PresignAction]([]byte(order))
+	if err != nil {
+		log.Println("error unmarshalling")
+		return presignedURL, err
+	}
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(awsRegion),
 	})
 	if err != nil {
 		fmt.Println("Error creating session:", err)
-		return "", err
-	}
+		return presignedURL, err
 
+	}
 	// Create an S3 client
 	s3Client := s3.New(sess)
-
+	log.Println("handler.Name", handler.Name)
 	// Generate a pre-signed URL for uploading the file
-	presignedURL, err := generatePresignedURL(s3Client, bucketName, objectKey, durationInSec)
+	presignedURL, err = generatePresignedURL(s3Client, bucketName, handler.Name.String(), durationInSec)
 	if err != nil {
 		fmt.Println("Error generating pre-signed URL:", err)
 		return "", err
@@ -227,7 +244,7 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 		handler.Name,
 		start,
 		handler.Summary,
-		types.NewInt(0),
+		types.NewInt(2),
 	)
 	if err != nil {
 		return err
@@ -327,8 +344,8 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) error {
 		taStory.PkStory,
 		statusStr,
 		types.NilString(),
-		types.NewStringArray([]string{}),
 		images,
+		types.NewStringArray([]string{}),
 		roles,
 	)
 

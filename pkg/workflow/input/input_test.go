@@ -319,11 +319,11 @@ func TestProcessAddFlowStep(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_flow_step
-ticket: 11
-status: Step6
-image: imageRodeoMall
-amount: 32000
-type: tourist
+ticket: 23
+status: Spread cookies 
+image: Cookies
+amount: 35000
+type: step
 `
 	order := []byte(input)
 	_, err = ProcessInput(order, &query)
@@ -450,7 +450,7 @@ func TestProcessGePresignedImage(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: get_presigned_image
-name: icecream
+name: 762ED0C1-959C-400F-AABC-4E31C4BF5CD6.jpg
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)
@@ -476,7 +476,7 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: show_flow_data
-ticket: 11
+ticket: 26
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)
@@ -662,6 +662,31 @@ pk_flow: 1
 	order := []byte(input)
 	_, err = ProcessInput(order, &query)
 
+}
+
+func TestProcessNewStoryFlow(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: new_story_flow
+name: Tiramisu
+summary: tiramisu recipe for homemade cooking
+`
+	order := []byte(input)
+	_, err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestProcessDeleteTicket(t *testing.T) {
