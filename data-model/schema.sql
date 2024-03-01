@@ -43,6 +43,7 @@
         "status"   varchar not null,
         "summary"      varchar,
         "user_id" int REFERENCES "ta_user" ("pk_user"),
+        "fk_flow" int REFERENCES "ta_flow" ("pk_flow"),
         constraint "story_status_unique" unique (pk_story, status)
     );
 

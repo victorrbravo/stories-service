@@ -12,6 +12,7 @@ type TaStory struct {
 	Status types.String `yaml:"status"`
 	Summary types.String `yaml:"summary"`
 	UserID types.Int `yaml:"user_id"`
+	FkFlow types.Int `yaml:"fk_flow"`
 }
 
 func  InsertTaStory(order string, query *database.IQuery) error {
@@ -24,6 +25,7 @@ func  InsertTaStory(order string, query *database.IQuery) error {
             handler.Status,
             handler.Summary,
             handler.UserID,
+            handler.FkFlow,
     )
     if err != nil {
         return err
@@ -80,6 +82,7 @@ func  UpdateTaStory(order string, query *database.IQuery) error {
             handler.Status,
             handler.Summary,
             handler.UserID,
+            handler.FkFlow,
     )
     if err != nil {
         return err
@@ -103,6 +106,19 @@ func  GetTaStoryByUserID(order string, query *database.IQuery) ([]models.TaStory
     }
     taStories, err := models.GetTaStoryByUserID(*query,
             handler.UserID,
+    )
+    if err != nil {
+        return taStories, err
+    }
+    return taStories, nil
+}
+func  GetTaStoryByFkFlow(order string, query *database.IQuery) ([]models.TaStory, error) {
+    handler, err := UnmarshallTaStory([]byte(order))
+    if err != nil {
+        return nil, err
+    }
+    taStories, err := models.GetTaStoryByFkFlow(*query,
+            handler.FkFlow,
     )
     if err != nil {
         return taStories, err

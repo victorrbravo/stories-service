@@ -376,9 +376,9 @@ func UnmarshallAddTask(order []byte) (AddTask, error) {
 	return addTask, nil
 }
 
-func doCheckAddTask[T db.Scanner](task *AddTask, query *db.IQuery) (*common.Workflow[T], error) {
+func doCheckAddTask[T db.Scanner](pkFlow int, task *AddTask, query *db.IQuery) (*common.Workflow[T], error) {
 	var workflowType WorkflowType[T]
-	workflowType.PkFlow = 1
+	workflowType.PkFlow = pkFlow
 	workflowType.Query = query
 	wf, err := workflowType.LoadWorkflow(workflowType.PkFlow)
 	if err != nil {
@@ -441,7 +441,7 @@ func doCheckDelTask[T db.Scanner](task *AddTask, query *db.IQuery) error {
 func GetWorkflow[T db.Scanner](pkFlow int, query *db.IQuery) (*common.Workflow[T], error) {
 	var workflowType WorkflowType[T]
 	workflowType.Query = query
-	workflowType.PkFlow = 1
+	workflowType.PkFlow = pkFlow
 	wf, err := workflowType.LoadWorkflow(workflowType.PkFlow)
 	if err != nil {
 		return wf, err
@@ -449,10 +449,10 @@ func GetWorkflow[T db.Scanner](pkFlow int, query *db.IQuery) (*common.Workflow[T
 	return wf, nil
 }
 
-func DoAddTaskIntl[T db.Scanner](task AddTask, query *db.IQuery) (*common.Workflow[T], error) {
+func DoAddTaskIntl[T db.Scanner](pkFlow int, task AddTask, query *db.IQuery) (*common.Workflow[T], error) {
 	var currentInsert string
 	fmt.Println("task struct flow", task.PkFlow, "name", task.Name)
-	wf, err := doCheckAddTask[T](&task, query)
+	wf, err := doCheckAddTask[T](pkFlow, &task, query)
 	if err != nil {
 		return wf, err
 	}
@@ -483,7 +483,7 @@ func DoAddTask[T db.Scanner](order string, query *db.IQuery) (*common.Workflow[T
 	if err != nil {
 		return nil, err
 	}
-	return DoAddTaskIntl[T](task, query)
+	return DoAddTaskIntl[T](task.PkFlow, task, query)
 
 }
 

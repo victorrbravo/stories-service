@@ -23,6 +23,37 @@ const (
 	JsonUrlTemplate = `
 	{ "url": "%s" }
 `
+	DefaultStartWorkflow = `
+{
+      "id": "3f12f5a5-57ac-4861-8771-f85de203f862",
+      "name": "Stories",
+      "variable": {
+        "name": "basic",
+        "queries": "pk_story,name,status"
+      },
+      "tracking_table_name": "ta_tracking",
+      "tracking_keys": "fk_story,fk_status",
+      "field_token": "pk_story",
+      "field_status": "status",
+      "table_name": "ta_story",
+      "initial": "fk_status='Start'",
+      "tasks": {
+        "Start": {
+          "info_field": "images[1]",
+          "time_field": "updated_at",
+          "transition": {
+            "pattern": "none",
+            "links": [
+              {
+                "task": "END",
+                "queries": "END"
+              }
+            ]
+          }
+        }
+      }
+    }
+`
 )
 
 type PresignAction struct {
@@ -31,6 +62,7 @@ type PresignAction struct {
 type Ticket struct {
 	Name    types.String `yaml:"name"`
 	Summary types.String `yaml:"summary"`
+	UserID  types.Int    `yaml:"user_id"`
 }
 
 type AddStoryStatus struct {
@@ -39,6 +71,7 @@ type AddStoryStatus struct {
 	Amount   types.String `yaml:"amount"`
 	Image1   types.String `yaml:"image"`
 	StepType types.String `yaml:"type"`
+	UserID   types.Int    `yaml:"user_id"`
 }
 
 type DeleteTicket struct {
@@ -240,16 +273,28 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 	start := types.NewString(constants.Start)
 	images := types.NewStringArray([]string{})
 	roles := types.NewStringArray([]string{})
+	if types.IsNil(handler.UserID) {
+		return fmt.Errorf("user_id is nil")
+	}
+	taFlow, err := models.CreateTaFlow(*query,
+		handler.Name,
+		[]byte(DefaultStartWorkflow),
+	)
+	if err != nil {
+		return err
+	}
 	taStory, err := models.CreateTaStory(*query,
 		handler.Name,
 		start,
 		handler.Summary,
-		types.NewInt(2),
+		handler.UserID,
+		taFlow.PkFlow,
 	)
 	if err != nil {
 		return err
 	}
 	stringArr := []string{}
+
 	models.CreateTaTracking(*query,
 		taStory.PkStory,
 		start,
@@ -267,7 +312,12 @@ func DoAddStepFlowAtEnd[T database.Scanner](ctx context.Context, order string, q
 		return err
 	}
 	var addTask AddTask
-	wf, err := GetWorkflow[T](1, query)
+	fkFLow, err := DoAddStepIntl(addStep, query)
+	if err != nil {
+		return err
+	}
+	intFkFlow := types.AsInt(fkFLow)
+	wf, err := GetWorkflow[T](intFkFlow, query)
 	if err != nil {
 		return err
 	}
@@ -276,15 +326,11 @@ func DoAddStepFlowAtEnd[T database.Scanner](ctx context.Context, order string, q
 	if err != nil {
 		return err
 	}
-	addTask.PkFlow = 1
+	addTask.PkFlow = intFkFlow
 	addTask.Source = types.NewString(lastTask.Name)
 	addTask.Sentence = types.NewString(wf.Sentence(addTask.Name.String()))
 	utils.SetDefaults(&addTask)
-	wf, err = DoAddTaskIntl[T](addTask, query)
-	if err != nil {
-		return err
-	}
-	err = DoAddStepIntl(addStep, query)
+	wf, err = DoAddTaskIntl[T](intFkFlow, addTask, query)
 	if err != nil {
 		return err
 	}
@@ -310,7 +356,9 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 		types.NilString(),
 		status,
 		types.NilString(),
-		types.NilInt)
+		types.NilInt,
+		handler.UserID,
+	)
 
 	models.CreateTaTracking(*query,
 		taStory.PkStory,
@@ -324,23 +372,28 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 	return nil
 }
 
-func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) error {
+func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, error) {
+	var value types.Int
 	taStory, err := models.GetTaStoryByPkStory(*query,
 		status.Ticket)
 	if err != nil {
-		return err
+		return value, err
 	}
-
+	value = taStory.FkFlow
 	images := types.NewStringArray([]string{status.Image1.String()})
 	roles := types.NewStringArray([]string{status.Amount.String(), status.StepType.String()})
 	statusStr := types.NewString(status.Status.String())
-	taStory.Update(*query,
+	err = taStory.Update(*query,
 		types.NilString(),
 		statusStr,
 		types.NilString(),
-		types.NilInt)
-
-	models.CreateTaTracking(*query,
+		types.NilInt,
+		types.NilInt,
+	)
+	if err != nil {
+		return value, err
+	}
+	_, err = models.CreateTaTracking(*query,
 		taStory.PkStory,
 		statusStr,
 		types.NilString(),
@@ -348,8 +401,10 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) error {
 		types.NewStringArray([]string{}),
 		roles,
 	)
-
-	return nil
+	if err != nil {
+		return value, err
+	}
+	return value, nil
 }
 
 func DoAddStep(order string, query *database.IQuery) (AddStoryStatus, error) {
@@ -357,7 +412,7 @@ func DoAddStep(order string, query *database.IQuery) (AddStoryStatus, error) {
 	if err != nil {
 		return handler, err
 	}
-	err = DoAddStepIntl(handler, query)
+	_, err = DoAddStepIntl(handler, query)
 	if err != nil {
 		return handler, err
 	}

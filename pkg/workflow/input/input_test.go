@@ -319,9 +319,9 @@ func TestProcessAddFlowStep(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_flow_step
-ticket: 23
-status: Spread cookies 
-image: Cookies
+ticket: 39
+status: Coffee maker 
+images: cookie1
 amount: 35000
 type: step
 `
@@ -476,7 +476,7 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: show_flow_data
-ticket: 26
+ticket: 33
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)
@@ -681,6 +681,7 @@ func TestProcessNewStoryFlow(t *testing.T) {
 action: new_story_flow
 name: Tiramisu
 summary: tiramisu recipe for homemade cooking
+user_id: 2
 `
 	order := []byte(input)
 	_, err = ProcessInput(order, &query)
