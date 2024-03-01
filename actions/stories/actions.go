@@ -258,6 +258,13 @@ func DoShowWorkflowTaskData[T db.Scanner](order string, query *db.IQuery) (strin
 	if err != nil {
 		return value, err
 	}
+	taStory, err := models.GetTaStoryByPkStory(*query,
+		getFlow.Ticket)
+	if err != nil {
+		return value, err
+	}
+	getFlow.PkFlow = types.AsInt(taStory.FkFlow)
+	log.Println("getFlow pkFlow", getFlow.PkFlow)
 	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{getFlow.Task.String()}, pg.VariableField[T])
 	if err != nil {
 		return value, err
@@ -278,7 +285,13 @@ func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, e
 	if err != nil {
 		return value, err
 	}
-	fmt.Println("getFlow", getFlow)
+	taStory, err := models.GetTaStoryByPkStory(*query,
+		getFlow.Ticket)
+	if err != nil {
+		return value, err
+	}
+	getFlow.PkFlow = types.AsInt(taStory.FkFlow)
+	log.Println("DoShowWorkflowData getFlow pkFlow", getFlow.PkFlow)
 	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{}, pg.TimeField[T], pg.RoleField[T],
 		pg.CountToken[T])
 	if err != nil {
