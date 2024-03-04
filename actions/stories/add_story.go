@@ -98,11 +98,22 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 	case "get_presigned_image":
 		value, err = DoGetPresignedImage(order, query)
 
+	case "suggest_short_name":
+		value, err = DoSuggestShortName(order, query)
+
 	}
 	if err != nil {
 		return value, err
 	}
 	return value, nil
+}
+
+func DoSuggestShortName(order string, query *database.IQuery) (string, error) {
+	var value string
+	var err error
+
+	return value, err
+
 }
 
 func DoGetStepsSchema(order string, query *database.IQuery) (string, error) {
