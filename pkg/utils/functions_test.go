@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
 	"testing"
 )
 
@@ -49,6 +50,12 @@ name: Hecmair
 
 }
 
+type InputTest1 struct {
+	Name   string   `yaml:"name"`
+	Action string   `yaml:"action"`
+	Images []string `yaml:"images"`
+}
+
 func TestFormatYamlArray(t *testing.T) {
 
 	input3 := `
@@ -63,5 +70,13 @@ images:
 name: Hecmair
 `
 	value3 := FormatYaml(input3)
+	order := []byte(value3)
+	var inputTest1 InputTest1
+	err := yaml.Unmarshal(order, &inputTest1)
+	if err != nil {
+		t.Errorf("error %v", err)
+	}
+	fmt.Printf("inputTest1: %+v\n", inputTest1)
 	assert.Equal(t, value3, expected3, "value3 and expected3 are different")
+
 }
