@@ -487,6 +487,31 @@ ticket: 39
 	fmt.Println("value data response", response)
 }
 
+func TestProcessSuggestShortName(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: suggest_short_name_for_image
+image_id: 71091BE6-18D2-4235-8FC3-3765469298DB.jpg
+`
+	order := []byte(input)
+	response, err := ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("value data response", response)
+}
+
 func TestProcessShowFlowTaskData(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{

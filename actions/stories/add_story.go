@@ -2,12 +2,15 @@ package stories
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/sashabaranov/go-openai"
 	"gopkg.in/yaml.v3"
 	"log"
+	"os"
 	"stories/actions/constants"
 	"stories/database"
 	"stories/generated/models"
@@ -22,6 +25,9 @@ const (
 	durationInSec   = 3600 // Duration for which the URL will be valid (in seconds)
 	JsonUrlTemplate = `
 	{ "url": "%s" }
+`
+	JsonResponseTemplate = `
+	{ "response": "%s" }
 `
 	DefaultStartWorkflow = `
 {
@@ -59,6 +65,11 @@ const (
 type PresignAction struct {
 	Name types.String `yaml:"name"`
 }
+
+type SuggestAction struct {
+	ImageID types.String `yaml:"image_id"`
+}
+
 type Ticket struct {
 	Name    types.String `yaml:"name"`
 	Summary types.String `yaml:"summary"`
@@ -98,7 +109,7 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 	case "get_presigned_image":
 		value, err = DoGetPresignedImage(order, query)
 
-	case "suggest_short_name":
+	case "suggest_short_name_for_image":
 		value, err = DoSuggestShortName(order, query)
 
 	}
@@ -109,9 +120,66 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 }
 
 func DoSuggestShortName(order string, query *database.IQuery) (string, error) {
-	var value string
+	value := fmt.Sprintf(JsonResponseTemplate, "")
 	var err error
+	handler, err := Unmarshall[SuggestAction]([]byte(order))
+	if err != nil {
+		log.Println("error unmarshalling")
+		return value, err
+	}
+	imagePath, err := utils.DownloadFromS3(bucketName, handler.ImageID.String())
 
+	if err != nil {
+		return value, err
+	}
+	log.Println("imagePath", imagePath)
+	image64, err := utils.EncodeImageBase64(imagePath)
+	if err != nil {
+		return value, err
+	}
+	apiKey := os.Getenv("OPEN_API_KEY")
+	if apiKey == "" {
+		return value, errors.New("OPEN_API_KEY is not set")
+	}
+	client := openai.NewClient(apiKey)
+	if err != nil {
+		fmt.Println("Error processing image ", imagePath, " error", err)
+		return value, err
+	}
+
+	url := fmt.Sprintf("data:image/jpeg;base64,%s", image64)
+	imageURL := openai.ChatMessageImageURL{
+		URL: url,
+	}
+	resp, err := client.CreateChatCompletion(
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model: openai.GPT4VisionPreview,
+			Messages: []openai.ChatCompletionMessage{
+				{
+					Role: openai.ChatMessageRoleUser,
+					MultiContent: []openai.ChatMessagePart{
+						{
+							Type: "text",
+							Text: "Summarize the image in two words or less",
+						},
+						{
+							Type:     "image_url",
+							ImageURL: &imageURL,
+						},
+					},
+				},
+			},
+		},
+	)
+	if err != nil {
+		fmt.Printf("ChatCompletion error: %v\n", err)
+		return value, err
+	}
+	if len(resp.Choices) == 0 {
+		return value, fmt.Errorf("no choices")
+	}
+	value = fmt.Sprintf(JsonResponseTemplate, resp.Choices[0].Message.Content)
 	return value, err
 
 }

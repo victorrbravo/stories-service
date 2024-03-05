@@ -3,7 +3,16 @@ package utils
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"image/jpeg"
 	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
 	"reflect"
 	"regexp"
 	"stories/types"
@@ -88,12 +97,77 @@ func FormatYaml(input string) string {
 	return input
 }
 
+func DownloadFromS3(bucketName string, objectKey string) (string, error) {
+	// Create a new AWS session
+	var value string
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(awsRegion),
+	})
+	if err != nil {
+		return value, err
+	}
+
+	// Create S3 service client
+	// Create a temporary file
+	tempFile, err := os.CreateTemp("", "downloaded-file")
+	if err != nil {
+		return value, err
+	}
+	defer tempFile.Close()
+
+	// Download the file from S3
+	// Initialize a session in us-west-2 that the SDK will use to load
+	// credentials from the shared credentials file ~/.aws/credentials.
+	downloader := s3manager.NewDownloader(sess)
+
+	numBytes, err := downloader.Download(tempFile,
+		&s3.GetObjectInput{
+			Bucket: aws.String(bucketName),
+			Key:    aws.String(objectKey),
+		})
+	if err != nil {
+		fmt.Println(err)
+	}
+	absPath := tempFile.Name()
+	log.Println("Downloaded", absPath, numBytes, "bytes")
+	return absPath, nil
+}
+
+func ToJpeg(jpegPath string, imageBytes []byte) error {
+
+	// DetectContentType detects the content type
+	contentType := http.DetectContentType(imageBytes)
+
+	switch contentType {
+	case "image/png":
+		// Decode the PNG image bytes
+		img, err := jpeg.Decode(bytes.NewReader(imageBytes))
+		if err != nil {
+			return err
+		}
+
+		buf := new(bytes.Buffer)
+
+		// encode the image as a JPEG file
+		if err := jpeg.Encode(buf, img, nil); err != nil {
+			return err
+		}
+		jpegBytes := buf.Bytes()
+		err = os.WriteFile(jpegPath, jpegBytes, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func EncodeImageBase64(path string) (string, error) {
+	var base64String string
 	imageData, err := ioutil.ReadFile(path)
 	if err != nil {
-		return "", err
+		return base64String, err
 	}
 	// Convert the image data to base64
-	base64String := base64.StdEncoding.EncodeToString(imageData)
+	base64String = base64.StdEncoding.EncodeToString(imageData)
 	return base64String, nil
 }
