@@ -94,7 +94,45 @@ func FormatYaml(input string) string {
 		input = strings.ReplaceAll(input, string(v), values[i])
 	}
 	input = strings.TrimLeft(input, "\r\n")
-	return input
+
+	value := formatYamlArray(input)
+	return value
+}
+
+func formatYamlArray(input string) string {
+	var result string
+	fEnd := func(r rune) bool {
+		if r == ' ' || r == '\n' || r == '\r' {
+			return true
+		}
+		return false
+	}
+	pattern := `(\r?\n)`
+	regexpPattern := regexp.MustCompile(pattern)
+
+	lines := regexpPattern.Split(input, -1)
+
+	for _, line := range lines {
+		fields := strings.Split(line, ":")
+		if len(fields) != 2 {
+			continue
+		}
+		field := strings.TrimFunc(fields[0], fEnd)
+		value := strings.TrimFunc(fields[1], fEnd)
+		items := strings.Split(value, ",")
+		if len(items) > 1 {
+			value = "\n"
+			for _, item := range items {
+				newValue := strings.TrimSpace(item)
+				newItem := fmt.Sprintf(" - %s\n", newValue)
+				value = value + newItem
+			}
+			value = strings.TrimRight(value, "\n")
+		}
+		newline := fmt.Sprintf("%s: %s\n", field, value)
+		result = result + newline
+	}
+	return result
 }
 
 func DownloadFromS3(bucketName string, objectKey string) (string, error) {
