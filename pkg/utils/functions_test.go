@@ -54,12 +54,13 @@ type InputTest1 struct {
 	Name   string   `yaml:"name"`
 	Action string   `yaml:"action"`
 	Images []string `yaml:"images"`
+	Roles  []string `yaml:"roles"`
 }
 
 func TestFormatYamlArray(t *testing.T) {
 
 	input3 := `
-action: update_user images: 0123-1567-89ab-cdef, 0123-2562-89ab-cdef, 3024-3567-89ab-cdef, 5023-3567-89ab-cdef  name: Hecmair 
+action: update_user images: 0123-1567-89ab-cdef, 0123-2562-89ab-cdef, 3024-3567-89ab-cdef, 5023-3567-89ab-cdef  roles: state 1,state 2, state 3 name: Hecmair 
 `
 	expected3 := `action: update_user
 images: 
@@ -67,6 +68,10 @@ images:
  - 0123-2562-89ab-cdef
  - 3024-3567-89ab-cdef
  - 5023-3567-89ab-cdef
+roles: 
+ - state 1
+ - state 2
+ - state 3
 name: Hecmair
 `
 	value3 := FormatYaml(input3)

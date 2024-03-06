@@ -369,6 +369,13 @@ func DoShowWorkflowGraph[T db.Scanner](order string, query *db.IQuery) (string, 
 		return value, err
 	}
 	log.Println("getFlow", getFlow)
+	taStory, err := models.GetTaStoryByPkStory(*query,
+		getFlow.Ticket)
+	if err != nil {
+		return value, err
+	}
+	getFlow.PkFlow = types.AsInt(taStory.FkFlow)
+	log.Println("DoShowWorkflowGraph getFlow pkFlow", getFlow.PkFlow)
 	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{}, pg.TimeField[T], pg.RoleField[T],
 		pg.CountToken[T], pg.Render[T])
 	if err != nil {

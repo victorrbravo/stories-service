@@ -110,7 +110,7 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		value, err = DoGetPresignedImage(order, query)
 
 	case "suggest_short_name_for_image":
-		value, err = DoSuggestShortName(order, query)
+		value, err = DoSuggestShortNameForImage(order, query)
 
 	}
 	if err != nil {
@@ -119,7 +119,7 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 	return value, nil
 }
 
-func DoSuggestShortName(order string, query *database.IQuery) (string, error) {
+func DoSuggestShortNameForImage(order string, query *database.IQuery) (string, error) {
 	value := fmt.Sprintf(JsonResponseTemplate, "")
 	var err error
 	handler, err := Unmarshall[SuggestAction]([]byte(order))

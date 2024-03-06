@@ -64,6 +64,8 @@
         "summary"      varchar,
         "description" varchar,
         updated_at    timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        amount_spent money DEFAULT  '0.0'::money,
+        distance float DEFAULT 0.0,
         "fk_status" varchar,
         "fk_story"    int REFERENCES "ta_story" ("pk_story"),
         constraint "tracking_status_unique" unique (fk_story, fk_status)
