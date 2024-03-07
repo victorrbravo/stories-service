@@ -124,6 +124,9 @@ func formatYamlArray(input string) string {
 			value = "\n"
 			for _, item := range items {
 				newValue := strings.TrimSpace(item)
+				if newValue == "" {
+					continue
+				}
 				newItem := fmt.Sprintf(" - %s\n", newValue)
 				value = value + newItem
 			}

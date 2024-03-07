@@ -12,14 +12,14 @@ import (
  * Generated queries (these can be used perfectly instead of writing them by hand
  */
 const (
-    TaTrackingCreateQuery = "INSERT INTO \"ta_tracking\" (\"fk_story\",\"fk_status\",\"summary\",\"images\",\"videos\",\"roles\") VALUES ($1, $2, $3, $4, $5, $6) RETURNING (\"pk_tracking\")"
-    AllTaTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"images\", \"videos\", \"roles\" FROM \"ta_tracking\""
-    TaTrackingByPkTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"images\", \"videos\", \"roles\" FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
-    TaTrackingByFkStoryQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"images\", \"videos\", \"roles\" FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
+    TaTrackingCreateQuery = "INSERT INTO \"ta_tracking\" (\"fk_story\",\"fk_status\",\"summary\",\"amount_spent\",\"images\",\"videos\",\"roles\") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING (\"pk_tracking\")"
+    AllTaTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\" FROM \"ta_tracking\""
+    TaTrackingByPkTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\" FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
+    TaTrackingByFkStoryQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\" FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
     TaTrackingByFkStoryDeleteQuery = "DELETE FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
-    TaTrackingUpdateQuery = "UPDATE \"ta_tracking\" SET \"fk_story\" = COALESCE($1, \"fk_story\"), \"fk_status\" = COALESCE($2, \"fk_status\"), \"summary\" = COALESCE($3, \"summary\"), \"images\" = COALESCE($4, \"images\"), \"videos\" = COALESCE($5, \"videos\"), \"roles\" = COALESCE($6, \"roles\") WHERE \"pk_tracking\" = $7"
+    TaTrackingUpdateQuery = "UPDATE \"ta_tracking\" SET \"fk_story\" = COALESCE($1, \"fk_story\"), \"fk_status\" = COALESCE($2, \"fk_status\"), \"summary\" = COALESCE($3, \"summary\"), \"amount_spent\" = COALESCE($4, \"amount_spent\"), \"images\" = COALESCE($5, \"images\"), \"videos\" = COALESCE($6, \"videos\"), \"roles\" = COALESCE($7, \"roles\") WHERE \"pk_tracking\" = $8"
     TaTrackingDeleteQuery = "DELETE FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
-    TaTrackingListOfFields = " ta_tracking.\"pk_tracking\", ta_tracking.\"fk_story\", ta_tracking.\"fk_status\", ta_tracking.\"summary\", ta_tracking.\"images\", ta_tracking.\"videos\", ta_tracking.\"roles\""
+    TaTrackingListOfFields = " ta_tracking.\"pk_tracking\", ta_tracking.\"fk_story\", ta_tracking.\"fk_status\", ta_tracking.\"summary\", ta_tracking.\"amount_spent\", ta_tracking.\"images\", ta_tracking.\"videos\", ta_tracking.\"roles\""
 )
 
 type TaTracking struct {
@@ -27,6 +27,7 @@ type TaTracking struct {
 	FkStory types.Int `json:"fk_story"`
 	FkStatus types.String `json:"fk_status"`
 	Summary types.String `json:"summary"`
+	AmountSpent types.String `json:"amount_spent"`
 	Images types.StringArray `json:"images"`
 	Videos types.StringArray `json:"videos"`
 	Roles types.StringArray `json:"roles"`
@@ -44,6 +45,7 @@ func (taTracking TaTracking) ScanRow(rows database.RowInterface) (interface{}, e
 		&taTracking.FkStory,
 		&taTracking.FkStatus,
 		&taTracking.Summary,
+		&taTracking.AmountSpent,
 		&taTracking.Images,
 		&taTracking.Videos,
 		&taTracking.Roles,
@@ -59,6 +61,7 @@ func CreateTaTracking(
 	fkStory types.Int,
 	fkStatus types.String,
 	summary types.String,
+	amountSpent types.String,
 	images types.StringArray,
 	videos types.StringArray,
 	roles types.StringArray,
@@ -72,6 +75,7 @@ func CreateTaTracking(
 		fkStory,
 		fkStatus,
 		summary,
+		amountSpent,
 		images,
 		videos,
 		roles,
@@ -86,6 +90,7 @@ func CreateTaTracking(
 	    FkStory: fkStory,
 	    FkStatus: fkStatus,
 	    Summary: summary,
+	    AmountSpent: amountSpent,
 	    Images: images,
 	    Videos: videos,
 	    Roles: roles,
@@ -98,6 +103,7 @@ func (taTracking *TaTracking) Update(
     fkStory types.Int,
     fkStatus types.String,
     summary types.String,
+    amountSpent types.String,
     images types.StringArray,
     videos types.StringArray,
     roles types.StringArray,
@@ -108,6 +114,7 @@ func (taTracking *TaTracking) Update(
         fkStory,
         fkStatus,
         summary,
+        amountSpent,
         images,
         videos,
         roles,
@@ -119,6 +126,7 @@ func (taTracking *TaTracking) Update(
     taTracking.FkStory = fkStory
     taTracking.FkStatus = fkStatus
     taTracking.Summary = summary
+    taTracking.AmountSpent = amountSpent
     taTracking.Images = images
     taTracking.Videos = videos
     taTracking.Roles = roles
@@ -181,6 +189,10 @@ func (taTracking TaTracking) GetFkStatus() types.String {
 
 func (taTracking TaTracking) GetSummary() types.String {
 	return taTracking.Summary}
+
+
+func (taTracking TaTracking) GetAmountSpent() types.String {
+	return taTracking.AmountSpent}
 
 
 func (taTracking TaTracking) GetImages() types.StringArray {

@@ -13,6 +13,7 @@ type DataTemplate struct {
 	TimeField     string
 	InfoField     string
 	AmountField   string
+	SummaryField  string
 	TrackingTable string
 	PkField       string
 	PkStatus      string

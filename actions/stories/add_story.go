@@ -84,6 +84,7 @@ type AddStoryStatus struct {
 	Images   types.StringArray `yaml:"images"`
 	StepType types.String      `yaml:"type"`
 	UserID   types.Int         `yaml:"user_id"`
+	Summary  types.String      `yaml:"summary"`
 }
 
 type DeleteTicket struct {
@@ -379,6 +380,7 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 		taStory.PkStory,
 		start,
 		types.NilString(),
+		types.NilString(),
 		types.NewStringArray(stringArr),
 		images,
 		roles,
@@ -444,6 +446,7 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 		taStory.PkStory,
 		status,
 		types.NilString(),
+		types.NilString(),
 		types.NewStringArray([]string{}),
 		images,
 		roles,
@@ -476,7 +479,8 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, er
 	_, err = models.CreateTaTracking(*query,
 		taStory.PkStory,
 		statusStr,
-		types.NilString(),
+		status.Summary,
+		status.Amount,
 		images,
 		types.NewStringArray([]string{}),
 		roles,

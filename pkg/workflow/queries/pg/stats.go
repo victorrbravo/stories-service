@@ -288,6 +288,7 @@ func buildSQL[T db.Scanner](wf *common.Workflow[T], name string, sqlString strin
 		InfoField:     current.InfoField,
 		AmountField:   current.AmountField,
 		TrackingTable: wf.TrackingTableName.String(),
+		SummaryField:  SummaryFieldName,
 		Statuses:      statuses,
 		Status:        name,
 		Filter:        queryValue,

@@ -85,3 +85,28 @@ name: Hecmair
 	assert.Equal(t, value3, expected3, "value3 and expected3 are different")
 
 }
+
+func TestFormatYamlArray2(t *testing.T) {
+	input3 := `
+action: update_user images: 0123-1567-89ab-cdef, roles: state 1,state 2, state 3 name: Hecmair 
+`
+	expected3 := `action: update_user
+images: 
+ - 0123-1567-89ab-cdef
+roles: 
+ - state 1
+ - state 2
+ - state 3
+name: Hecmair
+`
+	value3 := FormatYaml(input3)
+	order := []byte(value3)
+	var inputTest1 InputTest1
+	err := yaml.Unmarshal(order, &inputTest1)
+	if err != nil {
+		t.Errorf("error %v", err)
+	}
+	fmt.Printf("inputTest1: %+v\n", inputTest1)
+	assert.Equal(t, value3, expected3, "value3 and expected3 are different")
+
+}

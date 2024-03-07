@@ -35,6 +35,14 @@
       "Title": "Summary"
     },
     {
+      "Name": "AmountSpent",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "AmountSpent"
+    },
+    {
       "Name": "Images",
       "Type": "types.StringArray",
       "Scannable": true,

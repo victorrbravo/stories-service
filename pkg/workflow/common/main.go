@@ -69,6 +69,7 @@ type Data struct {
 	Videos       types.StringArray `json:"videos"`
 	Percentage   float64           `json:"percentage"`
 	UpdateAtDiff types.String      `json:"update_at_diff"`
+	Summary      types.String      `json:"summary"`
 	Amount       types.Float       `json:"amount"`
 	Distance     types.Float       `json:"distance"`
 	Total        types.Int         `json:"total"`
