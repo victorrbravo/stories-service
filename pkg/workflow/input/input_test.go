@@ -319,9 +319,10 @@ func TestProcessAddFlowStep(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_flow_step
-ticket: 39
+ticket: 42
 status: Coffee maker 
-images: cookie1
+images: 
+- cookie1
 amount: 35000
 type: step
 `
@@ -476,7 +477,7 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: show_flow_data
-ticket: 39
+ticket: 42
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)

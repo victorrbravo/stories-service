@@ -25,7 +25,7 @@ const jsonFile = `
   "tasks": [
     "ToDo": {
       "info_field": "roles[1]",
-      "time_field": "updated_at",
+      "time_field": "updated_at","amount_field": "amount_spent",
       "transition": {
         "pattern": "none",
         "links": [
@@ -38,7 +38,7 @@ const jsonFile = `
     },
     "Progress": {
       "info_field": "roles[1]",
-      "time_field": "updated_at",
+      "time_field": "updated_at","amount_field": "amount_spent",
       "transition": {
         "pattern": "or",
         "links": [
@@ -51,7 +51,7 @@ const jsonFile = `
     },
     "Done": {
       "info_field": "roles[1]",
-      "time_field": "updated_at",
+      "time_field": "updated_at","amount_field": "amount_spent",
       "transition": {
         "pattern": "or",
         "links": [

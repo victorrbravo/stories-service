@@ -47,6 +47,7 @@ const (
         "Start": {
           "info_field": "images[1]",
           "time_field": "updated_at",
+		  "amount_field": "amount_spent",
           "transition": {
             "pattern": "none",
             "links": [
@@ -77,12 +78,12 @@ type Ticket struct {
 }
 
 type AddStoryStatus struct {
-	Ticket   types.Int    `yaml:"ticket"`
-	Status   types.String `yaml:"status"`
-	Amount   types.String `yaml:"amount"`
-	Image1   types.String `yaml:"image"`
-	StepType types.String `yaml:"type"`
-	UserID   types.Int    `yaml:"user_id"`
+	Ticket   types.Int         `yaml:"ticket"`
+	Status   types.String      `yaml:"status"`
+	Amount   types.String      `yaml:"amount"`
+	Images   types.StringArray `yaml:"images"`
+	StepType types.String      `yaml:"type"`
+	UserID   types.Int         `yaml:"user_id"`
 }
 
 type DeleteTicket struct {
@@ -428,7 +429,7 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 		return err
 	}
 
-	images := types.NewStringArray([]string{handler.Image1.String()})
+	images := handler.Images
 	roles := types.NewStringArray([]string{handler.Amount.String(), handler.StepType.String()})
 	status := types.NewString(handler.Status.String())
 	taStory.Update(*query,
@@ -459,7 +460,7 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, er
 		return value, err
 	}
 	value = taStory.FkFlow
-	images := types.NewStringArray([]string{status.Image1.String()})
+	images := status.Images
 	roles := types.NewStringArray([]string{status.Amount.String(), status.StepType.String()})
 	statusStr := types.NewString(status.Status.String())
 	err = taStory.Update(*query,

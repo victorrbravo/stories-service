@@ -107,7 +107,7 @@ insert into ta_story (name, status) values ('story1', 'Done');
       "tasks": {
         "Start": {
           "info_field": "images[1]",
-          "time_field": "updated_at",
+          "time_field": "updated_at", "amount_field": "amount_spent",
           "transition": {
             "pattern": "none",
             "links": [
@@ -141,7 +141,7 @@ insert into ta_flow (pk_flow,name, flow) values (2,'flow1','
   "tasks": {
     "ToDo": {
       "info_field": "images[1]",
-      "time_field": "updated_at",
+      "time_field": "updated_at","amount_field": "amount_spent",
       "transition": {
         "pattern": "none",
         "links": [
@@ -154,7 +154,7 @@ insert into ta_flow (pk_flow,name, flow) values (2,'flow1','
     },
     "Progress": {
       "info_field": "images[1]",
-      "time_field": "updated_at",
+      "time_field": "updated_at","amount_spent": "amount_spent",
       "transition": {
         "pattern": "or",
         "links": [
@@ -167,7 +167,7 @@ insert into ta_flow (pk_flow,name, flow) values (2,'flow1','
     },
     "Done": {
       "info_field": "images[1]",
-      "time_field": "updated_at",
+      "time_field": "updated_at","amount_field": "amount_spent",
       "transition": {
         "pattern": "or",
         "links": [

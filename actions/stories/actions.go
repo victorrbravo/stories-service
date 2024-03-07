@@ -21,6 +21,7 @@ SELECT
 '{
 "info_field": "{{.RoleField}}", 
 "time_field": "{{.TimeField}}", 
+"amount_field": "{{.AmountField}}",
 "report": {{.Report}},
 "transition": {
 "links": [
@@ -48,6 +49,7 @@ SELECT
 '{
 "info_field": "{{.RoleField}}", 
 "time_field": "{{.TimeField}}", 
+"amount_field": "{{.AmountField}}",
 "report": {{.Report}},
 "transition": {
 "links": [
@@ -75,6 +77,7 @@ SELECT
 '{
 "info_field": "{{.RoleField}}", 
 "time_field": "{{.TimeField}}", 
+"amount_field": "{{.AmountField}}",
 "report": {{.Report}},
 "transition": {
 "links": [
@@ -147,6 +150,7 @@ UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }' WHERE pk_flow={{.PkFlow}};
 		"report": false,
 		"info_field": "images[1]", 
 		"time_field": "updated_at", 
+		"amount_field": "amount_spent",
 	"transition": {
 "links": [
 	{
@@ -164,6 +168,7 @@ UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }' WHERE pk_flow={{.PkFlow}};
 {
 "info_field": "{{.RoleField}}", 
 "time_field": "{{.TimeField}}", 
+"amount_field": "{{.AmountField}}",
 "transition": {
 "links": [
 	{
@@ -185,15 +190,16 @@ type ShowFlowInput struct {
 }
 
 type AddTask struct {
-	PkFlow    int          `yaml:"flow" default:"1"`
-	Name      types.String `yaml:"name" default:"Newtask"`
-	Sentence  types.String `yaml:"sentence" default:"END"`
-	Target    types.String `yaml:"target" default:"END"`
-	RoleField types.String `yaml:"role_field" default:"images[1]"`
-	TimeField types.String `yaml:"time_field" default:"updated_at"`
-	Pattern   types.String `yaml:"pattern" default:"none"`
-	Report    types.String `yaml:"report" default:"true"`
-	Source    types.String `yaml:"source"`
+	PkFlow      int          `yaml:"flow" default:"1"`
+	Name        types.String `yaml:"name" default:"Newtask"`
+	Sentence    types.String `yaml:"sentence" default:"END"`
+	Target      types.String `yaml:"target" default:"END"`
+	RoleField   types.String `yaml:"role_field" default:"images[1]"`
+	TimeField   types.String `yaml:"time_field" default:"updated_at"`
+	AmountField types.String `yaml:"amount_field" default:"amount_spent"`
+	Pattern     types.String `yaml:"pattern" default:"none"`
+	Report      types.String `yaml:"report" default:"true"`
+	Source      types.String `yaml:"source"`
 }
 
 type WorkflowData struct {
@@ -293,7 +299,7 @@ func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, e
 	getFlow.PkFlow = types.AsInt(taStory.FkFlow)
 	log.Println("DoShowWorkflowData getFlow pkFlow", getFlow.PkFlow)
 	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{}, pg.TimeField[T], pg.RoleField[T],
-		pg.CountToken[T])
+		pg.CountToken[T], pg.ArrayField[T])
 	if err != nil {
 		return value, err
 	}

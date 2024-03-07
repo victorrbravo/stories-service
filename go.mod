@@ -14,6 +14,7 @@ require (
 	golang.org/x/crypto v0.14.0
 	gopkg.in/yaml.v3 v3.0.1
 	oss.terrastruct.com/d2 v0.6.1
+	github.com/dustin/go-humanize v1.0.0 // indirect
 )
 
 require (

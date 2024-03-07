@@ -12,6 +12,7 @@ type DataTemplate struct {
 	Key2Link      string
 	TimeField     string
 	InfoField     string
+	AmountField   string
 	TrackingTable string
 	PkField       string
 	PkStatus      string

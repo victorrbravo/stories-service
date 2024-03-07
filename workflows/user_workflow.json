@@ -7,6 +7,7 @@
         {
             "name": "new",
           "time_field": "update_at",
+          "amount_field": "amount_spent",
           "info_field": "role",
             "token_link": "[]",
             "links": [
@@ -25,7 +26,8 @@
         {
             "name": "active",
           "time_field": "update_at",
-          "info_field": "role",
+          "info_field": "images[1]",
+          "amount_field": "amount_spent",
             "token_link": "[]",
           "links": [
                 {

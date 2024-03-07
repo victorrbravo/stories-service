@@ -60,18 +60,24 @@ func (obj *Values) Assign(v types.Int) types.Int {
 }
 
 type Data struct {
-	Count      types.Int      `json:"count"` // checked
-	TimeField  types.String   `json:"time_field"`
-	InfoField  types.String   `json:"info_field"`
-	Roles      []types.String `json:"roles"`
-	Percentage float64        `json:"percentage"`
-	Total      types.Int      `json:"total"`
-	FillValue  types.Int      `json:"fill_value"` // Measure progress in time, money or other type of value
-	FillSelect FillType       `json:"fill_select"`
-	Rows       []interface{}  `json:"rows"`
-	IDCurrent  types.Int      `json:"id_current"`
-	ToExport   Exportable     `json:"to_export"`
-	Stats      Values         `json:"stats"`
+	Count        types.Int         `json:"count"` // checked
+	TimeField    types.String      `json:"time_field"`
+	InfoField    types.String      `json:"info_field"`
+	AmountField  types.String      `json:"amount_field"`
+	Roles        types.StringArray `json:"roles"`
+	Images       types.StringArray `json:"images"`
+	Videos       types.StringArray `json:"videos"`
+	Percentage   float64           `json:"percentage"`
+	UpdateAtDiff types.String      `json:"update_at_diff"`
+	Amount       types.Float       `json:"amount"`
+	Distance     types.Float       `json:"distance"`
+	Total        types.Int         `json:"total"`
+	FillValue    types.Int         `json:"fill_value"` // Measure progress in time, money or other type of value
+	FillSelect   FillType          `json:"fill_select"`
+	Rows         []interface{}     `json:"rows"`
+	IDCurrent    types.Int         `json:"id_current"`
+	ToExport     Exportable        `json:"to_export"`
+	Stats        Values            `json:"stats"`
 }
 
 type JobWorkflow[T db.Scanner] struct {
@@ -117,12 +123,13 @@ type Variable struct {
 }
 
 type Task struct {
-	Name       string     `json:"name"`
-	TimeField  string     `json:"time_field"`
-	InfoField  string     `json:"info_field"`
-	Transition Transition `json:"transition"`
-	Data       Data       `json:"data,omitempty"`
-	Report     types.Bool `json:"report,omitempty"`
+	Name        string     `json:"name"`
+	TimeField   string     `json:"time_field"`
+	InfoField   string     `json:"info_field"`
+	AmountField string     `json:"amount_field"`
+	Transition  Transition `json:"transition"`
+	Data        Data       `json:"data,omitempty"`
+	Report      types.Bool `json:"report,omitempty"`
 }
 
 type Transition struct {
