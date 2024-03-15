@@ -16,6 +16,7 @@ import (
 	"stories/generated/models"
 	"stories/pkg/utils"
 	"stories/types"
+	"strings"
 	"time"
 )
 
@@ -26,9 +27,7 @@ const (
 	JsonUrlTemplate = `
 	{ "url": "%s" }
 `
-	JsonResponseTemplate = `
-	{ "response": "%s" }
-`
+	JsonResponseTemplate = `{ "response": "%s" }`
 	DefaultStartWorkflow = `
 {
       "id": "3f12f5a5-57ac-4861-8771-f85de203f862",
@@ -181,9 +180,10 @@ func DoSuggestShortNameForImage(order string, query *database.IQuery) (string, e
 	if len(resp.Choices) == 0 {
 		return value, fmt.Errorf("no choices")
 	}
-	value = fmt.Sprintf(JsonResponseTemplate, resp.Choices[0].Message.Content)
+	content := resp.Choices[0].Message.Content
+	trimContent := strings.Trim(content, " .")
+	value = fmt.Sprintf(JsonResponseTemplate, trimContent)
 	return value, err
-
 }
 
 func DoGetStepsSchema(order string, query *database.IQuery) (string, error) {
