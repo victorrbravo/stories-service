@@ -19,6 +19,7 @@ const jsonFile = `
   "variable": { "name": "basic", "queries": "pk_story,name,status" },
   "tracking_table_name": "ta_tracking",
   "tracking_keys": "fk_story,fk_status",
+  "tracking_id": "pk_tracking",
   "field_token": "pk_story",
   "table_name": "ta_story",
   "initial": "fk_status='ToDo'",

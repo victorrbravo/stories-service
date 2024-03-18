@@ -141,7 +141,8 @@ UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }' WHERE pk_flow={{.PkFlow}};
   "variable": { "name": "basic", "queries": "pk_story,name,status" },
   "tracking_table_name": "ta_tracking",
   "tracking_keys": "fk_story,fk_status",
-  "field_token": "pk_story",
+   "tracking_id": "pk_tracking",
+	"field_token": "pk_story",
   "field_status": "status",
   "table_name": "ta_story",
   "initial": "TRUE",
@@ -208,6 +209,7 @@ type WorkflowData struct {
 	Tasks []TaskData  `json:"tasks"`
 }
 type TaskData struct {
+	ID         types.Int         `json:"id"`
 	Name       string            `json:"name"`
 	Data       common.Data       `json:"data"`
 	Transition common.Transition `json:"transition"`

@@ -23,4 +23,5 @@ type DataTemplate struct {
 	Token         string
 	Filter        string
 	Fields        string
+	PkTracking    string
 }

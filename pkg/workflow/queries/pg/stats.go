@@ -296,6 +296,7 @@ func buildSQL[T db.Scanner](wf *common.Workflow[T], name string, sqlString strin
 		Fields:        wf.Variable.Queries,
 		PkField:       wf.FieldToken,
 		PkStatus:      wf.FieldStatus,
+		PkTracking:    checkPkTracking(wf),
 	}
 	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {
@@ -303,4 +304,15 @@ func buildSQL[T db.Scanner](wf *common.Workflow[T], name string, sqlString strin
 	}
 	newSQL := outputBuffer.String()
 	return newSQL, nil
+}
+
+func checkPkTracking[T db.Scanner](wf *common.Workflow[T]) string {
+	if wf.TrackingID.IsEmpty() {
+		wf.TrackingID = types.NewString(strings.Replace(wf.TrackingTableName.String(),
+			"ta_",
+			"pk_",
+			1,
+		))
+	}
+	return wf.TrackingID.String()
 }

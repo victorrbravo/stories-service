@@ -79,6 +79,7 @@ type Data struct {
 	IDCurrent    types.Int         `json:"id_current"`
 	ToExport     Exportable        `json:"to_export"`
 	Stats        Values            `json:"stats"`
+	ID           types.Int         `json:"id"`
 }
 
 type JobWorkflow[T db.Scanner] struct {
@@ -105,6 +106,7 @@ type Workflow[T db.Scanner] struct {
 	FieldStatus       string           `json:"field_status,omitempty"`
 	TrackingTableName types.String     `json:"tracking_table_name"`
 	TrackingKeys      types.String     `json:"tracking_keys"`
+	TrackingID        types.String     `json:"tracking_id"`
 	Variable          Variable         `json:"variable"`
 	Tasks             map[string]*Task `json:"tasks"`
 	Data              Data             `json:"data,omitempty"`

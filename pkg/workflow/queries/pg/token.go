@@ -48,7 +48,7 @@ FROM cte {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{
 `
 
 	SelectRoleToken = `
-SELECT {{.InfoField}},{{.TimeField}},{{.AmountField}}, {{.TrackingTable}}.{{.SummaryField}} FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
+SELECT {{.InfoField}},{{.TimeField}},{{.AmountField}}, {{.TrackingTable}}.{{.SummaryField}}, {{.PkTracking}} FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
 {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}}
 `
 	SelectArrayToken = `
@@ -109,7 +109,7 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 }
 
 func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
-	var role scanners.TupleFour
+	var role scanners.TupleFourInt
 	newQuery := wf.Query
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
@@ -132,6 +132,7 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			current.Data.TimeField = role.Second
 			current.Data.AmountField = role.Third
 			current.Data.Summary = role.Four
+			current.Data.ID = role.ID
 		}
 		return wf, nil
 	}
