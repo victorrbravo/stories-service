@@ -444,7 +444,7 @@ func doCheckAddTask[T db.Scanner](pkFlow int, task *AddTask, query *db.IQuery) (
 func doCheckDelTask[T db.Scanner](task *AddTask, query *db.IQuery) error {
 	var workflowType WorkflowType[T]
 	workflowType.Query = query
-	workflowType.PkFlow = 1
+	workflowType.PkFlow = task.PkFlow
 	wf, err := workflowType.LoadWorkflow(workflowType.PkFlow)
 	if err != nil {
 		return err
@@ -515,12 +515,9 @@ func DoAddTask[T db.Scanner](order string, query *db.IQuery) (*common.Workflow[T
 
 }
 
-func DoDeleteTask[T db.Scanner](order string, query *db.IQuery) error {
+func DoDeleteTaskInt[T db.Scanner](task AddTask, query *db.IQuery) error {
 	var currentDelete string
-	task, err := UnmarshallAddTask([]byte(order))
-	if err != nil {
-		return err
-	}
+	var err error
 	err = doCheckDelTask[T](&task, query)
 	if err != nil {
 		return err
@@ -545,4 +542,13 @@ func DoDeleteTask[T db.Scanner](order string, query *db.IQuery) error {
 		return err
 	}
 	return nil
+}
+
+func DoDeleteTask[T db.Scanner](order string, query *db.IQuery) error {
+	task, err := Unmarshall[AddTask]([]byte(order))
+	if err != nil {
+		return err
+	}
+	err = DoDeleteTaskInt[T](task, query)
+	return err
 }

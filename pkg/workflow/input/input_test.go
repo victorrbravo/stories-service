@@ -333,6 +333,30 @@ type: step
 	}
 }
 
+func TestProcessDeleteFlowStep(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: delete_flow_step
+id: 112
+`
+	order := []byte(input)
+	_, err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestProcessShowFlowGraph(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{

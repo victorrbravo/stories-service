@@ -71,6 +71,10 @@ type SuggestAction struct {
 	ImageID types.String `yaml:"image_id"`
 }
 
+type DeleteFlowStepAction struct {
+	ID types.Int `yaml:"id"`
+}
+
 type Ticket struct {
 	Name    types.String `yaml:"name"`
 	Summary types.String `yaml:"summary"`
@@ -104,8 +108,10 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		_, err = DoAddStep(order, query)
 	case "add_flow_step":
 		err = DoAddStepFlowAtEnd[models.TaTracking](ctx, order, query)
+	case "delete_flow_step":
+		err = DoDeleteFlowStep[models.TaTracking](ctx, order, query)
 	case "delete_ticket":
-		err = DoDeleteStep(order, query)
+		err = DoDeleteStoryByID(order, query)
 	case "presign_image":
 		value, err = DoPresignImage(order, query)
 	case "get_presigned_image":
@@ -389,6 +395,37 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 	return nil
 }
 
+func DoDeleteFlowStep[T database.Scanner](ctx context.Context, order string, query *database.IQuery) error {
+	deleteStep, err := Unmarshall[DeleteFlowStepAction]([]byte(order))
+	if err != nil {
+		return err
+	}
+
+	taTracking, err := models.GetTaTrackingByPkTracking(*query, deleteStep.ID)
+	if err != nil {
+		return err
+	}
+
+	taStory, err := models.GetTaStoryByPkStory(*query, taTracking.FkStory)
+	if err != nil {
+		return err
+	}
+	err = taTracking.Delete(*query)
+	if err != nil {
+		return err
+	}
+
+	intPkFlow := types.AsInt(taStory.FkFlow)
+	var curTask AddTask
+	curTask.PkFlow = intPkFlow
+	curTask.Name = taTracking.FkStatus
+	err = DoDeleteTaskInt[T](curTask, query)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func DoAddStepFlowAtEnd[T database.Scanner](ctx context.Context, order string, query *database.IQuery) error {
 	addStep, err := UnmarshallAddStep([]byte(order), query)
 	if err != nil {
@@ -504,7 +541,7 @@ func DoAddStep(order string, query *database.IQuery) (AddStoryStatus, error) {
 	return handler, nil
 }
 
-func DoDeleteStep(order string, query *database.IQuery) error {
+func DoDeleteStoryByID(order string, query *database.IQuery) error {
 	handler, err := UnmarshallAddStep([]byte(order), query)
 	if err != nil {
 		return err
