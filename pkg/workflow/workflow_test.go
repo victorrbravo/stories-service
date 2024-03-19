@@ -12,62 +12,6 @@ import (
 	"testing"
 )
 
-const jsonFile = `
-{
-  "id": "%s",
-  "name": "Workflow1",
-  "variable": { "name": "basic", "queries": "pk_story,name,status" },
-  "tracking_table_name": "ta_tracking",
-  "tracking_keys": "fk_story,fk_status",
-  "tracking_id": "pk_tracking",
-  "field_token": "pk_story",
-  "table_name": "ta_story",
-  "initial": "fk_status='ToDo'",
-  "tasks": [
-    "ToDo": {
-      "info_field": "roles[1]",
-      "time_field": "updated_at","amount_field": "amount_spent",
-      "transition": {
-        "pattern": "none",
-        "links": [
-          {
-            "task": "Progress",
-            "queries": "fk_status='Progress'"
-          }
-        ]
-      }
-    },
-    "Progress": {
-      "info_field": "roles[1]",
-      "time_field": "updated_at","amount_field": "amount_spent",
-      "transition": {
-        "pattern": "or",
-        "links": [
-          {
-            "task": "Done",
-            "queries": "fk_status='Done'"
-          }
-        ]
-      }
-    },
-    "Done": {
-      "info_field": "roles[1]",
-      "time_field": "updated_at","amount_field": "amount_spent",
-      "transition": {
-        "pattern": "or",
-        "links": [
-          {
-            "task": "END",
-            "queries": "END"
-          }
-        ]
-      }
-    }
-  ]
-}
-
-`
-
 func TestNextStatus(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -81,7 +25,7 @@ func TestNextStatus(t *testing.T) {
 		return
 	}
 	q := query.NewQuery()
-	wf, err := stories.GetWorkflow(1, &q)
+	wf, err := stories.GetWorkflow[models.TaTracking](1, &q)
 	statuses, _ := wf.Statuses(ctx, false)
 	fmt.Println("statuses ", statuses)
 
@@ -109,7 +53,7 @@ func TestGenerateStats(t *testing.T) {
 		return
 	}
 	q := query.NewQuery()
-	wf, err := stories.GetWorkflow(1, &q)
+	wf, err := stories.GetWorkflow[models.TaTracking](1, &q)
 	if err != nil {
 		t.Error(err)
 		return
@@ -154,7 +98,7 @@ func TestGenerateToken(t *testing.T) {
 	}
 
 	q := query.NewQuery()
-	wf, err := stories.GetWorkflow(1, &q)
+	wf, err := stories.GetWorkflow[models.TaTracking](1, &q)
 	wf.CurrentIDInt = types.NewInt(11)
 	monad := pg.New(wf, &q)
 	monad = pg.Bind(monad, pg.TimeField[models.TaTracking])
@@ -193,7 +137,7 @@ func TestWhereClauses(t *testing.T) {
 		return
 	}
 	q := query.NewQuery()
-	wf, err := stories.GetWorkflow(1, &q)
+	wf, err := stories.GetWorkflow[models.TaTracking](1, &q)
 	wheres := pg.ClausesWheres[models.TaTracking](*wf)
 	if len(wheres) == 0 {
 		t.Logf("len wheres is zero")
