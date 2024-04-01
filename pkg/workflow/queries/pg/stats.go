@@ -297,6 +297,8 @@ func buildSQL[T db.Scanner](wf *common.Workflow[T], name string, sqlString strin
 		PkField:       wf.FieldToken,
 		PkStatus:      wf.FieldStatus,
 		PkTracking:    checkPkTracking(wf),
+		VideosField:   current.VideosField,
+		ImagesField:   current.ImagesField,
 	}
 	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {

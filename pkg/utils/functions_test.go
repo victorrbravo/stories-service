@@ -7,6 +7,15 @@ import (
 	"testing"
 )
 
+func TestFormatYamlFlowStep(t *testing.T) {
+	input := `
+ action: add_flow_step ticket: 44 status: Shopping mall images: ABC897B7-71DA-4C08-B7E8-B7F2F071D445, amount: 3500.00 summary: In CC Cacique media_date: 2024-03-24T18:05:26Z type: step
+`
+	value := FormatYaml(input)
+	fmt.Println("value", value)
+
+}
+
 func TestFormatYaml(t *testing.T) {
 
 	input0 := `

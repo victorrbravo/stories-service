@@ -82,13 +82,15 @@ type Ticket struct {
 }
 
 type AddStoryStatus struct {
-	Ticket   types.Int         `yaml:"ticket"`
-	Status   types.String      `yaml:"status"`
-	Amount   types.String      `yaml:"amount"`
-	Images   types.StringArray `yaml:"images"`
-	StepType types.String      `yaml:"type"`
-	UserID   types.Int         `yaml:"user_id"`
-	Summary  types.String      `yaml:"summary"`
+	Ticket    types.Int         `yaml:"ticket"`
+	Status    types.String      `yaml:"status"`
+	Amount    types.String      `yaml:"amount"`
+	Images    types.StringArray `yaml:"images"`
+	Videos    types.StringArray `yaml:"videos"`
+	StepType  types.String      `yaml:"type"`
+	UserID    types.Int         `yaml:"user_id"`
+	Summary   types.String      `yaml:"summary"`
+	MediaDate types.String      `yaml:"media_date"`
 }
 
 type DeleteTicket struct {
@@ -391,6 +393,7 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 		types.NewStringArray(stringArr),
 		images,
 		roles,
+		types.Now(),
 	)
 	return nil
 }
@@ -488,6 +491,7 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 		types.NewStringArray([]string{}),
 		images,
 		roles,
+		types.Now(),
 	)
 
 	return nil
@@ -502,6 +506,12 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, er
 	}
 	value = taStory.FkFlow
 	images := status.Images
+	videos := status.Videos
+	mediaDate, err := time.Parse(time.RFC3339, status.MediaDate.String())
+	if err != nil {
+		log.Printf("error parsing date %s", err)
+		return value, err
+	}
 	roles := types.NewStringArray([]string{status.Amount.String(), status.StepType.String()})
 	statusStr := types.NewString(status.Status.String())
 	err = taStory.Update(*query,
@@ -520,8 +530,9 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, er
 		status.Summary,
 		status.Amount,
 		images,
-		types.NewStringArray([]string{}),
+		videos,
 		roles,
+		types.DateTime(mediaDate),
 	)
 	if err != nil {
 		return value, err

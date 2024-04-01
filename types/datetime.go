@@ -13,10 +13,11 @@ import (
 type DateTime time.Time
 
 const (
-	iso8601         = "2006-01-02T15:04:05.999Z07:00"
+	Iso8601         = "2006-01-02T15:04:05.999Z07:00"
 	withoutTimezone = "2006-01-02T15:04:05"
 	onlyDate        = "2006-01-02"
-	iso8601Quoted   = "\"" + iso8601 + "\""
+	iso8601Quoted   = "\"" + Iso8601 + "\""
+	standardFormat  = "2006-01-02 15:04:05"
 )
 
 func (date DateTime) format(format string) string {
@@ -51,7 +52,7 @@ func (date DateTime) Value() (driver.Value, error) {
 	if native.IsZero() {
 		return nil, nil
 	}
-	return date.format(iso8601), nil
+	return date.format(Iso8601), nil
 }
 
 // String implements the `Stringer' interface
@@ -121,7 +122,7 @@ func (date DateTime) MarshalJSON() ([]byte, error) {
 	if native.IsZero() {
 		return json.Marshal(nil)
 	}
-	return json.Marshal(date.format(iso8601))
+	return json.Marshal(date.format(Iso8601))
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface

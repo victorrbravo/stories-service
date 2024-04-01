@@ -65,6 +65,14 @@
       "Nullable": true,
       "Getter": true,
       "Title": "Roles"
+    },
+    {
+      "Name": "UpdatedAt",
+      "Type": "types.DateTime",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "UpdatedAt"
     }
   ]
 }

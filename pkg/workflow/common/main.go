@@ -133,6 +133,8 @@ type Task struct {
 	Transition  Transition `json:"transition"`
 	Data        Data       `json:"data,omitempty"`
 	Report      types.Bool `json:"report,omitempty"`
+	VideosField string     `json:"videos_field" default:"videos"`
+	ImagesField string     `json:"images_field" default:"images"`
 }
 
 type Transition struct {

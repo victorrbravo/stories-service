@@ -59,6 +59,11 @@ func SetDefaults[T any](p *T) {
 				if strings.Compare(currentString, "nil") == 0 {
 					valueOf.FieldByName(field.Name).Set(reflect.ValueOf(types.NewString(value)))
 				}
+			case "string":
+				currentString := valueField.(string)
+				if len(currentString) == 0 {
+					valueOf.FieldByName(field.Name).Set(reflect.ValueOf(string(value)))
+				}
 			case "int":
 				currentValue := valueField.(int)
 				if currentValue == 0 {
@@ -72,7 +77,7 @@ func SetDefaults[T any](p *T) {
 
 func FormatYaml(input string) string {
 	// Define the regular expression pattern
-	pattern := `(\r?\n)?\w+:\s*`
+	pattern := `(\r?\n)?[a-zA-Z_]+:\s*`
 
 	// Compile the regular expression
 	regexpPattern := regexp.MustCompile(pattern)
@@ -113,7 +118,7 @@ func formatYamlArray(input string) string {
 	lines := regexpPattern.Split(input, -1)
 
 	for _, line := range lines {
-		fields := strings.Split(line, ":")
+		fields := strings.SplitN(line, ":", 2)
 		if len(fields) != 2 {
 			continue
 		}

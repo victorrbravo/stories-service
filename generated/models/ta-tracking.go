@@ -12,14 +12,14 @@ import (
  * Generated queries (these can be used perfectly instead of writing them by hand
  */
 const (
-    TaTrackingCreateQuery = "INSERT INTO \"ta_tracking\" (\"fk_story\",\"fk_status\",\"summary\",\"amount_spent\",\"images\",\"videos\",\"roles\") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING (\"pk_tracking\")"
-    AllTaTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\" FROM \"ta_tracking\""
-    TaTrackingByPkTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\" FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
-    TaTrackingByFkStoryQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\" FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
+    TaTrackingCreateQuery = "INSERT INTO \"ta_tracking\" (\"fk_story\",\"fk_status\",\"summary\",\"amount_spent\",\"images\",\"videos\",\"roles\",\"updated_at\") VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING (\"pk_tracking\")"
+    AllTaTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\" FROM \"ta_tracking\""
+    TaTrackingByPkTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\" FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
+    TaTrackingByFkStoryQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\" FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
     TaTrackingByFkStoryDeleteQuery = "DELETE FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
-    TaTrackingUpdateQuery = "UPDATE \"ta_tracking\" SET \"fk_story\" = COALESCE($1, \"fk_story\"), \"fk_status\" = COALESCE($2, \"fk_status\"), \"summary\" = COALESCE($3, \"summary\"), \"amount_spent\" = COALESCE($4, \"amount_spent\"), \"images\" = COALESCE($5, \"images\"), \"videos\" = COALESCE($6, \"videos\"), \"roles\" = COALESCE($7, \"roles\") WHERE \"pk_tracking\" = $8"
+    TaTrackingUpdateQuery = "UPDATE \"ta_tracking\" SET \"fk_story\" = COALESCE($1, \"fk_story\"), \"fk_status\" = COALESCE($2, \"fk_status\"), \"summary\" = COALESCE($3, \"summary\"), \"amount_spent\" = COALESCE($4, \"amount_spent\"), \"images\" = COALESCE($5, \"images\"), \"videos\" = COALESCE($6, \"videos\"), \"roles\" = COALESCE($7, \"roles\"), \"updated_at\" = COALESCE($8, \"updated_at\") WHERE \"pk_tracking\" = $9"
     TaTrackingDeleteQuery = "DELETE FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
-    TaTrackingListOfFields = " ta_tracking.\"pk_tracking\", ta_tracking.\"fk_story\", ta_tracking.\"fk_status\", ta_tracking.\"summary\", ta_tracking.\"amount_spent\", ta_tracking.\"images\", ta_tracking.\"videos\", ta_tracking.\"roles\""
+    TaTrackingListOfFields = " ta_tracking.\"pk_tracking\", ta_tracking.\"fk_story\", ta_tracking.\"fk_status\", ta_tracking.\"summary\", ta_tracking.\"amount_spent\", ta_tracking.\"images\", ta_tracking.\"videos\", ta_tracking.\"roles\", ta_tracking.\"updated_at\""
 )
 
 type TaTracking struct {
@@ -31,6 +31,7 @@ type TaTracking struct {
 	Images types.StringArray `json:"images"`
 	Videos types.StringArray `json:"videos"`
 	Roles types.StringArray `json:"roles"`
+	UpdatedAt types.DateTime `json:"updated_at"`
 }
 
 func (taTracking TaTracking) ListOfFields() string {
@@ -49,6 +50,7 @@ func (taTracking TaTracking) ScanRow(rows database.RowInterface) (interface{}, e
 		&taTracking.Images,
 		&taTracking.Videos,
 		&taTracking.Roles,
+		&taTracking.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -65,6 +67,7 @@ func CreateTaTracking(
 	images types.StringArray,
 	videos types.StringArray,
 	roles types.StringArray,
+	updatedAt types.DateTime,
 ) (*TaTracking, error) {
 	var err error
     var scanner scanners.Int
@@ -79,6 +82,7 @@ func CreateTaTracking(
 		images,
 		videos,
 		roles,
+		updatedAt,
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -94,6 +98,7 @@ func CreateTaTracking(
 	    Images: images,
 	    Videos: videos,
 	    Roles: roles,
+	    UpdatedAt: updatedAt,
 	}
 	return taTracking, nil
 }
@@ -107,6 +112,7 @@ func (taTracking *TaTracking) Update(
     images types.StringArray,
     videos types.StringArray,
     roles types.StringArray,
+    updatedAt types.DateTime,
 ) error {
     var err error
 	err = query.Exec(
@@ -118,6 +124,7 @@ func (taTracking *TaTracking) Update(
         images,
         videos,
         roles,
+        updatedAt,
         taTracking.PkTracking,
     )
 	if err != nil {
@@ -130,6 +137,7 @@ func (taTracking *TaTracking) Update(
     taTracking.Images = images
     taTracking.Videos = videos
     taTracking.Roles = roles
+    taTracking.UpdatedAt = updatedAt
     return nil
 }
 
@@ -205,6 +213,10 @@ func (taTracking TaTracking) GetVideos() types.StringArray {
 
 func (taTracking TaTracking) GetRoles() types.StringArray {
 	return taTracking.Roles}
+
+
+func (taTracking TaTracking) GetUpdatedAt() types.DateTime {
+	return taTracking.UpdatedAt}
 
 
 func (taTracking *TaTracking) Delete(query database.IQuery) error {

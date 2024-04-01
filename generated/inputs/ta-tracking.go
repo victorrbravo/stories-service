@@ -15,6 +15,7 @@ type TaTracking struct {
 	Images types.StringArray `yaml:"images"`
 	Videos types.StringArray `yaml:"videos"`
 	Roles types.StringArray `yaml:"roles"`
+	UpdatedAt types.DateTime `yaml:"updated_at"`
 }
 
 func  InsertTaTracking(order string, query *database.IQuery) error {
@@ -30,6 +31,7 @@ func  InsertTaTracking(order string, query *database.IQuery) error {
             handler.Images,
             handler.Videos,
             handler.Roles,
+            handler.UpdatedAt,
     )
     if err != nil {
         return err
@@ -89,6 +91,7 @@ func  UpdateTaTracking(order string, query *database.IQuery) error {
             handler.Images,
             handler.Videos,
             handler.Roles,
+            handler.UpdatedAt,
     )
     if err != nil {
         return err

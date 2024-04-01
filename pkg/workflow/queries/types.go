@@ -24,4 +24,6 @@ type DataTemplate struct {
 	Filter        string
 	Fields        string
 	PkTracking    string
+	VideosField   string
+	ImagesField   string
 }

@@ -201,6 +201,8 @@ type AddTask struct {
 	Pattern     types.String `yaml:"pattern" default:"none"`
 	Report      types.String `yaml:"report" default:"true"`
 	Source      types.String `yaml:"source"`
+	VideosField types.String `yaml:"videos_field" default:"videos"`
+	ImagesField types.String `yaml:"images_field" default:"images"`
 }
 
 type WorkflowData struct {
@@ -473,6 +475,9 @@ func GetWorkflow[T db.Scanner](pkFlow int, query *db.IQuery) (*common.Workflow[T
 	wf, err := workflowType.LoadWorkflow(workflowType.PkFlow)
 	if err != nil {
 		return wf, err
+	}
+	for _, task := range wf.Tasks {
+		utils.SetDefaults[common.Task](task)
 	}
 	return wf, nil
 }

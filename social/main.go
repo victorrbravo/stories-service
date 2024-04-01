@@ -149,7 +149,7 @@ func (obj *Social) AddTask(strId string, name string, tokenLink string, pattern 
 	log.Println("task strId", strId)
 	log.Println("task strQuery |", strQuery, "|")
 
-	err = query.QueryOne(strQuery, &result, strId, data)
+	_, err = query.QueryOne(strQuery, &result, strId, data)
 	log.Println("task result", result)
 	return task, err
 }
@@ -167,7 +167,7 @@ func (obj *Social) RemoveTask(strId string, name string, tokenLink string, patte
 	log.Println("task strId", strId)
 	log.Println("task strQuery |", strQuery, "|")
 
-	err = query.QueryOne(strQuery, &result, strId, data)
+	_, err = query.QueryOne(strQuery, &result, strId, data)
 	log.Println("task result", result)
 	return task, err
 }
@@ -182,7 +182,7 @@ func (obj *Social) AddComment(value types.String, text string, user users.User, 
 		return comment, err
 	}
 	strquery, _ := obj.useTemplate(SocialAddComment)
-	err = query.QueryOne(strquery, &result, value, data)
+	_, err = query.QueryOne(strquery, &result, value, data)
 	log.Println("comment result", result)
 	return comment, err
 }
@@ -240,7 +240,7 @@ func (obj Social) AddLike(value types.Int, user users.User, query database.IQuer
 	like := Like{user.GetID(), types.Now()}
 	data, _ = json.Marshal(like)
 	strquery, _ := obj.useTemplate(SocialAddLike)
-	err = query.QueryOne(strquery, &result, value, data)
+	_, err = query.QueryOne(strquery, &result, value, data)
 	return result.Value, err
 }
 
@@ -248,7 +248,7 @@ func (obj Social) GetLikes(value types.Int, query database.IQuery) (types.String
 	var scanner scanners.String
 	var err error
 	strquery, err := obj.useTemplate(SocialGetSocialLikes)
-	err = query.QueryOne(strquery, &scanner, value)
+	_, err = query.QueryOne(strquery, &scanner, value)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return types.NewString("[]"), nil
@@ -265,7 +265,7 @@ func (obj Social) GetSocial(value types.UUID) (SocialData, error) {
 	var err error
 	strquery, _ := obj.useTemplate(SocialGetSocial)
 	log.Println(constants.Version, "strquery ", strquery)
-	err = query.QueryOne(strquery, &scanner, value)
+	_, err = query.QueryOne(strquery, &scanner, value)
 	if err != nil {
 		return socialData, err
 	}
