@@ -335,6 +335,38 @@ type: step
 	}
 }
 
+// Test for insert by Date
+func TestProcessAddFlowStepOrderByDate(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: add_flow_step_ordered
+ticket: 44
+status: San Pio
+images: 
+ - ABC897B7-71DA-4C08-B7E8-B7F2F071D445
+amount: 1270.00
+summary: In San Pio
+media_date: 2024-04-02T15:02:26Z
+type: step
+`
+	order := []byte(input)
+	_, err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestProcessDeleteFlowStep(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{

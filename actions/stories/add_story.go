@@ -12,9 +12,12 @@ import (
 	"log"
 	"os"
 	"stories/actions/constants"
+	types2 "stories/actions/types"
 	"stories/database"
 	"stories/generated/models"
 	"stories/pkg/utils"
+	"stories/pkg/workflow/common"
+	"stories/pkg/workflow/queries/pg"
 	"stories/types"
 	"strings"
 	"time"
@@ -109,7 +112,9 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 	case "add_step":
 		_, err = DoAddStep(order, query)
 	case "add_flow_step":
-		err = DoAddStepFlowAtEnd[models.TaTracking](ctx, order, query)
+		err = DoAddStepFlowAt[models.TaTracking](ctx, order, types2.None, query)
+	case "add_flow_step_ordered":
+		err = DoAddStepFlowAt[models.TaTracking](ctx, order, types2.DateTime, query)
 	case "delete_flow_step":
 		err = DoDeleteFlowStep[models.TaTracking](ctx, order, query)
 	case "delete_ticket":
@@ -429,7 +434,7 @@ func DoDeleteFlowStep[T database.Scanner](ctx context.Context, order string, que
 	return nil
 }
 
-func DoAddStepFlowAtEnd[T database.Scanner](ctx context.Context, order string, query *database.IQuery) error {
+func DoAddStepFlowAt[T database.Scanner](ctx context.Context, order string, insert types2.OrderInsert, query *database.IQuery) error {
 	addStep, err := UnmarshallAddStep([]byte(order), query)
 	if err != nil {
 		return err
@@ -444,13 +449,52 @@ func DoAddStepFlowAtEnd[T database.Scanner](ctx context.Context, order string, q
 	if err != nil {
 		return err
 	}
+	var prevTask *common.Task
+	isLast := true
+	if insert == types2.DateTime {
+		var getFlow ShowFlowInput
+		getFlow.PkFlow = intFkFlow
+		getFlow.Ticket = addStep.Ticket
+		wfData, err := UpdateWorkflow[T](getFlow, query, []interface{}{}, pg.RoleField[T])
+		if err != nil {
+			return err
+		}
+		statuses, err := wfData.Statuses(ctx, false)
+		if err != nil {
+			return err
+		}
+		for _, status := range statuses {
+			task, ok := wfData.Tasks[status]
+			if !ok {
+				log.Println("error for task", status)
+				continue
+			}
+			var taskTS, currTS time.Time
+			var err error
+			if taskTS, currTS, err = areDatesCorrect(task.Data.TimeField, addStep.MediaDate); err != nil {
+				continue
+			}
+			if taskTS.After(currTS) {
+				if prevTask != nil {
+					addTask.Source = types.NewString(prevTask.Name)
+				}
+				addTask.Target = types.NewString(task.Name)
+				isLast = false
+				break
+			}
+			fmt.Println("task name", task.Name, "ts", task.Data.TimeField)
+			prevTask = task
+		}
+	}
 	addTask.Name = types.NewString(addStep.Status.String())
-	lastTask, err := wf.Last(ctx)
-	if err != nil {
-		return err
+	if isLast {
+		lastTask, err := wf.Last(ctx)
+		if err != nil {
+			return err
+		}
+		addTask.Source = types.NewString(lastTask.Name)
 	}
 	addTask.PkFlow = intFkFlow
-	addTask.Source = types.NewString(lastTask.Name)
 	addTask.Sentence = types.NewString(wf.Sentence(addTask.Name.String()))
 	utils.SetDefaults(&addTask)
 	wf, err = DoAddTaskIntl[T](intFkFlow, addTask, query)
@@ -458,6 +502,26 @@ func DoAddStepFlowAtEnd[T database.Scanner](ctx context.Context, order string, q
 		return err
 	}
 	return nil
+}
+
+func areDatesCorrect(taskDate types.String, currDate types.String) (time.Time, time.Time, error) {
+	var taskTS, currTS time.Time
+	var err error
+	if taskDate.IsEmpty() {
+		return taskTS, currTS, errors.New("task date is empty")
+	}
+	if currDate.IsEmpty() {
+		return taskTS, currTS, errors.New("current date is empty")
+	}
+	taskTS, err = time.Parse(time.RFC3339, taskDate.String())
+	if err != nil {
+		return taskTS, currTS, errors.New("error parsing task date")
+	}
+	currTS, err = time.Parse(time.RFC3339, currDate.String())
+	if err != nil {
+		return taskTS, currTS, errors.New("error parsing current date")
+	}
+	return taskTS, currTS, nil
 }
 
 func DoAddStepFlow(order string, query *database.IQuery) error {
