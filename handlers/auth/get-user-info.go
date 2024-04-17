@@ -3,13 +3,11 @@ package auth
 import (
 	"net/http"
 
-	"stories/database"
 	"stories/handlers_utils"
 	"stories/types"
 )
 
 type ModelUser interface {
-	GetTaUserByEmail(database.IQuery, types.String) (interface{}, error)
 	GetEmail() types.String
 	GetPassword() types.String
 }

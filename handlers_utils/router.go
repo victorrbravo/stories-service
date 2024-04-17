@@ -28,6 +28,7 @@ func NewRouter() Router {
 	router := Router{rootNode: &RouteNode{}}
 	// Setup the cmd thing
 	http.Handle("/", router)
+
 	return router
 }
 

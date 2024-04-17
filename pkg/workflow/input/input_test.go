@@ -357,7 +357,7 @@ images:
  - ABC897B7-71DA-4C08-B7E8-B7F2F071D445
 amount: 1270.00
 summary: In San Pio
-media_date: 2024-04-02T15:02:26Z
+media_date: 2024-03-20T02:02:26Z
 type: step
 `
 	order := []byte(input)
@@ -534,8 +534,7 @@ func TestProcessShowFlowData(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: show_flow_data
-ticket: 44
+action: show_flow_data ticket: 44
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)
@@ -561,7 +560,7 @@ func TestProcessSuggestShortName(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: suggest_short_name_for_image
-image_id: 71091BE6-18D2-4235-8FC3-3765469298DB.jpg
+image_id: 5895050E-3FE2-48AF-B191-80BF2AEF8E63.jpg
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)

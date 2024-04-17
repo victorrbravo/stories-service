@@ -96,7 +96,6 @@ func getJWTToken(request *http.Request) (string, error) {
 func (handler RequestAuthorizer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	var next AuthorizedHTTPHandler
 	next = handler.next
-	var user interface{}
 	var email string
 	var err error
 	query := handler.GetQuery()
@@ -105,15 +104,14 @@ func (handler RequestAuthorizer) ServeHTTP(writer http.ResponseWriter, request *
 	if err != nil {
 		RespondWithError(writer, helpers.NewHttpError(http.StatusForbidden, constants.YouHaveNoAccessToResource))
 	}
-	user, err = models.TaUser{}.GetTaUserByEmail(query, types.NewString(email))
+	users, err := models.GetTaUserByEmail(query, types.NewString(email))
 	log.Println("models.TaUser{}.GetTaUserByEmail checking err", err)
 	if err != nil {
 		RespondWithError(writer, helpers.NewHttpError(http.StatusForbidden, constants.YouHaveNoAccessToResource))
-	} else if user != nil {
+	} else if len(users) > 0 {
 		if next.IsEnabled() {
-			taUser := user.(*models.TaUser)
+			taUser := users[0]
 			log.Println("models.TaUser{}.GetTaUserByEmail checking taUser", taUser)
-
 			next.ServeHTTP(writer, request, taUser)
 		} else {
 			RespondWithError(writer, helpers.NewHttpError(http.StatusMethodNotAllowed, constants.ThisEndpointIsDisabled))

@@ -137,11 +137,13 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 func DoSuggestShortNameForImage(order string, query *database.IQuery) (string, error) {
 	value := fmt.Sprintf(JsonResponseTemplate, "")
 	var err error
+	log.Println("DoSuggestShortNameForImage order ", order)
 	handler, err := Unmarshall[SuggestAction]([]byte(order))
 	if err != nil {
 		log.Println("error unmarshalling")
 		return value, err
 	}
+	log.Println("DoSuggestShortNameForImage DownloadFromS3 ", handler.ImageID)
 	imagePath, err := utils.DownloadFromS3(bucketName, handler.ImageID.String())
 
 	if err != nil {

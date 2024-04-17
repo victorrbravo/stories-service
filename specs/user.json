@@ -29,7 +29,7 @@
       "Type": "types.String",
       "Scannable": true,
       "Nullable": true,
-      "Searchable": false,
+      "Searchable": true,
       "Getter": true
     },
     {

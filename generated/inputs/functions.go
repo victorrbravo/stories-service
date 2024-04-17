@@ -97,6 +97,13 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
                     ValueTaUser, _ := GetTaUserByPkUser(order, query)
                     ValuesTaUser = append(ValuesTaUser, *ValueTaUser)
                 
+                case "get_user_by_email":
+                    ValueTaUsers, errSearch := GetTaUserByEmail(order, query)
+                    if errSearch != nil  {
+                            return value, errSearch
+                    }
+                    data, err = json.Marshal( ValueTaUsers )
+                    value = string(data)
 	}
     if err != nil  {
         return value, err

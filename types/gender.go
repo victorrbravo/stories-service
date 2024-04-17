@@ -33,12 +33,10 @@ func (gender Gender) convertToValue() (string, error) {
 
 func (gender *Gender) convertFromValue(value byte) error {
 	switch value {
-	case 'M':
+	case 'M', 'm':
 		*gender = Male
-		break
-	case 'F':
+	case 'F', 'f':
 		*gender = Female
-		break
 	default:
 		return fmt.Errorf(constants.InvalidGenderValue, value)
 	}
@@ -49,8 +47,8 @@ func (gender *Gender) convertFromValue(value byte) error {
 func (gender *Gender) Scan(src interface{}) error {
 	switch value := src.(type) {
 	case string:
-		if len(value) > 1 {
-			return fmt.Errorf(constants.InvalidValueForGender, value)
+		if len(value) == 0 {
+			return fmt.Errorf(constants.GenderCannotBeEmpty, value)
 		}
 		return gender.convertFromValue(value[0])
 	case []byte:
@@ -77,7 +75,7 @@ func (gender *Gender) UnmarshalJSON(src []byte) error {
 	if err != nil {
 		return err
 	}
-	if len(value) > 1 {
+	if len(value) < 1 {
 		return fmt.Errorf(constants.InvalidValueForGender, value)
 	}
 	return gender.convertFromValue(value[0])

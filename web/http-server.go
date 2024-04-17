@@ -25,7 +25,8 @@ type Server struct{}
 func CreateRouter(newQuery database.IQuery) handlers_utils.Router {
 	router := handlers_utils.NewRouter()
 	newUser := models.TaUser{}
-	router.AddNoAuthenticated(Authentication, "/login", auth.UserLoginHandler{Query: newQuery, User: newUser}, http.MethodPost, newQuery)
+	router.AddNoAuthenticated(Authentication, "/login", auth.UserLoginHandler{Query: newQuery, User: newUser},
+		http.MethodPost, newQuery)
 
 	router.AddAuthenticated(Social, "/add-step/{nameId}", social.AddStepHandler{Query: newQuery}, http.MethodPost, newQuery)
 	router.AddAuthenticated(Users, "/", handlers.GetAllHandler{Query: newQuery}, http.MethodGet, newQuery)

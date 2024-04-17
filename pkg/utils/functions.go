@@ -156,6 +156,8 @@ func DownloadFromS3(bucketName string, objectKey string) (string, error) {
 	// Create S3 service client
 	// Create a temporary file
 	tempFile, err := os.CreateTemp("", "downloaded-file")
+	log.Println("tempFile", tempFile.Name())
+	log.Println("temp directory create err", err)
 	if err != nil {
 		return value, err
 	}

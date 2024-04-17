@@ -36,6 +36,15 @@
     );
 
 
+
+
+    create table "ta_flow"
+    (
+        "pk_flow"  serial primary key,
+        "name"     varchar not null unique,
+        "flow"     jsonb DEFAULT '{}'::jsonb
+    );
+
     create table "ta_story"
     (
         "pk_story" serial primary key,
@@ -45,14 +54,6 @@
         "user_id" int REFERENCES "ta_user" ("pk_user"),
         "fk_flow" int REFERENCES "ta_flow" ("pk_flow"),
         constraint "story_status_unique" unique (pk_story, status)
-    );
-
-
-    create table "ta_flow"
-    (
-        "pk_flow"  serial primary key,
-        "name"     varchar not null unique,
-        "flow"     jsonb DEFAULT '{}'::jsonb
     );
 
     create table "ta_tracking"

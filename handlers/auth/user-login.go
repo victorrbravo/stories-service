@@ -56,7 +56,6 @@ func (handler *UserLoginHandler) SetUser(user ModelUser) {
 // to authenticate their requests
 func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	var err error
-	var object interface{}
 	fmt.Println("serverhttp login")
 	err = handlers_utils.GetParameters(&handler, request)
 	fmt.Println("serverhttp login err", err)
@@ -67,9 +66,8 @@ func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *h
 	fmt.Println("serverhttp login Email searching by |", handler.Email, "|")
 	fmt.Println("serverhttp login Password searching by |", handler.Password, "|")
 
-	object, err = handler.User.GetTaUserByEmail(handler.GetQuery(), handler.Email)
+	objects, err := models.GetTaUserByEmail(handler.GetQuery(), handler.Email)
 
-	fmt.Println("serverhttp err", err)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			handlers_utils.RespondWithError(
@@ -81,9 +79,9 @@ func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *h
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
 		return
 	}
-	taUser := object.(*models.TaUser)
+	taUser := objects[0]
 	fmt.Println("CONVERT taUser", taUser, "err", err)
-	pass := (*taUser).GetPassword()
+	pass := taUser.GetPassword()
 	fmt.Printf("Compare pass |%s|\n", pass)
 	fmt.Printf("Compare handler.Password |%s|\n", handler.Password)
 	passcrypt, _ := bcrypt.GenerateFromPassword([]byte(types.AsString(handler.Password)), 0)

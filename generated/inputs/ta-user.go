@@ -99,4 +99,17 @@ func  GetAllTaUser(query *database.IQuery) ([]models.TaUser, error) {
     }
     return taUser, nil
 }
+func  GetTaUserByEmail(order string, query *database.IQuery) ([]models.TaUser, error) {
+    handler, err := UnmarshallTaUser([]byte(order))
+    if err != nil {
+        return nil, err
+    }
+    taUsers, err := models.GetTaUserByEmail(*query,
+            handler.Email,
+    )
+    if err != nil {
+        return taUsers, err
+    }
+    return taUsers, nil
+}
 
