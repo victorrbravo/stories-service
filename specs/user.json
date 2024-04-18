@@ -10,7 +10,7 @@
       "Title": "ID"
     },
     {
-      "Name": "Firstname",
+      "Name": "FirstName",
       "Type": "types.String",
       "Scannable": true,
       "Nullable": true,
@@ -19,7 +19,7 @@
       "Valid": "minlength=3,alpha"
     },
     {
-      "Name": "Lastname",
+      "Name": "LastName",
       "Type": "types.String",
       "Scannable": true,
       "Nullable": true
@@ -41,7 +41,7 @@
       "Getter": true
     },
     {
-      "Name": "Account",
+      "Name": "AccountType",
       "Type": "types.String",
       "Scannable": true,
       "Nullable": true,

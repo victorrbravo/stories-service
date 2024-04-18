@@ -13,18 +13,20 @@ type Gender rune
 
 // Gender values
 const (
-	Female        Gender = 'F'
-	Male                 = 'M'
-	unknownGender        = 0
+	Female          Gender = 'F'
+	Male                   = 'M'
+	unknownGender          = 0
+	MaLeLowerCase          = 'm'
+	FemaleLowerCase        = 'f'
 )
 
 func (gender Gender) convertToValue() (string, error) {
 	switch gender {
 	case unknownGender:
 		return "?", nil
-	case Male:
+	case Male, MaLeLowerCase:
 		return "M", nil
-	case Female:
+	case Female, FemaleLowerCase:
 		return "F", nil
 	default:
 		return "", fmt.Errorf(constants.InvalidGenderValue, gender)

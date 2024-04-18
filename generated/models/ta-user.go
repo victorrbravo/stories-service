@@ -12,22 +12,22 @@ import (
  * Generated queries (these can be used perfectly instead of writing them by hand
  */
 const (
-    TaUserCreateQuery = "INSERT INTO \"ta_user\" (\"firstname\",\"lastname\",\"email\",\"password\",\"account\") VALUES ($1, $2, $3, $4, $5) RETURNING (\"pk_user\")"
-    AllTaUserQuery = "SELECT \"pk_user\", \"firstname\", \"lastname\", \"email\", \"password\", \"account\" FROM \"ta_user\""
-    TaUserByPkUserQuery = "SELECT \"pk_user\", \"firstname\", \"lastname\", \"email\", \"password\", \"account\" FROM \"ta_user\" WHERE \"pk_user\" = $1"
-    TaUserByEmailQuery = "SELECT \"pk_user\", \"firstname\", \"lastname\", \"email\", \"password\", \"account\" FROM \"ta_user\" WHERE \"email\" = $1"
-    TaUserUpdateQuery = "UPDATE \"ta_user\" SET \"firstname\" = COALESCE($1, \"firstname\"), \"lastname\" = COALESCE($2, \"lastname\"), \"email\" = COALESCE($3, \"email\"), \"password\" = COALESCE($4, \"password\"), \"account\" = COALESCE($5, \"account\") WHERE \"pk_user\" = $6"
+    TaUserCreateQuery = "INSERT INTO \"ta_user\" (\"first_name\",\"last_name\",\"email\",\"password\",\"account_type\") VALUES ($1, $2, $3, $4, $5) RETURNING (\"pk_user\")"
+    AllTaUserQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\" FROM \"ta_user\""
+    TaUserByPkUserQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\" FROM \"ta_user\" WHERE \"pk_user\" = $1"
+    TaUserByEmailQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\" FROM \"ta_user\" WHERE \"email\" = $1"
+    TaUserUpdateQuery = "UPDATE \"ta_user\" SET \"first_name\" = COALESCE($1, \"first_name\"), \"last_name\" = COALESCE($2, \"last_name\"), \"email\" = COALESCE($3, \"email\"), \"password\" = COALESCE($4, \"password\"), \"account_type\" = COALESCE($5, \"account_type\") WHERE \"pk_user\" = $6"
     TaUserDeleteQuery = "DELETE FROM \"ta_user\" WHERE \"pk_user\" = $1"
-    TaUserListOfFields = " ta_user.\"pk_user\", ta_user.\"firstname\", ta_user.\"lastname\", ta_user.\"email\", ta_user.\"password\", ta_user.\"account\""
+    TaUserListOfFields = " ta_user.\"pk_user\", ta_user.\"first_name\", ta_user.\"last_name\", ta_user.\"email\", ta_user.\"password\", ta_user.\"account_type\""
 )
 
 type TaUser struct {
 	PkUser types.Int `json:"pk_user"`
-	Firstname types.String `json:"firstname"`
-	Lastname types.String `json:"lastname"`
+	FirstName types.String `json:"first_name"`
+	LastName types.String `json:"last_name"`
 	Email types.String `json:"email"`
 	Password types.String `json:"password"`
-	Account types.String `json:"account"`
+	AccountType types.String `json:"account_type"`
 }
 
 func (taUser TaUser) ListOfFields() string {
@@ -39,11 +39,11 @@ func (taUser TaUser) ScanRow(rows database.RowInterface) (interface{}, error) {
 	var err error
 	err = rows.Scan(
 		&taUser.PkUser,
-		&taUser.Firstname,
-		&taUser.Lastname,
+		&taUser.FirstName,
+		&taUser.LastName,
 		&taUser.Email,
 		&taUser.Password,
-		&taUser.Account,
+		&taUser.AccountType,
 	)
 	if err != nil {
 		return nil, err
@@ -53,11 +53,11 @@ func (taUser TaUser) ScanRow(rows database.RowInterface) (interface{}, error) {
 
 func CreateTaUser(
     query database.IQuery,
-	firstname types.String,
-	lastname types.String,
+	firstName types.String,
+	lastName types.String,
 	email types.String,
 	password types.String,
-	account types.String,
+	accountType types.String,
 ) (*TaUser, error) {
 	var err error
     var scanner scanners.Int
@@ -65,11 +65,11 @@ func CreateTaUser(
 	_, err = query.QueryOne(
 	    TaUserCreateQuery,
 	    &scanner,
-		firstname,
-		lastname,
+		firstName,
+		lastName,
 		email,
 		password,
-		account,
+		accountType,
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -78,41 +78,41 @@ func CreateTaUser(
 	}
 	taUser = &TaUser{
 	    PkUser: scanner.Value,
-	    Firstname: firstname,
-	    Lastname: lastname,
+	    FirstName: firstName,
+	    LastName: lastName,
 	    Email: email,
 	    Password: password,
-	    Account: account,
+	    AccountType: accountType,
 	}
 	return taUser, nil
 }
 
 func (taUser *TaUser) Update(
     query database.IQuery,
-    firstname types.String,
-    lastname types.String,
+    firstName types.String,
+    lastName types.String,
     email types.String,
     password types.String,
-    account types.String,
+    accountType types.String,
 ) error {
     var err error
 	err = query.Exec(
 	    TaUserUpdateQuery,
-        firstname,
-        lastname,
+        firstName,
+        lastName,
         email,
         password,
-        account,
+        accountType,
         taUser.PkUser,
     )
 	if err != nil {
     	return err
 	}
-    taUser.Firstname = firstname
-    taUser.Lastname = lastname
+    taUser.FirstName = firstName
+    taUser.LastName = lastName
     taUser.Email = email
     taUser.Password = password
-    taUser.Account = account
+    taUser.AccountType = accountType
     return nil
 }
 
@@ -156,7 +156,7 @@ func (taUser TaUser) GetID() types.Int {
 
 
 func (taUser TaUser) GetFullName() types.String {
-	return taUser.Firstname}
+	return taUser.FirstName}
 
 func (taUser TaUser) GetEmail() types.String {
 	return taUser.Email}

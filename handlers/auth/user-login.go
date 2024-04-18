@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"stories/pkg/utils"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -56,15 +57,15 @@ func (handler *UserLoginHandler) SetUser(user ModelUser) {
 // to authenticate their requests
 func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	var err error
-	fmt.Println("serverhttp login")
+	log.Println("serverhttp login")
 	err = handlers_utils.GetParameters(&handler, request)
-	fmt.Println("serverhttp login err", err)
+	log.Println("serverhttp login err", err)
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, err.Error()))
 		return
 	}
-	fmt.Println("serverhttp login Email searching by |", handler.Email, "|")
-	fmt.Println("serverhttp login Password searching by |", handler.Password, "|")
+	log.Println("serverhttp login Email searching by |", handler.Email, "|")
+	log.Println("serverhttp login Password searching by |", handler.Password, "|")
 
 	objects, err := models.GetTaUserByEmail(handler.GetQuery(), handler.Email)
 
@@ -80,21 +81,20 @@ func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *h
 		return
 	}
 	taUser := objects[0]
-	fmt.Println("CONVERT taUser", taUser, "err", err)
+	log.Println("CONVERT taUser", taUser, "err", err)
 	pass := taUser.GetPassword()
-	fmt.Printf("Compare pass |%s|\n", pass)
-	fmt.Printf("Compare handler.Password |%s|\n", handler.Password)
+	log.Printf("Compare pass |%s|\n", pass)
+	log.Printf("Compare handler.Password |%s|\n", handler.Password)
 	passcrypt, _ := bcrypt.GenerateFromPassword([]byte(types.AsString(handler.Password)), 0)
-	fmt.Printf(
+	log.Printf(
 		"pass bcrypt |%s|\n", string(passcrypt))
 	err = crypto.ComparePasswords([]byte(types.AsString(pass)), types.AsString(handler.Password))
-	fmt.Println("crypto crypto.ComparePasswords err", err)
+	log.Println("crypto crypto.ComparePasswords err", err)
 	if err != nil {
 		handlers_utils.RespondWithError(
 			writer,
 			helpers.NewHttpError(http.StatusUnauthorized, constants.UserNotFoundOrPasswordMismatch),
 		)
-
 		return
 	}
 	// token, err = user.CreateSession(handler.queries)
@@ -104,10 +104,17 @@ func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *h
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
 		return
 	}
-	log.Println("tokenDetails.AccessToken", tokenDetails.AccessToken)
-	// token.SessionCount = user.GetSessionCount()
-	// Update auth token
-	// user.SetAuthToken(token.Token)
-	// Send the response to the client
-	handlers_utils.SendJSONResponse(writer, tokenDetails.AccessToken, http.StatusOK)
+	handlers_utils.SendJSONResponse(writer, struct {
+		Message       string `json:"message"`
+		Token         string `json:"token"`
+		Refreshtoken  string `json:"refreshtoken"`
+		Expires       int64  `json:"expires"`
+		ExpiresString string `json:"expires_string"`
+	}{
+		Message:       fmt.Sprintf("User %s logged in successfully", handler.Email),
+		Token:         tokenDetails.AccessToken,
+		Refreshtoken:  tokenDetails.RefreshToken,
+		Expires:       tokenDetails.AtExpires,
+		ExpiresString: utils.UnixToRFC3339(tokenDetails.AtExpires),
+	}, http.StatusOK)
 }

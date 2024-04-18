@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 )
 
 func ParseTemplate[T any](tmpls string, data *T) (string, error) {
@@ -141,6 +142,16 @@ func formatYamlArray(input string) string {
 		result = result + newline
 	}
 	return result
+}
+
+func UnixToRFC3339(unixTime int64) string {
+	// Convert Unix timestamp to time.Time
+	t := time.Unix(unixTime, 0)
+
+	// Format time according to RFC3339
+	rfc3339Time := t.Format(time.RFC3339)
+
+	return rfc3339Time
 }
 
 func DownloadFromS3(bucketName string, objectKey string) (string, error) {
