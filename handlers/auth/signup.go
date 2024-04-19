@@ -68,6 +68,7 @@ func (handler SignupUserHandler) ServeHTTP(writer http.ResponseWriter, request *
 		types.NewString(handler.Email),
 		types.NewString(password),
 		types.NewString("user"),
+		types.NewBool(false),
 	)
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))

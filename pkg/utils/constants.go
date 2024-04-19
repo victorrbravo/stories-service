@@ -7,4 +7,6 @@ const (
 	JsonUrlTemplate = `
 	{ "url": "%s" }
 `
+	BearerPrefix                            = "Bearer "
+	HeaderMessageInvalidAuthorizationHeader = "Invalid Authorization header"
 )

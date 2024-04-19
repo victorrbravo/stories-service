@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"stories/pkg/utils"
 
-	"golang.org/x/crypto/bcrypt"
-
 	"stories/constants"
 	"stories/crypto"
 	"stories/database"
@@ -83,11 +81,6 @@ func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *h
 	taUser := objects[0]
 	log.Println("CONVERT taUser", taUser, "err", err)
 	pass := taUser.GetPassword()
-	log.Printf("Compare pass |%s|\n", pass)
-	log.Printf("Compare handler.Password |%s|\n", handler.Password)
-	passcrypt, _ := bcrypt.GenerateFromPassword([]byte(types.AsString(handler.Password)), 0)
-	log.Printf(
-		"pass bcrypt |%s|\n", string(passcrypt))
 	err = crypto.ComparePasswords([]byte(types.AsString(pass)), types.AsString(handler.Password))
 	log.Println("crypto crypto.ComparePasswords err", err)
 	if err != nil {

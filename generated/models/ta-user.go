@@ -12,13 +12,13 @@ import (
  * Generated queries (these can be used perfectly instead of writing them by hand
  */
 const (
-    TaUserCreateQuery = "INSERT INTO \"ta_user\" (\"first_name\",\"last_name\",\"email\",\"password\",\"account_type\") VALUES ($1, $2, $3, $4, $5) RETURNING (\"pk_user\")"
-    AllTaUserQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\" FROM \"ta_user\""
-    TaUserByPkUserQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\" FROM \"ta_user\" WHERE \"pk_user\" = $1"
-    TaUserByEmailQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\" FROM \"ta_user\" WHERE \"email\" = $1"
-    TaUserUpdateQuery = "UPDATE \"ta_user\" SET \"first_name\" = COALESCE($1, \"first_name\"), \"last_name\" = COALESCE($2, \"last_name\"), \"email\" = COALESCE($3, \"email\"), \"password\" = COALESCE($4, \"password\"), \"account_type\" = COALESCE($5, \"account_type\") WHERE \"pk_user\" = $6"
+    TaUserCreateQuery = "INSERT INTO \"ta_user\" (\"first_name\",\"last_name\",\"email\",\"password\",\"account_type\",\"activated\") VALUES ($1, $2, $3, $4, $5, $6) RETURNING (\"pk_user\")"
+    AllTaUserQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\", \"activated\" FROM \"ta_user\""
+    TaUserByPkUserQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\", \"activated\" FROM \"ta_user\" WHERE \"pk_user\" = $1"
+    TaUserByEmailQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\", \"activated\" FROM \"ta_user\" WHERE \"email\" = $1"
+    TaUserUpdateQuery = "UPDATE \"ta_user\" SET \"first_name\" = COALESCE($1, \"first_name\"), \"last_name\" = COALESCE($2, \"last_name\"), \"email\" = COALESCE($3, \"email\"), \"password\" = COALESCE($4, \"password\"), \"account_type\" = COALESCE($5, \"account_type\"), \"activated\" = COALESCE($6, \"activated\") WHERE \"pk_user\" = $7"
     TaUserDeleteQuery = "DELETE FROM \"ta_user\" WHERE \"pk_user\" = $1"
-    TaUserListOfFields = " ta_user.\"pk_user\", ta_user.\"first_name\", ta_user.\"last_name\", ta_user.\"email\", ta_user.\"password\", ta_user.\"account_type\""
+    TaUserListOfFields = " ta_user.\"pk_user\", ta_user.\"first_name\", ta_user.\"last_name\", ta_user.\"email\", ta_user.\"password\", ta_user.\"account_type\", ta_user.\"activated\""
 )
 
 type TaUser struct {
@@ -28,6 +28,7 @@ type TaUser struct {
 	Email types.String `json:"email"`
 	Password types.String `json:"password"`
 	AccountType types.String `json:"account_type"`
+	Activated types.Bool `json:"activated"`
 }
 
 func (taUser TaUser) ListOfFields() string {
@@ -44,6 +45,7 @@ func (taUser TaUser) ScanRow(rows database.RowInterface) (interface{}, error) {
 		&taUser.Email,
 		&taUser.Password,
 		&taUser.AccountType,
+		&taUser.Activated,
 	)
 	if err != nil {
 		return nil, err
@@ -58,6 +60,7 @@ func CreateTaUser(
 	email types.String,
 	password types.String,
 	accountType types.String,
+	activated types.Bool,
 ) (*TaUser, error) {
 	var err error
     var scanner scanners.Int
@@ -70,6 +73,7 @@ func CreateTaUser(
 		email,
 		password,
 		accountType,
+		activated,
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -83,6 +87,7 @@ func CreateTaUser(
 	    Email: email,
 	    Password: password,
 	    AccountType: accountType,
+	    Activated: activated,
 	}
 	return taUser, nil
 }
@@ -94,6 +99,7 @@ func (taUser *TaUser) Update(
     email types.String,
     password types.String,
     accountType types.String,
+    activated types.Bool,
 ) error {
     var err error
 	err = query.Exec(
@@ -103,6 +109,7 @@ func (taUser *TaUser) Update(
         email,
         password,
         accountType,
+        activated,
         taUser.PkUser,
     )
 	if err != nil {
@@ -113,6 +120,7 @@ func (taUser *TaUser) Update(
     taUser.Email = email
     taUser.Password = password
     taUser.AccountType = accountType
+    taUser.Activated = activated
     return nil
 }
 

@@ -49,7 +49,9 @@ func (handler CreateHandler) ServeHTTP(writer http.ResponseWriter, request *http
 	}
 	_, err = models.CreateTaUser(handler.GetQuery(), handler.FirstName, handler.LastName, handler.Email,
 		types.NewString("pass"),
-		handler.AccountType)
+		handler.AccountType,
+		types.NewBool(false),
+	)
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
 		return

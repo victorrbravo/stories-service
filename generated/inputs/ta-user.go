@@ -13,6 +13,7 @@ type TaUser struct {
 	Email types.String `yaml:"email"`
 	Password types.String `yaml:"password"`
 	AccountType types.String `yaml:"account_type"`
+	Activated types.Bool `yaml:"activated"`
 }
 
 func  InsertTaUser(order string, query *database.IQuery) error {
@@ -26,6 +27,7 @@ func  InsertTaUser(order string, query *database.IQuery) error {
             handler.Email,
             handler.Password,
             handler.AccountType,
+            handler.Activated,
     )
     if err != nil {
         return err
@@ -83,6 +85,7 @@ func  UpdateTaUser(order string, query *database.IQuery) error {
             handler.Email,
             handler.Password,
             handler.AccountType,
+            handler.Activated,
     )
     if err != nil {
         return err

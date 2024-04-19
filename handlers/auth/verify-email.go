@@ -3,8 +3,12 @@ package auth
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
+	"stories/database"
+	"stories/generated/models"
+	"stories/types"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
@@ -14,7 +18,9 @@ import (
 	"stories/helpers"
 )
 
-type VerifyEmailHandler struct{}
+type VerifyEmailHandler struct {
+	Query database.IQuery
+}
 
 func (handler VerifyEmailHandler) IsValid() error {
 	return nil
@@ -49,10 +55,11 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusUnauthorized, constants.TokenNotParseCorrectly))
 		return
 	}
-	_ = jwtToken["email"].(string)
+	email := jwtToken["email"].(string)
 	// email = jwtToken["email"].(string)
-	// user, err = auth.GetUserByEmail(email)
+	users, err := models.GetTaUserByEmail(handler.Query, types.NewString(email))
 	if err != nil {
+		log.Println("models.TaUser{}.GetTaUserByEmail checking err", err)
 		if err == sql.ErrNoRows {
 			handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusUnauthorized, constants.UserNotFoundOrPasswordMismatch))
 			return
@@ -60,9 +67,18 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
 		return
 	}
-	if err != nil {
-		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
-		return
-	}
+
+	user := users[0]
+
+	user.Update(handler.Query,
+		types.NilString(),
+		types.NilString(),
+		types.NilString(),
+		types.NilString(),
+		types.NilString(),
+		types.NewBool(true),
+	)
+	log.Println(fmt.Sprintf("User %s was activated succesfully"), user.Email)
+
 	handlers_utils.SendJSONResponse(writer, nil, http.StatusOK)
 }

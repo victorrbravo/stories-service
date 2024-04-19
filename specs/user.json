@@ -46,6 +46,13 @@
       "Scannable": true,
       "Nullable": true,
       "Searchable": false
+    },
+    {
+      "Name": "Activated",
+      "Type": "types.Bool",
+      "Scannable": true,
+      "Nullable": true,
+      "Searchable": false
     }
   ]
 }

@@ -141,6 +141,14 @@ func CreateJWTToken(email string) (*TokenDetails, error) {
 	return td, nil
 }
 
+func checkOSJWTEnvironment() {
+	value := os.Getenv(constants.JWTAccessEnvironmentOSName)
+	if len(value) == 0 {
+		log.Println("JWTAccessEnvironmentOSName is not set, setting it to default value")
+		_ = os.Setenv(constants.JWTAccessEnvironmentOSName, constants.DefaultJWT) // this should be in an env file
+	}
+}
+
 func CreateInvitationJWTToken(email string) (*TokenDetails, error) {
 	var err error
 	td := &TokenDetails{}
@@ -149,10 +157,7 @@ func CreateInvitationJWTToken(email string) (*TokenDetails, error) {
 	td.RtExpires = time.Now().Add(time.Minute * 60 * 24 * 365 * 2).Unix()
 	td.RefreshUuid = td.AccessUuid + "++" + email
 	// Creating Access Token
-	value := os.Getenv(constants.JWTAccessEnvironmentOSName)
-	if len(value) == 0 {
-		_ = os.Setenv(constants.JWTAccessEnvironmentOSName, constants.DefaultJWT) // this should be in an env file
-	}
+	checkOSJWTEnvironment()
 	atClaims := jwt.MapClaims{}
 	atClaims["authorized"] = true
 	atClaims["access_uuid"] = td.AccessUuid
@@ -194,6 +199,7 @@ func verifyToken(t string) (*jwt.Token, error) {
 }
 
 func TokenValid(t string) (jwt.MapClaims, error) {
+	checkOSJWTEnvironment()
 	token, err := verifyToken(t)
 	if err != nil {
 		return nil, err
