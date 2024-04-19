@@ -3,6 +3,7 @@ package auth
 import (
 	"database/sql"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"net/url"
@@ -17,6 +18,10 @@ import (
 	"stories/handlers_utils"
 	"stories/helpers"
 )
+
+type VerificationData struct {
+	Name string `json:"name"`
+}
 
 type VerifyEmailHandler struct {
 	Query database.IQuery
@@ -42,7 +47,7 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 	var query url.Values
 	query = request.URL.Query()
 	code = query.Get("code")
-	if code == "" {
+	if len(code) == 0 {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(constants.RequiredFieldIsEmpty, "code")))
 		return
 	}
@@ -77,8 +82,18 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 		types.NilString(),
 		types.NilString(),
 		types.NewBool(true),
+		types.NilString(),
 	)
 	log.Println(fmt.Sprintf("User %s was activated succesfully"), user.Email)
 
-	handlers_utils.SendJSONResponse(writer, nil, http.StatusOK)
+	// Redirect to the login page
+	data := VerificationData{Name: user.Email.String()}
+	writeHTMLWithTemplate(writer, data)
+}
+
+func writeHTMLWithTemplate(writer http.ResponseWriter, data VerificationData) {
+	tmpl := template.Must(template.ParseFiles("index.html"))
+	writer.Header().Set("Content-Type", "text/html")
+	writer.WriteHeader(http.StatusOK)
+	tmpl.Execute(writer, data)
 }

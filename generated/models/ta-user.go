@@ -12,13 +12,13 @@ import (
  * Generated queries (these can be used perfectly instead of writing them by hand
  */
 const (
-    TaUserCreateQuery = "INSERT INTO \"ta_user\" (\"first_name\",\"last_name\",\"email\",\"password\",\"account_type\",\"activated\") VALUES ($1, $2, $3, $4, $5, $6) RETURNING (\"pk_user\")"
-    AllTaUserQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\", \"activated\" FROM \"ta_user\""
-    TaUserByPkUserQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\", \"activated\" FROM \"ta_user\" WHERE \"pk_user\" = $1"
-    TaUserByEmailQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\", \"activated\" FROM \"ta_user\" WHERE \"email\" = $1"
-    TaUserUpdateQuery = "UPDATE \"ta_user\" SET \"first_name\" = COALESCE($1, \"first_name\"), \"last_name\" = COALESCE($2, \"last_name\"), \"email\" = COALESCE($3, \"email\"), \"password\" = COALESCE($4, \"password\"), \"account_type\" = COALESCE($5, \"account_type\"), \"activated\" = COALESCE($6, \"activated\") WHERE \"pk_user\" = $7"
+    TaUserCreateQuery = "INSERT INTO \"ta_user\" (\"first_name\",\"last_name\",\"email\",\"password\",\"account_type\",\"activated\",\"code\") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING (\"pk_user\")"
+    AllTaUserQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\", \"activated\", \"code\" FROM \"ta_user\""
+    TaUserByPkUserQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\", \"activated\", \"code\" FROM \"ta_user\" WHERE \"pk_user\" = $1"
+    TaUserByEmailQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\", \"activated\", \"code\" FROM \"ta_user\" WHERE \"email\" = $1"
+    TaUserUpdateQuery = "UPDATE \"ta_user\" SET \"first_name\" = COALESCE($1, \"first_name\"), \"last_name\" = COALESCE($2, \"last_name\"), \"email\" = COALESCE($3, \"email\"), \"password\" = COALESCE($4, \"password\"), \"account_type\" = COALESCE($5, \"account_type\"), \"activated\" = COALESCE($6, \"activated\"), \"code\" = COALESCE($7, \"code\") WHERE \"pk_user\" = $8"
     TaUserDeleteQuery = "DELETE FROM \"ta_user\" WHERE \"pk_user\" = $1"
-    TaUserListOfFields = " ta_user.\"pk_user\", ta_user.\"first_name\", ta_user.\"last_name\", ta_user.\"email\", ta_user.\"password\", ta_user.\"account_type\", ta_user.\"activated\""
+    TaUserListOfFields = " ta_user.\"pk_user\", ta_user.\"first_name\", ta_user.\"last_name\", ta_user.\"email\", ta_user.\"password\", ta_user.\"account_type\", ta_user.\"activated\", ta_user.\"code\""
 )
 
 type TaUser struct {
@@ -29,6 +29,7 @@ type TaUser struct {
 	Password types.String `json:"password"`
 	AccountType types.String `json:"account_type"`
 	Activated types.Bool `json:"activated"`
+	Code types.String `json:"code"`
 }
 
 func (taUser TaUser) ListOfFields() string {
@@ -46,6 +47,7 @@ func (taUser TaUser) ScanRow(rows database.RowInterface) (interface{}, error) {
 		&taUser.Password,
 		&taUser.AccountType,
 		&taUser.Activated,
+		&taUser.Code,
 	)
 	if err != nil {
 		return nil, err
@@ -61,6 +63,7 @@ func CreateTaUser(
 	password types.String,
 	accountType types.String,
 	activated types.Bool,
+	code types.String,
 ) (*TaUser, error) {
 	var err error
     var scanner scanners.Int
@@ -74,6 +77,7 @@ func CreateTaUser(
 		password,
 		accountType,
 		activated,
+		code,
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -88,6 +92,7 @@ func CreateTaUser(
 	    Password: password,
 	    AccountType: accountType,
 	    Activated: activated,
+	    Code: code,
 	}
 	return taUser, nil
 }
@@ -100,6 +105,7 @@ func (taUser *TaUser) Update(
     password types.String,
     accountType types.String,
     activated types.Bool,
+    code types.String,
 ) error {
     var err error
 	err = query.Exec(
@@ -110,6 +116,7 @@ func (taUser *TaUser) Update(
         password,
         accountType,
         activated,
+        code,
         taUser.PkUser,
     )
 	if err != nil {
@@ -121,6 +128,7 @@ func (taUser *TaUser) Update(
     taUser.Password = password
     taUser.AccountType = accountType
     taUser.Activated = activated
+    taUser.Code = code
     return nil
 }
 

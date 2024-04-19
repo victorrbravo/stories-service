@@ -11,6 +11,7 @@ import (
 	"image/jpeg"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"reflect"
@@ -229,4 +230,14 @@ func EncodeImageBase64(path string) (string, error) {
 	// Convert the image data to base64
 	base64String = base64.StdEncoding.EncodeToString(imageData)
 	return base64String, nil
+}
+
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+func RandomString(length int) string {
+	b := make([]rune, length)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }

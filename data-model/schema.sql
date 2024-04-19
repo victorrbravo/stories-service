@@ -16,7 +16,8 @@
         "account_type"           VARCHAR NOT NULL,
         "password"               VARCHAR        NOT NULL,
         "activated"              BOOLEAN        DEFAULT FALSE,
-        "status"                VARCHAR DEFAULT ''::varchar
+        "status"                VARCHAR DEFAULT ''::varchar,
+        "code"                   VARCHAR(8) DEFAULT ''::varchar
     );
 
     create table "ta_signed_in"

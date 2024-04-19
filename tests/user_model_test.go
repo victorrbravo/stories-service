@@ -47,8 +47,14 @@ func TestModelAddUser(t *testing.T) {
 	t.Log("Connect err", err)
 	newQuery := query.NewQuery()
 	t.Log("Get Add User")
-	user, err = models.CreateTaUser(newQuery, types.NewString("Marcelo"), types.NewString("Bravo"),
-		types.NewString("victor2@email.com"), types.NewString("pass"), types.NewString("Admin"))
+	user, err = models.CreateTaUser(newQuery,
+		types.NewString("Marcelo"),
+		types.NewString("Bravo"),
+		types.NewString("victor2@email.com"),
+		types.NewString("pass"),
+		types.NewString("Admin"),
+		types.NewBool(false),
+		types.NilString())
 	if err != nil {
 		t.Logf("Error GetAllUsers %v", err)
 		return

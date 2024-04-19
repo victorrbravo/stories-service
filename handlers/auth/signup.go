@@ -6,10 +6,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
+	"os"
 	"stories/database"
 	"stories/generated/models"
 	"stories/handlers_utils"
 	"stories/helpers"
+	"stories/pkg/utils"
 	"stories/types"
 )
 
@@ -62,6 +64,7 @@ func (handler SignupUserHandler) ServeHTTP(writer http.ResponseWriter, request *
 	}
 	passcrypt, _ := bcrypt.GenerateFromPassword([]byte(types.AsString(handler.Password)), 0)
 	password := string(passcrypt)
+	code := utils.RandomString(8)
 	taUser, err := models.CreateTaUser(handler.Query,
 		handler.Name,
 		handler.LastName,
@@ -69,15 +72,25 @@ func (handler SignupUserHandler) ServeHTTP(writer http.ResponseWriter, request *
 		types.NewString(password),
 		types.NewString("user"),
 		types.NewBool(false),
+		types.NewString(code),
 	)
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
 		return
 	}
+	urlToSend := buildUrlToSend(handler.Email, code)
+	log.Println(urlToSend)
 	log.Println(" created taUser ID:", taUser.PkUser)
 	handlers_utils.SendJSONResponse(writer, struct {
 		Message string `json:"message"`
 		Email   string `json:"email"`
 	}{Message: fmt.Sprintf("User %s %s created successfully", handler.Name, handler.LastName),
 		Email: handler.Email}, http.StatusOK)
+}
+
+func buildUrlToSend(email string, code string) string {
+	urlVerify := os.Getenv("URL_VERIFY_EMAIL")
+	endpointVerify := fmt.Sprintf(EndPointVerifyEmail, urlVerify, code)
+	return endpointVerify
+
 }
