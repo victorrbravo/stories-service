@@ -63,12 +63,9 @@ func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *h
 		return
 	}
 	log.Println("serverhttp login Email searching by |", handler.Email, "|")
-	log.Println("serverhttp login Password searching by |", handler.Password, "|")
-
 	objects, err := models.GetTaUserByEmail(handler.GetQuery(), handler.Email)
-
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			handlers_utils.RespondWithError(
 				writer,
 				helpers.NewHttpError(http.StatusUnauthorized, constants.UserNotFoundOrPasswordMismatch),

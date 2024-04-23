@@ -168,3 +168,8 @@ func (date DateTime) Sub(what DateTime) time.Duration {
 func Now() DateTime {
 	return DateTime(time.Now())
 }
+
+func NowUTC() DateTime {
+
+	return DateTime(time.Now().UTC())
+}

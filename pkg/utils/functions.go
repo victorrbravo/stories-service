@@ -237,6 +237,7 @@ func EncodeImageBase64(path string) (string, error) {
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
 func RandomString(length int) string {
+	rand.Seed(time.Now().UnixNano())
 	b := make([]rune, length)
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]

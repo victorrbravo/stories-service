@@ -85,7 +85,36 @@
 
 ALTER TABLE ta_session ADD COLUMN "pk_session" SERIAL PRIMARY KEY;
 
-    insert into ta_story (name, status) values ('story1', 'Start');
+    create table "ta_permissions"
+    (
+        "pk_permission" serial primary key,
+        "name"          varchar not null unique,
+        "fk_story"       int REFERENCES "ta_story" ("pk_story"),
+        "description"   varchar,
+        "permissions"     jsonb DEFAULT '{}'::jsonb
+    );
+
+    create table "ta_social_story"
+    (
+        "pk_social" serial primary key,
+        "name"      varchar not null,
+        "fk_story" int REFERENCES "ta_story" ("pk_story"),
+        "social"   jsonb DEFAULT '{}'::jsonb
+    );
+
+    create table "ta_stories_shared"
+    (
+        "pk_shared" serial primary key,
+        "fk_story"  int REFERENCES "ta_story" ("pk_story"),
+        "fk_from_user"   int REFERENCES "ta_user" ("pk_user"),
+        "fk_to_user"   int REFERENCES "ta_user" ("pk_user"),
+        "permissions" jsonb DEFAULT '{}'::jsonb,
+        "shared_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    );
+
+
+-- Data for table `ta_user`
+insert into ta_story (name, status) values ('story1', 'Start');
 
 
 insert into ta_story (name, status) values ('story1', 'ToDo');

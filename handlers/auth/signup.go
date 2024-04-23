@@ -95,8 +95,8 @@ func (handler SignupUserHandler) ServeHTTP(writer http.ResponseWriter, request *
 	log.Println(" created taUser ID:", taUser.PkUser)
 	// Send to Queue
 	// Send email to user
-	_ = fmt.Sprintf(DefaultSignUpBodyEmail, handler.Name, handler.LastName, urlToSend)
-	// body :=
+	body := fmt.Sprintf(DefaultSignUpBodyEmail, handler.Name, handler.LastName, urlToSend)
+	fmt.Println("body", body)
 	//SendEmail(SenderSignupEmail,
 	//	handler.Email,
 	//	DefaultSubjectSignUpEmail,

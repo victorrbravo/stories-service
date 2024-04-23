@@ -112,7 +112,7 @@ action: all_user
 		t.Error(err)
 	}
 	for index, value := range pg.ValuesTaUser {
-		fmt.Println(index+1, "Firstname", value.Firstname, "Lastname", value.Lastname, "Email", value.Email)
+		fmt.Println(index+1, "Firstname", value.FirstName, "Lastname", value.LastName, "Email", value.Email)
 	}
 
 }
@@ -788,7 +788,7 @@ func TestProcessDeleteTicket(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: delete_ticket
-ticket: 14
+ticket: 43
 `
 	order := []byte(input)
 	_, err = ProcessInput(order, &query)

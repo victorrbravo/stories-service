@@ -109,6 +109,8 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		value, err = DoGetStepsSchema(order, query)
 	case "new_story_flow":
 		err = NewStoryFlow(order, query)
+	case "delete_story_flow":
+		err = DoDeleteStoryByID(order, query)
 	case "add_step":
 		_, err = DoAddStep(order, query)
 	case "add_flow_step":
@@ -623,15 +625,26 @@ func DoDeleteStoryByID(order string, query *database.IQuery) error {
 	if err != nil {
 		return err
 	}
-	err = models.DeleteTaTrackingByFkStory(*query, handler.Ticket)
-	if err != nil {
-		return err
-	}
 	taStory, err := models.GetTaStoryByPkStory(*query, handler.Ticket)
 	if err != nil {
 		return err
 	}
+	log.Println("taStory FkFlow", taStory.FkFlow)
+	taFlow, err := models.GetTaFlowByPkFlow(*query, taStory.FkFlow)
+	if err != nil {
+		return err
+	}
+
+	err = models.DeleteTaTrackingByFkStory(*query, handler.Ticket)
+	if err != nil {
+		return err
+	}
 	err = taStory.Delete(*query)
+	if err != nil {
+		return err
+	}
+	err = taFlow.Delete(*query)
+	log.Println("error deleting flow", err)
 	if err != nil {
 		return err
 	}

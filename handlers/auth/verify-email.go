@@ -9,6 +9,7 @@ import (
 	"stories/database"
 	"stories/generated/models"
 	"stories/types"
+	"time"
 
 	"stories/constants"
 	"stories/handlers_utils"
@@ -16,7 +17,9 @@ import (
 )
 
 type VerificationData struct {
-	Name string `json:"name"`
+	Name            string `json:"name"`
+	TemplateContent string `json:"template_name"`
+	LinkResend      string `json:"link_resend"`
 }
 
 type VerifyEmailHandler struct {
@@ -37,7 +40,6 @@ func (handler VerifyEmailHandler) IsEnabled() bool {
 // You must add a parameter to Query String (URL) in this format: ?code=<CODE_SENT>
 func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	var err error
-	// var email string
 	var code string
 	var query url.Values
 	query = request.URL.Query()
@@ -46,7 +48,8 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(constants.RequiredFieldIsEmpty, "code")))
 		return
 	}
-	// Get the token from the query strin
+	// Get the token from the query string
+	log.Println("Verifying email with code: ", code)
 	searchCode := types.NewString(code)
 	taSessions, err := models.GetTaSessionByToken(handler.Query, searchCode)
 	if err != nil {
@@ -56,13 +59,35 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 
 	}
 	taSession := taSessions[0]
+	log.Println("Started At", taSession.StartedAt)
+	limit := taSession.StartedAt.Add(time.Minute * 15)
+	log.Println("Limit", limit)
+	now := types.NowUTC()
+	log.Println("Now", now)
+	if now.After(limit) {
+		log.Println(fmt.Sprintf("Token %s has expired", code))
+		linkResend := fmt.Sprintf("%s?code=%s", DefaultURLResendEmail, code)
+		writeHTMLWithTemplate(writer, VerificationData{Name: "this new user",
+			TemplateContent: ExpiredTokenVerifyEmail,
+			LinkResend:      linkResend,
+		})
+		return
+	}
+	log.Println("Session found: ", taSession.PkSession)
 	taUser, err := models.GetTaUserByPkUser(handler.Query, taSession.FkUser)
 	if err != nil {
 		log.Println(fmt.Sprintf("Error getting user %d", taSession.FkUser))
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(InvalidToken, code)))
 		return
 	}
+	if taUser.Activated.ToBool() {
+		log.Println(fmt.Sprintf("User %s was already activated", taUser.Email))
+		writeHTMLWithTemplate(writer, VerificationData{Name: taUser.Email.String(), TemplateContent: AlreadyVerifiedEmail})
+		return
 
+	}
+	log.Println("User found: ", taUser.Email, "PkUser", taUser.PkUser)
+	email := taUser.Email
 	err = taUser.Update(handler.Query,
 		types.NilString(),
 		types.NilString(),
@@ -76,15 +101,28 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(InvalidToken, code)))
 		return
 	}
-	log.Println(fmt.Sprintf("User %s was activated succesfully"), taUser.Email)
+	log.Println(fmt.Sprintf("User %s was activated succesfully", email))
 	// Redirect to the login page
-	data := VerificationData{Name: taUser.Email.String()}
-	writeHTMLWithTemplate(writer, data)
+	log.Println("VerificationData taUser.Email: |", email, "|")
+	data := VerificationData{Name: email.String(), TemplateContent: SuccessVerifyEmail}
+	err = writeHTMLWithTemplate(writer, data)
+	if err != nil {
+		log.Println("Error writing HTML with template error", err.Error())
+		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
+		return
+	}
 }
 
-func writeHTMLWithTemplate(writer http.ResponseWriter, data VerificationData) {
-	tmpl := template.Must(template.ParseFiles("index.html"))
+func writeHTMLWithTemplate(writer http.ResponseWriter, data VerificationData) error {
+	parser := template.New("verify-email")
+	tmplObj, err := parser.Parse(data.TemplateContent)
+	if err != nil {
+		return err
+	}
 	writer.Header().Set("Content-Type", "text/html")
 	writer.WriteHeader(http.StatusOK)
-	tmpl.Execute(writer, data)
+	tmpl := template.Must(tmplObj, err)
+	err = tmpl.Execute(writer, data)
+	log.Println("writeHTMLWithTemplate err", err)
+	return nil
 }
