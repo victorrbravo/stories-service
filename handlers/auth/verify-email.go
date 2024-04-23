@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"database/sql"
 	"fmt"
 	"html/template"
 	"log"
@@ -10,9 +9,6 @@ import (
 	"stories/database"
 	"stories/generated/models"
 	"stories/types"
-	"strings"
-
-	"github.com/dgrijalva/jwt-go"
 
 	"stories/constants"
 	"stories/handlers_utils"
@@ -43,7 +39,6 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 	var err error
 	// var email string
 	var code string
-	var jwtToken jwt.MapClaims
 	var query url.Values
 	query = request.URL.Query()
 	code = query.Get("code")
@@ -51,43 +46,39 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(constants.RequiredFieldIsEmpty, "code")))
 		return
 	}
-	jwtToken, err = helpers.TokenValid(strings.TrimSuffix(code, "\\r\\n"))
+	// Get the token from the query strin
+	searchCode := types.NewString(code)
+	taSessions, err := models.GetTaSessionByToken(handler.Query, searchCode)
 	if err != nil {
-		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusUnauthorized, constants.TokenIsNotValid))
+		log.Println(fmt.Sprintf("Error getting token %s", code))
+		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(InvalidToken, code)))
 		return
+
 	}
-	if _, ok := jwtToken["email"]; !ok {
-		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusUnauthorized, constants.TokenNotParseCorrectly))
-		return
-	}
-	email := jwtToken["email"].(string)
-	// email = jwtToken["email"].(string)
-	users, err := models.GetTaUserByEmail(handler.Query, types.NewString(email))
+	taSession := taSessions[0]
+	taUser, err := models.GetTaUserByPkUser(handler.Query, taSession.FkUser)
 	if err != nil {
-		log.Println("models.TaUser{}.GetTaUserByEmail checking err", err)
-		if err == sql.ErrNoRows {
-			handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusUnauthorized, constants.UserNotFoundOrPasswordMismatch))
-			return
-		}
-		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
+		log.Println(fmt.Sprintf("Error getting user %d", taSession.FkUser))
+		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(InvalidToken, code)))
 		return
 	}
 
-	user := users[0]
-
-	user.Update(handler.Query,
+	err = taUser.Update(handler.Query,
 		types.NilString(),
 		types.NilString(),
 		types.NilString(),
 		types.NilString(),
 		types.NilString(),
 		types.NewBool(true),
-		types.NilString(),
 	)
-	log.Println(fmt.Sprintf("User %s was activated succesfully"), user.Email)
-
+	if err != nil {
+		log.Println(fmt.Sprintf("Error updating user %d", taSession.FkUser))
+		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(InvalidToken, code)))
+		return
+	}
+	log.Println(fmt.Sprintf("User %s was activated succesfully"), taUser.Email)
 	// Redirect to the login page
-	data := VerificationData{Name: user.Email.String()}
+	data := VerificationData{Name: taUser.Email.String()}
 	writeHTMLWithTemplate(writer, data)
 }
 

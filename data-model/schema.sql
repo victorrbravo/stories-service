@@ -17,7 +17,6 @@
         "password"               VARCHAR        NOT NULL,
         "activated"              BOOLEAN        DEFAULT FALSE,
         "status"                VARCHAR DEFAULT ''::varchar,
-        "code"                   VARCHAR(8) DEFAULT ''::varchar
     );
 
     create table "ta_signed_in"
@@ -84,7 +83,9 @@
         "invalid"    boolean                  DEFAULT false
     );
 
+ALTER TABLE ta_session ADD COLUMN "pk_session" SERIAL PRIMARY KEY;
 
+    insert into ta_story (name, status) values ('story1', 'Start');
 
 
 insert into ta_story (name, status) values ('story1', 'ToDo');

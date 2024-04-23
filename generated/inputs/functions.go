@@ -11,6 +11,8 @@ import (
 
 var ValuesTaFlow  []models.TaFlow
 
+var ValuesTaSession  []models.TaSession
+
 var ValuesTaStory  []models.TaStory
 
 var ValuesTaTracking  []models.TaTracking
@@ -26,6 +28,10 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
     
     if ValuesTaFlow  == nil {
         ValuesTaFlow = make([]models.TaFlow, 0)
+    }
+    
+    if ValuesTaSession  == nil {
+        ValuesTaSession = make([]models.TaSession, 0)
     }
     
     if ValuesTaStory  == nil {
@@ -54,6 +60,25 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
                     ValueTaFlow, _ := GetTaFlowByPkFlow(order, query)
                     ValuesTaFlow = append(ValuesTaFlow, *ValueTaFlow)
                 
+    			case "add_session":
+    			    err = InsertTaSession(order, query)
+    			case "delete_session":
+                    err = DeleteTaSession(order, query)
+    			case "update_session":
+                    err = UpdateTaSession(order, query)
+                case "all_session":
+                    ValuesTaSession, _ = GetAllTaSession(query)
+                case "get_session_by_PkSession":
+                    ValueTaSession, _ := GetTaSessionByPkSession(order, query)
+                    ValuesTaSession = append(ValuesTaSession, *ValueTaSession)
+                
+                case "get_session_by_token":
+                    ValueTaSessions, errSearch := GetTaSessionByToken(order, query)
+                    if errSearch != nil  {
+                            return value, errSearch
+                    }
+                    data, err = json.Marshal( ValueTaSessions )
+                    value = string(data)
     			case "add_story":
     			    err = InsertTaStory(order, query)
     			case "delete_story":
@@ -120,6 +145,18 @@ func UnmarshallTaFlow(order []byte) (TaFlow, error) {
 		return taFlow, err
 	}
 	return taFlow, nil
+}
+
+
+
+func UnmarshallTaSession(order []byte) (TaSession, error) {
+	var taSession TaSession
+	var err error
+	err = yaml.Unmarshal(order, &taSession)
+	if err != nil {
+		return taSession, err
+	}
+	return taSession, nil
 }
 
 

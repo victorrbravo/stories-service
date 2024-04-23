@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/dgrijalva/jwt-go"
 	"image/jpeg"
 	"io/ioutil"
 	"log"
@@ -16,6 +17,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"stories/constants"
 	"stories/types"
 	"strconv"
 	"strings"
@@ -240,4 +242,24 @@ func RandomString(length int) string {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(b)
+}
+
+// GenerateJWT generates a JWT token with the provided claims
+func GenerateJWT(email string) (string, error) {
+	// Set token claims
+	value := os.Getenv(constants.JWTAccessEnvironmentOSName)
+	if len(value) == 0 {
+		_ = os.Setenv(constants.JWTAccessEnvironmentOSName, constants.DefaultJWT) // this should be in an env file
+	}
+	claims := jwt.MapClaims{
+		"email": email,
+		"exp":   time.Now().Add(time.Minute * 10).Unix(), // Token expiration time
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	// Sign the token with the secret key
+	tokenString, err := token.SignedString([]byte(value))
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
 }

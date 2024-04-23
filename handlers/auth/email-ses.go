@@ -1,17 +1,21 @@
 package auth
 
 import (
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ses"
+	"log"
 )
 
-func sendEmail(sender, recipient, subject, body string) {
+func SendEmail(sender, recipient, subject, body string) error {
 	// Initialize a new AWS session using the default credentials
-	sess := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	}))
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String("us-east-1"), // Specify your AWS region here
+	})
+	if err != nil {
+		log.Println("Error creating session:", err)
+		return err
+	}
 
 	// Create a new SES client
 	svc := ses.New(sess)
@@ -35,11 +39,12 @@ func sendEmail(sender, recipient, subject, body string) {
 	}
 
 	// Try to send the email
-	_, err := svc.SendEmail(input)
+	_, err = svc.SendEmail(input)
 	if err != nil {
-		fmt.Println("Email sending failed:", err)
-		return
+		log.Println("Email sending failed:", err)
+		return err
 	}
+	log.Println("Email sent successfully!")
+	return nil
 
-	fmt.Println("Email sent successfully!")
 }

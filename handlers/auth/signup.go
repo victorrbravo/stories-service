@@ -65,6 +65,7 @@ func (handler SignupUserHandler) ServeHTTP(writer http.ResponseWriter, request *
 	passcrypt, _ := bcrypt.GenerateFromPassword([]byte(types.AsString(handler.Password)), 0)
 	password := string(passcrypt)
 	code := utils.RandomString(8)
+	log.Println("code: |", code, "|")
 	taUser, err := models.CreateTaUser(handler.Query,
 		handler.Name,
 		handler.LastName,
@@ -72,24 +73,47 @@ func (handler SignupUserHandler) ServeHTTP(writer http.ResponseWriter, request *
 		types.NewString(password),
 		types.NewString("user"),
 		types.NewBool(false),
-		types.NewString(code),
 	)
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
 		return
 	}
+	taSession, err := models.CreateTaSession(handler.Query,
+		types.NewString(code),
+		taUser.PkUser,
+		types.Now(),
+		false,
+	)
+	if err != nil {
+		log.Println("Error creating session", err.Error())
+		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+	log.Println("taSession pkSession", taSession.PkSession)
 	urlToSend := buildUrlToSend(handler.Email, code)
-	log.Println(urlToSend)
+	log.Println("urlToSend", urlToSend)
 	log.Println(" created taUser ID:", taUser.PkUser)
+	// Send to Queue
+	// Send email to user
+	_ = fmt.Sprintf(DefaultSignUpBodyEmail, handler.Name, handler.LastName, urlToSend)
+	// body :=
+	//SendEmail(SenderSignupEmail,
+	//	handler.Email,
+	//	DefaultSubjectSignUpEmail,
+	//	body)
 	handlers_utils.SendJSONResponse(writer, struct {
 		Message string `json:"message"`
 		Email   string `json:"email"`
 	}{Message: fmt.Sprintf("User %s %s created successfully", handler.Name, handler.LastName),
 		Email: handler.Email}, http.StatusOK)
+
 }
 
 func buildUrlToSend(email string, code string) string {
 	urlVerify := os.Getenv("URL_VERIFY_EMAIL")
+	if len(urlVerify) == 0 {
+		urlVerify = DefaultURLVerifyEmail
+	}
 	endpointVerify := fmt.Sprintf(EndPointVerifyEmail, urlVerify, code)
 	return endpointVerify
 

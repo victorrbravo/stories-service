@@ -1,0 +1,48 @@
+{
+  "Model": "TaSession",
+  "Attrs": [
+    {
+      "Name": "PkSession",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Key": true,
+      "Getter": true,
+      "Title": "PkSession"
+    },
+    {
+      "Name": "Token",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Searchable": true,
+      "Title": "Token"
+    },
+    {
+      "Name": "FkUser",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "FkUser"
+    },
+    {
+      "Name": "StartedAt",
+      "Type": "types.DateTime",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "StartedAt"
+    },
+    {
+      "Name": "Invalid",
+      "Type": "bool",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Searchable": true,
+      "Title": "Invalid"
+    }
+  ]
+}
+

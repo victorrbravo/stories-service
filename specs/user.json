@@ -53,13 +53,6 @@
       "Scannable": true,
       "Nullable": true,
       "Searchable": false
-    },
-    {
-      "Name": "Code",
-      "Type": "types.String",
-      "Scannable": true,
-      "Nullable": true,
-      "Searchable": false
     }
   ]
 }

@@ -54,7 +54,7 @@ func TestModelAddUser(t *testing.T) {
 		types.NewString("pass"),
 		types.NewString("Admin"),
 		types.NewBool(false),
-		types.NilString())
+	)
 	if err != nil {
 		t.Logf("Error GetAllUsers %v", err)
 		return

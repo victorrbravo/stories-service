@@ -80,6 +80,14 @@ func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *h
 	}
 	taUser := objects[0]
 	log.Println("CONVERT taUser", taUser, "err", err)
+	if !taUser.Activated.ToBool() {
+		log.Println("User not activated yet email:", handler.Email)
+		handlers_utils.RespondWithError(
+			writer,
+			helpers.NewHttpError(http.StatusUnauthorized, UserNotActivated),
+		)
+		return
+	}
 	pass := taUser.GetPassword()
 	err = crypto.ComparePasswords([]byte(types.AsString(pass)), types.AsString(handler.Password))
 	log.Println("crypto crypto.ComparePasswords err", err)
