@@ -45,11 +45,12 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 	query = request.URL.Query()
 	code = query.Get("code")
 	if len(code) == 0 {
+		log.Println("code cannot be empty")
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(constants.RequiredFieldIsEmpty, "code")))
 		return
 	}
 	// Get the token from the query string
-	log.Println("Verifying email with code: ", code)
+	log.Println("code is not empty")
 	searchCode := types.NewString(code)
 	taSessions, err := models.GetTaSessionByToken(handler.Query, searchCode)
 	if err != nil {

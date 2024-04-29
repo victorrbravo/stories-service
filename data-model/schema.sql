@@ -113,6 +113,8 @@ ALTER TABLE ta_session ADD COLUMN "pk_session" SERIAL PRIMARY KEY;
     );
 
 
+alter table ta_user add column name varchar;
+
 -- Data for table `ta_user`
 insert into ta_story (name, status) values ('story1', 'Start');
 

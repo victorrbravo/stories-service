@@ -16,7 +16,7 @@ const SuccessVerifyEmail = `
 
     <div class="row mt-4 g-4">
         <div class="col-8">
-            <h1 class="mb-4">User activated</h1>
+            <h1 class="mb-4">Activated successfully!</h1>
             <ul class="list-group fs-5 me-5" id="film-list">
                     <li class="list-group-item bg-primary text-white">{{.Name}} activated</li>
             </ul>
@@ -42,7 +42,7 @@ const AlreadyVerifiedEmail = `
 
     <div class="row mt-4 g-4">
         <div class="col-8">
-            <h1 class="mb-4">User activated</h1>
+            <h1 class="mb-4">User information</h1>
             <ul class="list-group fs-5 me-5" id="film-list">
                     <li class="list-group-item bg-primary text-white">{{.Name}} has already activated</li>
             </ul>
@@ -69,7 +69,7 @@ const ExpiredTokenVerifyEmail = `
 
     <div class="row mt-4 g-4">
         <div class="col-8">
-            <h1 class="mb-4">User activated</h1>
+            <h1 class="mb-4">User information</h1>
             <ul class="list-group fs-5 me-5" id="film-list">
                     <li class="list-group-item bg-primary text-white">Token has Expired for {{.Name}} </li>
             </ul>
