@@ -53,6 +53,13 @@
       "Scannable": true,
       "Nullable": true,
       "Searchable": false
+    },
+    {
+      "Name": "Username",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Searchable": true
     }
   ]
 }

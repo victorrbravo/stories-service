@@ -108,11 +108,13 @@ func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *h
 		Refreshtoken  string `json:"refreshtoken"`
 		Expires       int64  `json:"expires"`
 		ExpiresString string `json:"expires_string"`
+		Username      string `json:"username"`
 	}{
 		Message:       fmt.Sprintf("User %s logged in successfully", handler.Email),
 		Token:         tokenDetails.AccessToken,
 		Refreshtoken:  tokenDetails.RefreshToken,
 		Expires:       tokenDetails.AtExpires,
 		ExpiresString: utils.UnixToRFC3339(tokenDetails.AtExpires),
+		Username:      taUser.Username.String(),
 	}, http.StatusOK)
 }

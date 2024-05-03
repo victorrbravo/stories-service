@@ -276,6 +276,31 @@ summary: an afternoon in Merida
 	}
 }
 
+func TestProcessInputNewStoryTIps(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: new_story_tips
+ticket: 44
+tips: tips1, tips2, tips3 
+`
+	order := []byte(input)
+	_, err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestProcessAddStep(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{
@@ -484,6 +509,32 @@ func TestProcessGetStoriesByUserId(t *testing.T) {
 	input := `
 action: get_story_by_user_id
 user_id: 2
+`
+	order := []byte(input)
+	response, err := ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("response", response)
+}
+
+func TestProcessGetStoriesByEmail(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: get_stories_by_email
+email: victorrbravo1@gmail.com
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)
@@ -762,9 +813,9 @@ func TestProcessNewStoryFlow(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: new_story_flow
-name: Tiramisu
+name: Tiramisu6
 summary: tiramisu recipe for homemade cooking
-user_id: 2
+email: solazver@gmail.com
 `
 	order := []byte(input)
 	_, err = ProcessInput(order, &query)

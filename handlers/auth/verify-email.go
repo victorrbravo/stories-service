@@ -96,6 +96,7 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 		types.NilString(),
 		types.NilString(),
 		types.NewBool(true),
+		types.NilString(),
 	)
 	if err != nil {
 		log.Println(fmt.Sprintf("Error updating user %d", taSession.FkUser))

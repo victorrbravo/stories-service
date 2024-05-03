@@ -9,7 +9,7 @@ import (
 	"stories/constants"
 )
 
-// DateTime wrapper around the native `time.Time' with an special format
+// DateTime wrapper around the native `time.Time' with an special Format
 type DateTime time.Time
 
 const (
@@ -20,7 +20,7 @@ const (
 	standardFormat  = "2006-01-02 15:04:05"
 )
 
-func (date DateTime) format(format string) string {
+func (date DateTime) Format(format string) string {
 	native := time.Time(date)
 	if native.IsZero() {
 		return ""
@@ -52,16 +52,16 @@ func (date DateTime) Value() (driver.Value, error) {
 	if native.IsZero() {
 		return nil, nil
 	}
-	return date.format(Iso8601), nil
+	return date.Format(Iso8601), nil
 }
 
 // String implements the `Stringer' interface
 func (date DateTime) String() string {
-	return date.format("01/02/2006 03:04 PM")
+	return date.Format("01/02/2006 03:04 PM")
 }
 
 func (date DateTime) WithoutTimezone() string {
-	return date.format(withoutTimezone)
+	return date.Format(withoutTimezone)
 }
 
 // ValidForTimeZone Checks if value is valid for current time Zone (configuration)
@@ -122,7 +122,7 @@ func (date DateTime) MarshalJSON() ([]byte, error) {
 	if native.IsZero() {
 		return json.Marshal(nil)
 	}
-	return json.Marshal(date.format(Iso8601))
+	return json.Marshal(date.Format(Iso8601))
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface

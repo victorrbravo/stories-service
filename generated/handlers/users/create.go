@@ -51,6 +51,7 @@ func (handler CreateHandler) ServeHTTP(writer http.ResponseWriter, request *http
 		types.NewString("pass"),
 		handler.AccountType,
 		types.NewBool(false),
+		types.NewString("M1"),
 	)
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))

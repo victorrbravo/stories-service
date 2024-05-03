@@ -14,6 +14,7 @@ type TaUser struct {
 	Password types.String `yaml:"password"`
 	AccountType types.String `yaml:"account_type"`
 	Activated types.Bool `yaml:"activated"`
+	Username types.String `yaml:"username"`
 }
 
 func  InsertTaUser(order string, query *database.IQuery) error {
@@ -28,6 +29,7 @@ func  InsertTaUser(order string, query *database.IQuery) error {
             handler.Password,
             handler.AccountType,
             handler.Activated,
+            handler.Username,
     )
     if err != nil {
         return err
@@ -86,6 +88,7 @@ func  UpdateTaUser(order string, query *database.IQuery) error {
             handler.Password,
             handler.AccountType,
             handler.Activated,
+            handler.Username,
     )
     if err != nil {
         return err
@@ -109,6 +112,19 @@ func  GetTaUserByEmail(order string, query *database.IQuery) ([]models.TaUser, e
     }
     taUsers, err := models.GetTaUserByEmail(*query,
             handler.Email,
+    )
+    if err != nil {
+        return taUsers, err
+    }
+    return taUsers, nil
+}
+func  GetTaUserByUsername(order string, query *database.IQuery) ([]models.TaUser, error) {
+    handler, err := UnmarshallTaUser([]byte(order))
+    if err != nil {
+        return nil, err
+    }
+    taUsers, err := models.GetTaUserByUsername(*query,
+            handler.Username,
     )
     if err != nil {
         return taUsers, err

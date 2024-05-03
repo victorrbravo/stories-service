@@ -6,6 +6,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
+	"net/smtp"
 	"os"
 	"stories/database"
 	"stories/generated/models"
@@ -23,6 +24,7 @@ type SignupUserHandler struct {
 	LastName             types.String `json:"last_name"  validate:"required"`
 	Phone                string       `json:"phone" validate:"required,e164"`
 	Gender               types.Gender `json:"gender"`
+	Username             types.String `json:"username"`
 	Query                database.IQuery
 }
 
@@ -38,6 +40,23 @@ func (handler SignupUserHandler) IsEnabled() bool {
 func (handler SignupUserHandler) GetQuery() database.IQuery {
 	log.Println("SetQuery was executed")
 	return handler.Query
+}
+
+func sendEmail(smtpHost, smtpPort, smtpUsername, smtpPassword, from, to, subject, body string) error {
+	// Compose the email message.
+	message := fmt.Sprintf("From: %s\r\n", from)
+	message += fmt.Sprintf("To: %s\r\n", to)
+	message += fmt.Sprintf("Subject: %s\r\n", subject)
+	message += "\r\n" + body
+
+	// Connect to the SMTP server.
+	auth := smtp.PlainAuth("", smtpUsername, smtpPassword, smtpHost)
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{to}, []byte(message))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Get currently authenticated user's information
@@ -73,6 +92,7 @@ func (handler SignupUserHandler) ServeHTTP(writer http.ResponseWriter, request *
 		types.NewString(password),
 		types.NewString("user"),
 		types.NewBool(false),
+		handler.Username,
 	)
 	if err != nil {
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
@@ -92,15 +112,19 @@ func (handler SignupUserHandler) ServeHTTP(writer http.ResponseWriter, request *
 	log.Println("taSession pkSession", taSession.PkSession)
 	urlToSend := buildUrlToSend(handler.Email, code)
 	log.Println("urlToSend", urlToSend)
-	log.Println(" created taUser ID:", taUser.PkUser)
+	log.Println("created taUser ID:", taUser.PkUser)
 	// Send to Queue
 	// Send email to user
 	body := fmt.Sprintf(DefaultSignUpBodyEmail, handler.Name, handler.LastName, urlToSend)
-	fmt.Println("body", body)
-	//SendEmail(SenderSignupEmail,
-	//	handler.Email,
-	//	DefaultSubjectSignUpEmail,
-	//	body)
+	log.Println("SES email body: |", body, "|")
+	log.Println("SES email subject: |", DefaultSubjectSignUpEmail, "|")
+	err = VerifyEmailAddress(handler.Email, "us-east-1")
+	if err != nil {
+		log.Println("Error trying to send  email for verification", err.Error())
+		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+	log.Println("After Email sent successfully!: ", handler.Email)
 	handlers_utils.SendJSONResponse(writer, struct {
 		Message string `json:"message"`
 		Email   string `json:"email"`

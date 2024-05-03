@@ -1,11 +1,38 @@
 package auth
 
 import (
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ses"
 	"log"
 )
+
+func VerifyEmailAddress(emailAddress string, region string) error {
+	// Create a new AWS session
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(region),
+	})
+	if err != nil {
+		return err
+	}
+
+	// Create a new SES client
+	svc := ses.New(sess)
+
+	// Send a verification email
+	_, err = svc.VerifyEmailAddress(&ses.VerifyEmailAddressInput{
+		EmailAddress: aws.String(emailAddress),
+	})
+	if err != nil {
+		if awsErr, ok := err.(awserr.Error); ok {
+			return fmt.Errorf("%s: %s", awsErr.Code(), awsErr.Message())
+		}
+		return err
+	}
+	return nil
+}
 
 func SendEmail(sender, recipient, subject, body string) error {
 	// Initialize a new AWS session using the default credentials
@@ -37,14 +64,12 @@ func SendEmail(sender, recipient, subject, body string) error {
 		},
 		Source: aws.String(sender),
 	}
-
 	// Try to send the email
 	_, err = svc.SendEmail(input)
 	if err != nil {
-		log.Println("Email sending failed:", err)
+		log.Println("SES Email sending failed:", err)
 		return err
 	}
-	log.Println("Email sent successfully!")
 	return nil
 
 }

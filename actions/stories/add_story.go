@@ -2,6 +2,7 @@ package stories
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
@@ -66,6 +67,10 @@ const (
 `
 )
 
+type GetStoriesAction struct {
+	Email types.String `yaml:"email"`
+}
+
 type PresignAction struct {
 	Name types.String `yaml:"name"`
 }
@@ -82,6 +87,7 @@ type Ticket struct {
 	Name    types.String `yaml:"name"`
 	Summary types.String `yaml:"summary"`
 	UserID  types.Int    `yaml:"user_id"`
+	Email   types.String `yaml:"email"`
 }
 
 type AddStoryStatus struct {
@@ -94,6 +100,10 @@ type AddStoryStatus struct {
 	UserID    types.Int         `yaml:"user_id"`
 	Summary   types.String      `yaml:"summary"`
 	MediaDate types.String      `yaml:"media_date"`
+}
+type StoryTips struct {
+	Ticket types.Int         `yaml:"ticket"`
+	Tips   types.StringArray `yaml:"tips"`
 }
 
 type DeleteTicket struct {
@@ -109,6 +119,10 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		value, err = DoGetStepsSchema(order, query)
 	case "new_story_flow":
 		err = NewStoryFlow(order, query)
+	case "new_story_tips":
+		err = NewStoryTips(order, query)
+	case "show_story_tips":
+		err = ShowStoryTips(order, query)
 	case "delete_story_flow":
 		err = DoDeleteStoryByID(order, query)
 	case "add_step":
@@ -128,11 +142,102 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 
 	case "suggest_short_name_for_image":
 		value, err = DoSuggestShortNameForImage(order, query)
-
+	case "get_stories_by_email":
+		value, err = DoGetStoriesByEmail(order, query)
 	}
 	if err != nil {
 		return value, err
 	}
+	return value, nil
+}
+
+func ShowStoryTips(order string, query *database.IQuery) error {
+
+	return nil
+}
+
+func NewStoryTips(order string, query *database.IQuery) error {
+	handler, err := Unmarshall[StoryTips]([]byte(order))
+	if err != nil {
+		return err
+	}
+	start := types.NewString(constants.Start)
+
+	taStory, err := models.GetTaStoryByPkStory(*query, handler.Ticket)
+	if err != nil {
+		return err
+	}
+	nameFlow := fmt.Sprintf("%s_%s", taStory.Name, constants.FlowTipsSuffix)
+	nameStory := types.NewString(nameFlow)
+	taFlow, err := models.CreateTaFlow(*query,
+		types.NewString(nameFlow),
+		[]byte(DefaultStartWorkflow),
+	)
+	if err != nil {
+		return err
+	}
+	taNewStory, err := models.CreateTaStory(*query,
+		nameStory,
+		start,
+		types.NewString(constants.SummaryDefault),
+		taStory.UserID,
+		taFlow.PkFlow,
+	)
+	log.Println("creating ta_story err", err)
+	if err != nil {
+		return err
+	}
+
+	for index, tip := range handler.Tips {
+		status := fmt.Sprintf("tip_%d", index)
+		action := fmt.Sprintf(`
+action: add_flow_step
+ticket: %d
+status: %s
+images: 
+ - ABC897B7-71DA-4C08-B7E8-B7F2F071D445
+amount: 0.00
+summary: %s
+media_date: %s
+type: step
+
+`, taNewStory.PkStory, status, tip, types.Now().Format(time.RFC3339))
+		log.Println("action", action)
+		//	_, err := input.ProcessInput([]byte(action), query)
+		//	if err != nil {
+		//		log.Println("error processing action", err, "tip", tip)
+		//	}
+	}
+
+	return nil
+}
+
+func DoGetStoriesByEmail(order string, query *database.IQuery) (string, error) {
+	value := "[]"
+	handler, err := Unmarshall[GetStoriesAction]([]byte(order))
+	if err != nil {
+		log.Println("DoGetStoriesByEmail error unmarshalling")
+		return value, err
+	}
+	taUsers, err := models.GetTaUserByEmail(*query, handler.Email)
+	if err != nil {
+		log.Println("DoGetStoriesByEmail error getting user")
+		return value, err
+	}
+	if taUsers == nil || len(taUsers) == 0 {
+		return value, errors.New("user not found")
+	}
+	taUser := taUsers[0]
+	taStories, err := models.GetTaStoryByUserID(*query, taUser.PkUser)
+	if err != nil {
+		log.Println("DoGetStoriesByEmail error getting stories")
+		return value, err
+	}
+	if taStories == nil {
+		taStories = []models.TaStory{}
+	}
+	data, err := json.Marshal(taStories)
+	value = string(data)
 	return value, nil
 }
 
@@ -372,11 +477,35 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 	start := types.NewString(constants.Start)
 	images := types.NewStringArray([]string{})
 	roles := types.NewStringArray([]string{})
+	nameFlow := ""
+	log.Println("handler.Email", handler.Email)
+	log.Println("handler.UserID", handler.UserID)
 	if types.IsNil(handler.UserID) {
-		return fmt.Errorf("user_id is nil")
+		if types.IsNil(handler.Email) {
+			return fmt.Errorf("email is required")
+		}
+		taUsers, err := models.GetTaUserByEmail(*query, handler.Email)
+		if err != nil {
+			return err
+		}
+		log.Println("taUsers", taUsers)
+		if taUsers == nil || len(taUsers) == 0 {
+			log.Println("user not found")
+			return fmt.Errorf("user not found")
+		}
+		log.Println("len(taUsers)", len(taUsers))
+		taUser := taUsers[0]
+		handler.UserID = taUser.PkUser
+		username := taUser.Username.String()
+		prefix := username
+		log.Println("prefix", prefix)
+		nameFlow = fmt.Sprintf("%s_%s", prefix, handler.Name)
+	} else {
+		nameFlow = fmt.Sprintf("%s_%s", handler.UserID, handler.Name)
 	}
+	log.Println("creating ta_flow name_flow", nameFlow)
 	taFlow, err := models.CreateTaFlow(*query,
-		handler.Name,
+		types.NewString(nameFlow),
 		[]byte(DefaultStartWorkflow),
 	)
 	if err != nil {
@@ -389,10 +518,12 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 		handler.UserID,
 		taFlow.PkFlow,
 	)
+	log.Println("creating ta_story err", err)
 	if err != nil {
 		return err
 	}
 	stringArr := []string{}
+	log.Println("creating ta_tracking")
 
 	models.CreateTaTracking(*query,
 		taStory.PkStory,
