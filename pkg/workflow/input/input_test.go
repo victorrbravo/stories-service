@@ -5,6 +5,7 @@ import (
 	"stories/database"
 	db "stories/database"
 	pg "stories/generated/inputs"
+	"stories/pkg/utils"
 	"testing"
 )
 
@@ -294,7 +295,8 @@ action: new_story_tips
 ticket: 44
 tips: tips1, tips2, tips3 
 `
-	order := []byte(input)
+	inputFormated := utils.FormatYaml(input)
+	order := []byte(inputFormated)
 	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
@@ -585,7 +587,8 @@ func TestProcessShowFlowData(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: show_flow_data ticket: 44
+action: show_flow_data
+ticket: 58
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)

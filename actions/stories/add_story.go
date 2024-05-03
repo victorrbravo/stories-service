@@ -120,7 +120,7 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 	case "new_story_flow":
 		err = NewStoryFlow(order, query)
 	case "new_story_tips":
-		err = NewStoryTips(order, query)
+		err = NewStoryTips(ctx, order, query)
 	case "show_story_tips":
 		err = ShowStoryTips(order, query)
 	case "delete_story_flow":
@@ -156,7 +156,7 @@ func ShowStoryTips(order string, query *database.IQuery) error {
 	return nil
 }
 
-func NewStoryTips(order string, query *database.IQuery) error {
+func NewStoryTips(ctx context.Context, order string, query *database.IQuery) error {
 	handler, err := Unmarshall[StoryTips]([]byte(order))
 	if err != nil {
 		return err
@@ -192,7 +192,7 @@ func NewStoryTips(order string, query *database.IQuery) error {
 		status := fmt.Sprintf("tip_%d", index)
 		action := fmt.Sprintf(`
 action: add_flow_step
-ticket: %d
+ticket: %s
 status: %s
 images: 
  - ABC897B7-71DA-4C08-B7E8-B7F2F071D445
@@ -201,12 +201,13 @@ summary: %s
 media_date: %s
 type: step
 
-`, taNewStory.PkStory, status, tip, types.Now().Format(time.RFC3339))
-		log.Println("action", action)
-		//	_, err := input.ProcessInput([]byte(action), query)
-		//	if err != nil {
-		//		log.Println("error processing action", err, "tip", tip)
-		//	}
+`, taNewStory.PkStory.String(), status, tip, types.Now().Format(time.RFC3339))
+		log.Println("add_flow_step action", action)
+		err = DoAddStepFlowAt[models.TaTracking](ctx, action, types2.None, query)
+		if err != nil {
+			log.Println("error adding step", err)
+			return err
+		}
 	}
 
 	return nil
