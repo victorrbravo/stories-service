@@ -1,6 +1,7 @@
 package handlers_utils
 
 import (
+	"fmt"
 	"net/http"
 
 	"stories/helpers"
@@ -17,4 +18,9 @@ func RespondWithError(writer http.ResponseWriter, err error) {
 		// Generic error instead
 		_, _ = writer.Write([]byte("unknown error"))
 	}
+}
+
+func ResponseWithInternalError(writer http.ResponseWriter) {
+	err := helpers.NewHttpError(http.StatusInternalServerError, fmt.Errorf("internal error").Error())
+	SendJSONResponse(writer, err, err.Status)
 }

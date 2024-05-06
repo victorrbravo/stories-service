@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"golang.org/x/crypto/bcrypt"
@@ -28,6 +29,13 @@ type SignupUserHandler struct {
 	Query                database.IQuery
 }
 
+type SMTPConfiguration struct {
+	SmtpUsername string
+	SmtpPassword string
+	SmtpHost     string
+	SmtpPort     string
+}
+
 func (handler SignupUserHandler) IsValid() error {
 	return nil
 }
@@ -42,20 +50,58 @@ func (handler SignupUserHandler) GetQuery() database.IQuery {
 	return handler.Query
 }
 
-func sendEmail(smtpHost, smtpPort, smtpUsername, smtpPassword, from, to, subject, body string) error {
-	// Compose the email message.
-	message := fmt.Sprintf("From: %s\r\n", from)
-	message += fmt.Sprintf("To: %s\r\n", to)
-	message += fmt.Sprintf("Subject: %s\r\n", subject)
-	message += "\r\n" + body
+func sendEmailTLS(from string, password string, smtpHost string, smtpPort, to string, subject string, body string) error {
+	// Sender email configuration
 
-	// Connect to the SMTP server.
-	auth := smtp.PlainAuth("", smtpUsername, smtpPassword, smtpHost)
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{to}, []byte(message))
+	// Authentication setup
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+
+	// SMTP client with TLS configuration
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true, // Skip certificate verification, not recommended in production
+		ServerName:         smtpHost,
+	}
+	conn, err := tls.Dial("tcp", smtpHost+":"+smtpPort, tlsConfig)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// Sending email
+	client, err := smtp.NewClient(conn, smtpHost)
 	if err != nil {
 		return err
 	}
 
+	if err := client.Auth(auth); err != nil {
+		return err
+	}
+
+	if err := client.Mail(from); err != nil {
+		return err
+	}
+
+	if err := client.Rcpt(to); err != nil {
+		return err
+	}
+
+	w, err := client.Data()
+	if err != nil {
+		return err
+	}
+	message := fmt.Sprintf("Subject: %s\nContent-Type: text/html; charset=UTF-8\n\n%s", subject, body)
+	bytesBody := []byte(message)
+	_, err = w.Write(bytesBody)
+	if err != nil {
+		return err
+	}
+
+	err = w.Close()
+	if err != nil {
+		return err
+	}
+
+	log.Println("Email sent successfully!")
 	return nil
 }
 
@@ -111,26 +157,59 @@ func (handler SignupUserHandler) ServeHTTP(writer http.ResponseWriter, request *
 	}
 	log.Println("taSession pkSession", taSession.PkSession)
 	urlToSend := buildUrlToSend(handler.Email, code)
-	log.Println("urlToSend", urlToSend)
-	log.Println("created taUser ID:", taUser.PkUser)
-	// Send to Queue
-	// Send email to user
-	body := fmt.Sprintf(DefaultSignUpBodyEmail, handler.Name, handler.LastName, urlToSend)
-	log.Println("SES email body: |", body, "|")
-	log.Println("SES email subject: |", DefaultSubjectSignUpEmail, "|")
-	err = VerifyEmailAddress(handler.Email, "us-east-1")
+	log.Println("urlToSend", urlToSend, "created taUser ID:", taUser.PkUser)
+
+	smtpConf, err := getSMTPConfiguration()
 	if err != nil {
-		log.Println("Error trying to send  email for verification", err.Error())
+		log.Println("Error trying to get SMTP configuration", err.Error())
+		handlers_utils.ResponseWithInternalError(writer)
+		return
+	}
+	body := fmt.Sprintf(DefaultSignUpBodyEmail, handler.Name, handler.LastName, urlToSend)
+	err = sendEmailTLS(smtpConf.SmtpUsername,
+		smtpConf.SmtpPassword,
+		smtpConf.SmtpHost,
+		smtpConf.SmtpPort,
+		handler.Email,
+		DefaultSubjectSignUpEmail,
+		body)
+
+	if err != nil {
+		log.Println("Error sending email", err.Error())
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
 		return
 	}
 	log.Println("After Email sent successfully!: ", handler.Email)
 	handlers_utils.SendJSONResponse(writer, struct {
-		Message string `json:"message"`
-		Email   string `json:"email"`
-	}{Message: fmt.Sprintf("User %s %s created successfully", handler.Name, handler.LastName),
-		Email: handler.Email}, http.StatusOK)
+		Status  int    `json:"Status"`
+		Message string `json:"Message"`
+		Email   string `json:"Email"`
+	}{Status: 200,
+		Message: fmt.Sprintf("User %s %s created successfully", handler.Name, handler.LastName),
+		Email:   handler.Email}, http.StatusOK)
 
+}
+
+func getSMTPConfiguration() (SMTPConfiguration, error) {
+	smtpConf := SMTPConfiguration{}
+
+	smtpConf.SmtpUsername = os.Getenv("SMTP_USERNAME")
+	smtpConf.SmtpPassword = os.Getenv("SMTP_PASSWORD")
+	smtpConf.SmtpHost = os.Getenv("SMTP_HOST")
+	smtpConf.SmtpPort = os.Getenv("SMTP_PORT")
+	if len(smtpConf.SmtpUsername) == 0 {
+		return smtpConf, fmt.Errorf("SMTP_USERNAME not set")
+	}
+	if len(smtpConf.SmtpPassword) == 0 {
+		return smtpConf, fmt.Errorf("SMTP_PASSWORD not set")
+	}
+	if len(smtpConf.SmtpHost) == 0 {
+		return smtpConf, fmt.Errorf("SMTP_HOST not set")
+	}
+	if len(smtpConf.SmtpPort) == 0 {
+		return smtpConf, fmt.Errorf("SMTP_PORT not set")
+	}
+	return smtpConf, nil
 }
 
 func buildUrlToSend(email string, code string) string {
