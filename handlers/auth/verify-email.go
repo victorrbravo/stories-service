@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"stories/database"
 	"stories/generated/models"
 	"stories/types"
@@ -64,23 +65,30 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 	limit := taSession.StartedAt.Add(time.Minute * 15)
 	log.Println("Limit", limit)
 	now := types.NowUTC()
-	log.Println("Now", now)
-	if now.After(limit) {
-		log.Println(fmt.Sprintf("Token %s has expired", code))
-		linkResend := fmt.Sprintf("%s?code=%s", DefaultURLResendEmail, code)
-		writeHTMLWithTemplate(writer, VerificationData{Name: "this new user",
-			TemplateContent: ExpiredTokenVerifyEmail,
-			LinkResend:      linkResend,
-		})
-		return
-	}
-	log.Println("Session found: ", taSession.PkSession)
 	taUser, err := models.GetTaUserByPkUser(handler.Query, taSession.FkUser)
 	if err != nil {
 		log.Println(fmt.Sprintf("Error getting user %d", taSession.FkUser))
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(InvalidToken, code)))
 		return
 	}
+	if now.After(limit) {
+		urlResend := os.Getenv("URL_RESEND_EMAIL")
+		if len(urlResend) == 0 {
+			log.Println("URL_RESEND_EMAIL is not set")
+			handlers_utils.ResponseWithInternalError(writer)
+			return
+		}
+		log.Println(fmt.Sprintf("Token %s has expired", code))
+		linkResend := fmt.Sprintf("%s?code=%s", urlResend, code)
+		nameUser := fmt.Sprintf("%s", taUser.Email)
+		writeHTMLWithTemplate(writer, VerificationData{Name: nameUser,
+			TemplateContent: ExpiredTokenVerifyEmail,
+			LinkResend:      linkResend,
+		})
+		return
+	}
+	log.Println("Session found: ", taSession.PkSession)
+
 	if taUser.Activated.ToBool() {
 		log.Println(fmt.Sprintf("User %s was already activated", taUser.Email))
 		writeHTMLWithTemplate(writer, VerificationData{Name: taUser.Email.String(), TemplateContent: AlreadyVerifiedEmail})
@@ -110,7 +118,7 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 	err = writeHTMLWithTemplate(writer, data)
 	if err != nil {
 		log.Println("Error writing HTML with template error", err.Error())
-		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
+		handlers_utils.ResponseWithInternalError(writer)
 		return
 	}
 }

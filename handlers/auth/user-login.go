@@ -55,7 +55,7 @@ func (handler *UserLoginHandler) SetUser(user ModelUser) {
 // to authenticate their requests
 func (handler UserLoginHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	var err error
-	log.Println("serverhttp login")
+	log.Println("UserLoginHandler login")
 	err = handlers_utils.GetParameters(&handler, request)
 	log.Println("serverhttp login err", err)
 	if err != nil {

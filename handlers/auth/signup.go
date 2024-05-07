@@ -219,5 +219,14 @@ func buildUrlToSend(email string, code string) string {
 	}
 	endpointVerify := fmt.Sprintf(EndPointVerifyEmail, urlVerify, code)
 	return endpointVerify
+}
+
+func buildUrlToChangePassword(email string, code string) string {
+	urlVerify := os.Getenv("URL_CHANGE_PASSWORD")
+	if len(urlVerify) == 0 {
+		urlVerify = DefaultURLVerifyEmail
+	}
+	endpointVerify := fmt.Sprintf(EndPointVerifyEmail, urlVerify, code)
+	return endpointVerify
 
 }

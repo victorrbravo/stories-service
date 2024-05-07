@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"stories/constants"
 	"stories/database"
 	"stories/generated/models"
 	"stories/helpers"
@@ -32,15 +34,21 @@ func (handler ResendCodeHandler) IsEnabled() bool {
 }
 
 // Get currently authenticated user's information
-func (handler ResendCodeHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request, user ModelUser) {
-
-	err := handlers_utils.GetParameters(&handler, request)
-	if err != nil {
-		log.Println("ResendCodeHandler ServeHTTP GetParameters error", err)
-		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, err.Error()))
+func (handler ResendCodeHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	var err error
+	var code string
+	var query url.Values
+	query = request.URL.Query()
+	code = query.Get("code")
+	if len(code) == 0 {
+		log.Println("code cannot be empty")
+		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(constants.RequiredFieldIsEmpty, "code")))
 		return
 	}
-	taSessions, err := models.GetTaSessionByToken(handler.Query, handler.Token)
+	// Get the token from the query string
+	log.Println("code is not empty")
+	searchCode := types.NewString(code)
+	taSessions, err := models.GetTaSessionByToken(handler.Query, searchCode)
 	if err != nil {
 		log.Println(fmt.Sprintf("Error getting token %s", handler.Token))
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(InvalidToken, handler.Token)))
@@ -48,10 +56,11 @@ func (handler ResendCodeHandler) ServeHTTP(writer http.ResponseWriter, request *
 	}
 	taSession := taSessions[0]
 
-	code := utils.RandomString(8)
+	newCode := utils.RandomString(8)
 
+	pkUser := taSession.FkUser
 	err = taSession.Update(handler.Query,
-		types.NewString(code),
+		types.NewString(newCode),
 		types.NilInt,
 		types.Now(),
 		false,
@@ -61,18 +70,38 @@ func (handler ResendCodeHandler) ServeHTTP(writer http.ResponseWriter, request *
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(InvalidToken, handler.Token)))
 		return
 	}
-	body := ""
-	taUser, err := models.GetTaUserByPkUser(handler.Query, taSession.FkUser)
-
+	log.Println("fkUser", pkUser)
+	taUser, err := models.GetTaUserByPkUser(handler.Query, pkUser)
 	if err != nil {
-		log.Println(fmt.Sprintf("Error getting user %d", taSession.FkUser))
-		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(InvalidToken, handler.Token)))
+		log.Println(fmt.Sprintf("Error getting user %v", taSession.FkUser), "error", err.Error())
+		handlers_utils.ResponseWithInternalError(writer)
 		return
 	}
-	SendEmail(SenderSignupEmail,
+	email := taUser.Email.String()
+	body := fmt.Sprintf(`
+			Please click <a href="%s"><b>here</b></a> to verify your email.</br>
+		Please use this code to verify your email address on Use2 Team.
+`, buildUrlToSend(email, newCode))
+	smtpConf, err := getSMTPConfiguration()
+	if err != nil {
+		log.Println("Error trying to get SMTP configuration", err.Error())
+		handlers_utils.ResponseWithInternalError(writer)
+		return
+	}
+	err = sendEmailTLS(smtpConf.SmtpUsername,
+		smtpConf.SmtpPassword,
+		smtpConf.SmtpHost,
+		smtpConf.SmtpPort,
 		taUser.Email.String(),
-		DefaultSubjectSignUpEmail,
+		DefaultResendSubjectEmail,
 		body)
 
-	handlers_utils.SendJSONResponse(writer, user, http.StatusOK)
+	if err != nil {
+		log.Println("Error sending email", err.Error())
+		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	data := VerificationData{Name: email, TemplateContent: CodewasResendTemplate}
+	err = writeHTMLWithTemplate(writer, data)
 }

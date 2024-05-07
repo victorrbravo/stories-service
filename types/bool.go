@@ -14,6 +14,8 @@ type Bool struct {
 	value  bool
 }
 
+var NilBool = Bool{value: false, notNil: false}
+
 // NewBool creates new nullable boolean from a native bool
 func NewBool(value bool) Bool {
 	return Bool{notNil: true, value: value}
