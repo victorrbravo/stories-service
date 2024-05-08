@@ -73,6 +73,15 @@
       "Nullable": true,
       "Getter": true,
       "Title": "UpdatedAt"
+    },
+    {
+      "Name": "FkStoryTips",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Searchable": true,
+      "Title": "FkStoryTips"
     }
   ]
 }

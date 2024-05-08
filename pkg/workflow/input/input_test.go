@@ -113,7 +113,7 @@ action: all_user
 		t.Error(err)
 	}
 	for index, value := range pg.ValuesTaUser {
-		fmt.Println(index+1, "Firstname", value.FirstName, "Lastname", value.LastName, "Email", value.Email)
+		fmt.Println(index+1, "Firstname", value.Firstname, "Lastname", value.Lastname, "Email", value.Email)
 	}
 
 }
@@ -291,9 +291,9 @@ func TestProcessInputNewStoryTIps(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: new_story_tips
-ticket: 44
-tips: tips1, tips2, tips3 
+action: new_step_tips
+step_id: 167
+tips: tips1 for buca1, tips2 for buca1, tips3 for buca1 
 `
 	inputFormated := utils.FormatYaml(input)
 	order := []byte(inputFormated)
@@ -588,7 +588,7 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: show_flow_data
-ticket: 58
+ticket: 65
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)

@@ -10,7 +10,12 @@ import (
 )
 
 // DateTime wrapper around the native `time.Time' with an special Format
-type DateTime time.Time
+type DateTime struct {
+	DateTime time.Time
+	NotNil   bool
+}
+
+var NilDateTime = DateTime{time.Time{}, false}
 
 const (
 	Iso8601         = "2006-01-02T15:04:05.999Z07:00"
@@ -21,34 +26,37 @@ const (
 )
 
 func (date DateTime) Format(format string) string {
-	native := time.Time(date)
+	native := time.Time(date.DateTime)
 	if native.IsZero() {
 		return ""
 	}
 	return native.Format(format)
 }
+func FromTime(datetime time.Time) DateTime {
+	return DateTime{datetime, true}
+}
 
 // Format Verbose
 func (date DateTime) FormatVerbose() string {
-	native := time.Time(date)
+	native := time.Time(date.DateTime)
 	return native.Format(time.RFC850)
 }
 
 // Round wrapper around the native function
 func (date DateTime) Round(duration time.Duration) DateTime {
-	native := time.Time(date)
-	return DateTime(native.Round(duration))
+	native := time.Time(date.DateTime)
+	return DateTime{native.Round(duration), true}
 }
 
 // IsZero wrapper around the native function
 func (date DateTime) IsZero() bool {
-	native := time.Time(date)
+	native := time.Time(date.DateTime)
 	return native.IsZero()
 }
 
 // Value implements the sql.Valuer interface
 func (date DateTime) Value() (driver.Value, error) {
-	native := time.Time(date)
+	native := time.Time(date.DateTime)
 	if native.IsZero() {
 		return nil, nil
 	}
@@ -76,7 +84,7 @@ func (date DateTime) ValidForTimeZone() error {
 	if ServerTZ == nil {
 		return nil
 	}
-	dateValue = time.Time(date)
+	dateValue = time.Time(date.DateTime)
 	newDate = newDate.In(ServerTZ)
 	now = newDate.Format(onlyDate)
 	val = dateValue.Format(onlyDate)
@@ -93,9 +101,9 @@ func (date *DateTime) AdjustToCurrentTimeZone() error {
 	if ServerTZ == nil {
 		return nil
 	}
-	newDate = time.Time(*date)
+	newDate = time.Time((*date).DateTime)
 	newDate = newDate.In(ServerTZ)
-	*date = DateTime(newDate)
+	*date = DateTime{newDate, true}
 	return nil
 }
 
@@ -103,11 +111,11 @@ func (date *DateTime) AdjustToCurrentTimeZone() error {
 func (date *DateTime) Scan(value interface{}) error {
 	var err error
 	if value == nil {
-		*date = DateTime(time.Time{})
+		*date = DateTime{time.Time{}, true}
 	} else {
 		switch instance := value.(type) {
 		case time.Time:
-			*date = DateTime(instance)
+			*date = DateTime{instance, true}
 			break
 		default:
 			return fmt.Errorf(constants.InvalidTypeForInputParameter)
@@ -118,11 +126,11 @@ func (date *DateTime) Scan(value interface{}) error {
 
 // MarshalJSON implements the json.Marshaler interface
 func (date DateTime) MarshalJSON() ([]byte, error) {
-	native := time.Time(date)
+	native := time.Time(date.DateTime)
 	if native.IsZero() {
 		return json.Marshal(nil)
 	}
-	return json.Marshal(date.Format(Iso8601))
+	return json.Marshal(date.DateTime.Format(Iso8601))
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface
@@ -130,11 +138,11 @@ func (date *DateTime) UnmarshalJSON(data []byte) error {
 	var err error
 	var t time.Time
 	if string(data) == constants.JSONNil {
-		*date = DateTime(time.Time{})
+		*date = DateTime{time.Time{}, true}
 	} else {
 		t, err = time.Parse(iso8601Quoted, string(data))
 		if err == nil {
-			*date = DateTime(t)
+			*date = DateTime{t, true}
 		}
 	}
 	return err
@@ -142,34 +150,33 @@ func (date *DateTime) UnmarshalJSON(data []byte) error {
 
 // Before wrapper around the native function
 func (date DateTime) Before(other DateTime) bool {
-	native := time.Time(date)
-	return native.Before(time.Time(other))
+	native := time.Time(date.DateTime)
+	return native.Before(time.Time(other.DateTime))
 }
 
 // After wrapper around the native function
 func (date DateTime) After(other DateTime) bool {
-	native := time.Time(date)
-	return native.After(time.Time(other))
+	native := time.Time(date.DateTime)
+	return native.After(time.Time(other.DateTime))
 }
 
 // Add wrapper around the native function
 func (date DateTime) Add(duration time.Duration) DateTime {
-	native := time.Time(date)
-	return DateTime(native.Add(duration))
+	native := time.Time(date.DateTime)
+	return DateTime{native.Add(duration), true}
 }
 
 // Sub wrapper around the native function
 func (date DateTime) Sub(what DateTime) time.Duration {
-	native := time.Time(date)
-	return native.Sub(time.Time(what))
+	native := time.Time(date.DateTime)
+	return native.Sub(time.Time(what.DateTime))
 }
 
 // Now wrapper around the native function
 func Now() DateTime {
-	return DateTime(time.Now())
+	return DateTime{time.Now(), true}
 }
 
 func NowUTC() DateTime {
-
-	return DateTime(time.Now().UTC())
+	return DateTime{time.Now().UTC(), true}
 }

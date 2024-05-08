@@ -16,6 +16,7 @@ type TaTracking struct {
 	Videos types.StringArray `yaml:"videos"`
 	Roles types.StringArray `yaml:"roles"`
 	UpdatedAt types.DateTime `yaml:"updated_at"`
+	FkStoryTips types.Int `yaml:"fk_story_tips"`
 }
 
 func  InsertTaTracking(order string, query *database.IQuery) error {
@@ -32,6 +33,7 @@ func  InsertTaTracking(order string, query *database.IQuery) error {
             handler.Videos,
             handler.Roles,
             handler.UpdatedAt,
+            handler.FkStoryTips,
     )
     if err != nil {
         return err
@@ -92,6 +94,7 @@ func  UpdateTaTracking(order string, query *database.IQuery) error {
             handler.Videos,
             handler.Roles,
             handler.UpdatedAt,
+            handler.FkStoryTips,
     )
     if err != nil {
         return err
@@ -107,5 +110,18 @@ func  GetAllTaTracking(query *database.IQuery) ([]models.TaTracking, error) {
         return taTracking, err
     }
     return taTracking, nil
+}
+func  GetTaTrackingByFkStoryTips(order string, query *database.IQuery) ([]models.TaTracking, error) {
+    handler, err := UnmarshallTaTracking([]byte(order))
+    if err != nil {
+        return nil, err
+    }
+    taTrackings, err := models.GetTaTrackingByFkStoryTips(*query,
+            handler.FkStoryTips,
+    )
+    if err != nil {
+        return taTrackings, err
+    }
+    return taTrackings, nil
 }
 

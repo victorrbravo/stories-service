@@ -8,8 +8,8 @@ import (
 
 type TaUser struct {
 	PkUser types.Int `yaml:"pk_user"`
-	FirstName types.String `yaml:"first_name"`
-	LastName types.String `yaml:"last_name"`
+	Firstname types.String `yaml:"firstname"`
+	Lastname types.String `yaml:"lastname"`
 	Email types.String `yaml:"email"`
 	Password types.String `yaml:"password"`
 	AccountType types.String `yaml:"account_type"`
@@ -23,8 +23,8 @@ func  InsertTaUser(order string, query *database.IQuery) error {
         return err
     }
     _, err = models.CreateTaUser(*query,
-            handler.FirstName,
-            handler.LastName,
+            handler.Firstname,
+            handler.Lastname,
             handler.Email,
             handler.Password,
             handler.AccountType,
@@ -82,8 +82,8 @@ func  UpdateTaUser(order string, query *database.IQuery) error {
         return err
     }
     err = taUser.Update(*query,
-            handler.FirstName,
-            handler.LastName,
+            handler.Firstname,
+            handler.Lastname,
             handler.Email,
             handler.Password,
             handler.AccountType,

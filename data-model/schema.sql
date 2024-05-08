@@ -89,7 +89,7 @@ ALTER TABLE ta_user ALTER COLUMN username SET NOT NULL;
 ALTER TABLE ta_user
         ADD CONSTRAINT unique_username UNIQUE (username);
 alter table ta_story add constraint unique_name UNIQUE(user_id,name);
-alter table ta_story add column fk_story int REFERENCES ta_story(pk_story);
+alter table ta_tracking add column fk_story_tips int REFERENCES ta_story(pk_story);
 alter table ta_story add column story_type varchar default 'story';
 
     create table "ta_permissions"

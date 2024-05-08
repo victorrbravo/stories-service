@@ -11,7 +11,12 @@ import (
 
 type state int
 
-type StringArray []string
+type StringArray struct {
+	notNil bool
+	Array  []string
+}
+
+var NilStringArray = StringArray{notNil: false, Array: nil}
 
 const (
 	initial  state = 1 << 0
@@ -21,7 +26,7 @@ const (
 )
 
 func NewStringArray(array []string) StringArray {
-	return array
+	return StringArray{true, array}
 }
 
 func (stringArray *StringArray) fromString(value string) error {
@@ -30,10 +35,11 @@ func (stringArray *StringArray) fromString(value string) error {
 	var chr rune
 	// This is valid for SQL and JSON
 	if strings.ToLower(value) == constants.JSONNil {
-		*stringArray = []string{}
+		*stringArray = NilStringArray
 		return nil
 	}
-	*stringArray = make([]string, 0)
+	stringArray.Array = []string{}
+	stringArray.notNil = true
 	for _, chr = range value {
 		if currentState&escaping == escaping {
 			currentState = currentState ^ escaping
@@ -60,12 +66,12 @@ func (stringArray *StringArray) fromString(value string) error {
 				break
 			case '}':
 				if len(buffer.String()) > 0 {
-					*stringArray = append(*stringArray, buffer.String())
+					stringArray.Array = append(stringArray.Array, buffer.String())
 				}
 				return nil
 			case ',':
 				if currentState == reading {
-					*stringArray = append(*stringArray, buffer.String())
+					stringArray.Array = append(stringArray.Array, buffer.String())
 					buffer.Reset()
 				} else {
 					return fmt.Errorf("unexpected `%v' found while scanning", chr)
@@ -83,6 +89,16 @@ func (stringArray *StringArray) fromString(value string) error {
 	return fmt.Errorf("end of input reached but `}' was never found")
 }
 
+func (stringArray *StringArray) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var value []string
+	value = stringArray.Array
+	if err := unmarshal(&value); err != nil {
+		return err
+	}
+	*stringArray = StringArray{true, value}
+	return nil
+}
+
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (stringArray *StringArray) UnmarshalJSON(src []byte) error {
 	strValue := string(src)
@@ -93,7 +109,8 @@ func (stringArray *StringArray) UnmarshalJSON(src []byte) error {
 		if err != nil {
 			return err
 		}
-		*stringArray = array
+		stringArray.Array = array
+		stringArray.notNil = true
 	}
 	return nil
 }
@@ -103,10 +120,10 @@ func (stringArray StringArray) MarshalJSON() ([]byte, error) {
 	var err error
 	var value []byte
 	var elements []string = make([]string, 0)
-	if stringArray == nil {
+	if stringArray.isNil() {
 		return []byte(constants.JSONArrayEmpty), nil
 	}
-	for _, element := range stringArray {
+	for _, element := range stringArray.Array {
 		elements = append(elements, strings.ReplaceAll(element, "'", ""))
 	}
 	value, err = json.Marshal(elements)
@@ -116,7 +133,7 @@ func (stringArray StringArray) MarshalJSON() ([]byte, error) {
 func (stringArray *StringArray) Scan(src interface{}) error {
 	switch value := src.(type) {
 	case nil:
-		*stringArray = nil
+		*stringArray = NilStringArray
 		break
 	case string:
 		return stringArray.fromString(value)
@@ -132,10 +149,10 @@ func (stringArray StringArray) Value() (driver.Value, error) {
 	if stringArray.isNil() {
 		return nil, nil
 	}
-	var elements []string = make([]string, len(stringArray))
+	var elements []string = make([]string, len(stringArray.Array))
 	var replacer *strings.Replacer
 	replacer = strings.NewReplacer("\\", "\\\\", "\"", "\\\"")
-	for index, element := range stringArray {
+	for index, element := range stringArray.Array {
 		elements[index] = fmt.Sprintf("\"%s\"", replacer.Replace(element))
 	}
 	return fmt.Sprintf("{%s}", strings.Join(elements, ",")), nil
@@ -145,32 +162,33 @@ func (stringArray StringArray) String() string {
 	if stringArray.isNil() {
 		return constants.DatabaseArrayEmpty
 	}
-	var elements []string = make([]string, len(stringArray))
+	var elements []string = make([]string, len(stringArray.Array))
 	var replacer *strings.Replacer
 	replacer = strings.NewReplacer("\\", "\\\\", "\"", "\\\"")
-	for index, element := range stringArray {
+	for index, element := range stringArray.Array {
 		elements[index] = fmt.Sprintf("\"%s\"", replacer.Replace(element))
 	}
 	return fmt.Sprintf("%s", strings.Join(elements, ","))
 }
 
 func (stringArray StringArray) isNil() bool {
-	return stringArray == nil
+	return !stringArray.notNil
 }
 
 func (stringArray StringArray) ToInterfaceArray() []interface{} {
 	var interfaces []interface{}
-	interfaces = make([]interface{}, len(stringArray))
-	for i, element := range stringArray {
+	interfaces = make([]interface{}, len(stringArray.Array))
+	for i, element := range stringArray.Array {
 		interfaces[i] = element
 	}
 	return interfaces
 }
 
 func (stringArray *StringArray) FromInterfaceArray(array []interface{}) {
-	*stringArray = make(StringArray, len(array))
+	stringArray.Array = make([]string, len(array))
+	stringArray.notNil = true
 	for i, item := range array {
-		(*stringArray)[i] = item.(string)
+		stringArray.Array[i] = item.(string)
 	}
 }
 
@@ -179,7 +197,7 @@ func (stringArray StringArray) Includes(value string) bool {
 		return false
 	}
 
-	for _, entry := range stringArray {
+	for _, entry := range stringArray.Array {
 		if entry == value {
 			return true
 		}

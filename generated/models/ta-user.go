@@ -12,20 +12,20 @@ import (
  * Generated queries (these can be used perfectly instead of writing them by hand
  */
 const (
-    TaUserCreateQuery = "INSERT INTO \"ta_user\" (\"first_name\",\"last_name\",\"email\",\"password\",\"account_type\",\"activated\",\"username\") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING (\"pk_user\")"
-    AllTaUserQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\", \"activated\", \"username\" FROM \"ta_user\""
-    TaUserByPkUserQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\", \"activated\", \"username\" FROM \"ta_user\" WHERE \"pk_user\" = $1"
-    TaUserByEmailQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\", \"activated\", \"username\" FROM \"ta_user\" WHERE \"email\" = $1"
-    TaUserByUsernameQuery = "SELECT \"pk_user\", \"first_name\", \"last_name\", \"email\", \"password\", \"account_type\", \"activated\", \"username\" FROM \"ta_user\" WHERE \"username\" = $1"
-    TaUserUpdateQuery = "UPDATE \"ta_user\" SET \"first_name\" = COALESCE($1, \"first_name\"), \"last_name\" = COALESCE($2, \"last_name\"), \"email\" = COALESCE($3, \"email\"), \"password\" = COALESCE($4, \"password\"), \"account_type\" = COALESCE($5, \"account_type\"), \"activated\" = COALESCE($6, \"activated\"), \"username\" = COALESCE($7, \"username\") WHERE \"pk_user\" = $8"
+    TaUserCreateQuery = "INSERT INTO \"ta_user\" (\"firstname\",\"lastname\",\"email\",\"password\",\"account_type\",\"activated\",\"username\") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING (\"pk_user\")"
+    AllTaUserQuery = "SELECT \"pk_user\", \"firstname\", \"lastname\", \"email\", \"password\", \"account_type\", \"activated\", \"username\" FROM \"ta_user\""
+    TaUserByPkUserQuery = "SELECT \"pk_user\", \"firstname\", \"lastname\", \"email\", \"password\", \"account_type\", \"activated\", \"username\" FROM \"ta_user\" WHERE \"pk_user\" = $1"
+    TaUserByEmailQuery = "SELECT \"pk_user\", \"firstname\", \"lastname\", \"email\", \"password\", \"account_type\", \"activated\", \"username\" FROM \"ta_user\" WHERE \"email\" = $1"
+    TaUserByUsernameQuery = "SELECT \"pk_user\", \"firstname\", \"lastname\", \"email\", \"password\", \"account_type\", \"activated\", \"username\" FROM \"ta_user\" WHERE \"username\" = $1"
+    TaUserUpdateQuery = "UPDATE \"ta_user\" SET \"firstname\" = COALESCE($1, \"firstname\"), \"lastname\" = COALESCE($2, \"lastname\"), \"email\" = COALESCE($3, \"email\"), \"password\" = COALESCE($4, \"password\"), \"account_type\" = COALESCE($5, \"account_type\"), \"activated\" = COALESCE($6, \"activated\"), \"username\" = COALESCE($7, \"username\") WHERE \"pk_user\" = $8"
     TaUserDeleteQuery = "DELETE FROM \"ta_user\" WHERE \"pk_user\" = $1"
-    TaUserListOfFields = " ta_user.\"pk_user\", ta_user.\"first_name\", ta_user.\"last_name\", ta_user.\"email\", ta_user.\"password\", ta_user.\"account_type\", ta_user.\"activated\", ta_user.\"username\""
+    TaUserListOfFields = " ta_user.\"pk_user\", ta_user.\"firstname\", ta_user.\"lastname\", ta_user.\"email\", ta_user.\"password\", ta_user.\"account_type\", ta_user.\"activated\", ta_user.\"username\""
 )
 
 type TaUser struct {
 	PkUser types.Int `json:"pk_user"`
-	FirstName types.String `json:"first_name"`
-	LastName types.String `json:"last_name"`
+	Firstname types.String `json:"firstname"`
+	Lastname types.String `json:"lastname"`
 	Email types.String `json:"email"`
 	Password types.String `json:"password"`
 	AccountType types.String `json:"account_type"`
@@ -42,8 +42,8 @@ func (taUser TaUser) ScanRow(rows database.RowInterface) (interface{}, error) {
 	var err error
 	err = rows.Scan(
 		&taUser.PkUser,
-		&taUser.FirstName,
-		&taUser.LastName,
+		&taUser.Firstname,
+		&taUser.Lastname,
 		&taUser.Email,
 		&taUser.Password,
 		&taUser.AccountType,
@@ -58,8 +58,8 @@ func (taUser TaUser) ScanRow(rows database.RowInterface) (interface{}, error) {
 
 func CreateTaUser(
     query database.IQuery,
-	firstName types.String,
-	lastName types.String,
+	firstname types.String,
+	lastname types.String,
 	email types.String,
 	password types.String,
 	accountType types.String,
@@ -72,8 +72,8 @@ func CreateTaUser(
 	_, err = query.QueryOne(
 	    TaUserCreateQuery,
 	    &scanner,
-		firstName,
-		lastName,
+		firstname,
+		lastname,
 		email,
 		password,
 		accountType,
@@ -87,8 +87,8 @@ func CreateTaUser(
 	}
 	taUser = &TaUser{
 	    PkUser: scanner.Value,
-	    FirstName: firstName,
-	    LastName: lastName,
+	    Firstname: firstname,
+	    Lastname: lastname,
 	    Email: email,
 	    Password: password,
 	    AccountType: accountType,
@@ -100,8 +100,8 @@ func CreateTaUser(
 
 func (taUser *TaUser) Update(
     query database.IQuery,
-    firstName types.String,
-    lastName types.String,
+    firstname types.String,
+    lastname types.String,
     email types.String,
     password types.String,
     accountType types.String,
@@ -111,8 +111,8 @@ func (taUser *TaUser) Update(
     var err error
 	err = query.Exec(
 	    TaUserUpdateQuery,
-        firstName,
-        lastName,
+        firstname,
+        lastname,
         email,
         password,
         accountType,
@@ -123,8 +123,8 @@ func (taUser *TaUser) Update(
 	if err != nil {
     	return err
 	}
-    taUser.FirstName = firstName
-    taUser.LastName = lastName
+    taUser.Firstname = firstname
+    taUser.Lastname = lastname
     taUser.Email = email
     taUser.Password = password
     taUser.AccountType = accountType
@@ -189,7 +189,7 @@ func (taUser TaUser) GetID() types.Int {
 
 
 func (taUser TaUser) GetFullName() types.String {
-	return taUser.FirstName}
+	return taUser.Firstname}
 
 func (taUser TaUser) GetEmail() types.String {
 	return taUser.Email}

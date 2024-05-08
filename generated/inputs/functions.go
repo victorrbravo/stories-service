@@ -110,6 +110,13 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
                     ValueTaTracking, _ := GetTaTrackingByPkTracking(order, query)
                     ValuesTaTracking = append(ValuesTaTracking, *ValueTaTracking)
                 
+                case "get_tracking_by_fk_story_tips":
+                    ValueTaTrackings, errSearch := GetTaTrackingByFkStoryTips(order, query)
+                    if errSearch != nil  {
+                            return value, errSearch
+                    }
+                    data, err = json.Marshal( ValueTaTrackings )
+                    value = string(data)
     			case "add_user":
     			    err = InsertTaUser(order, query)
     			case "delete_user":

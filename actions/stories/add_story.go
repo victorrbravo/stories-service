@@ -101,8 +101,8 @@ type AddStoryStatus struct {
 	Summary   types.String      `yaml:"summary"`
 	MediaDate types.String      `yaml:"media_date"`
 }
-type StoryTips struct {
-	Ticket types.Int         `yaml:"ticket"`
+type StepTips struct {
+	StepID types.Int         `yaml:"step_id"`
 	Tips   types.StringArray `yaml:"tips"`
 }
 
@@ -119,8 +119,8 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		value, err = DoGetStepsSchema(order, query)
 	case "new_story_flow":
 		err = NewStoryFlow(order, query)
-	case "new_story_tips":
-		err = NewStoryTips(ctx, order, query)
+	case "new_step_tips":
+		err = NewStepTips(ctx, order, query)
 	case "show_story_tips":
 		err = ShowStoryTips(order, query)
 	case "delete_story_flow":
@@ -156,18 +156,25 @@ func ShowStoryTips(order string, query *database.IQuery) error {
 	return nil
 }
 
-func NewStoryTips(ctx context.Context, order string, query *database.IQuery) error {
-	handler, err := Unmarshall[StoryTips]([]byte(order))
+func NewStepTips(ctx context.Context, order string, query *database.IQuery) error {
+	handler, err := Unmarshall[StepTips]([]byte(order))
 	if err != nil {
 		return err
 	}
 	start := types.NewString(constants.Start)
 
-	taStory, err := models.GetTaStoryByPkStory(*query, handler.Ticket)
+	taStep, err := models.GetTaTrackingByPkTracking(*query, handler.StepID)
 	if err != nil {
 		return err
 	}
-	nameFlow := fmt.Sprintf("%s_%s", taStory.Name, constants.FlowTipsSuffix)
+
+	taStory, err := models.GetTaStoryByPkStory(*query, taStep.FkStory)
+	if err != nil {
+		log.Println("error getting story", err)
+		return err
+	}
+
+	nameFlow := fmt.Sprintf("%s_story_for_%s", constants.FlowTipsSuffix, taStep.PkTracking.String())
 	nameStory := types.NewString(nameFlow)
 	taFlow, err := models.CreateTaFlow(*query,
 		types.NewString(nameFlow),
@@ -183,12 +190,28 @@ func NewStoryTips(ctx context.Context, order string, query *database.IQuery) err
 		taStory.UserID,
 		taFlow.PkFlow,
 	)
-	log.Println("creating ta_story err", err)
 	if err != nil {
+		log.Println("error creating story", err)
 		return err
 	}
 
-	for index, tip := range handler.Tips {
+	err = taStep.Update(*query,
+		types.NilInt,
+		types.NilString(),
+		types.NilString(),
+		types.NilString(),
+		types.NilStringArray,
+		types.NilStringArray,
+		types.NilStringArray,
+		types.NilDateTime,
+		taNewStory.PkStory,
+	)
+	if err != nil {
+		log.Println("error updating story", err)
+		return err
+	}
+
+	for index, tip := range handler.Tips.Array {
 		status := fmt.Sprintf("tip_%d", index)
 		action := fmt.Sprintf(`
 action: add_flow_step
@@ -535,6 +558,7 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 		images,
 		roles,
 		types.Now(),
+		types.NilInt,
 	)
 	return nil
 }
@@ -692,6 +716,7 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 		images,
 		roles,
 		types.Now(),
+		types.NilInt,
 	)
 
 	return nil
@@ -732,7 +757,8 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, er
 		images,
 		videos,
 		roles,
-		types.DateTime(mediaDate),
+		types.FromTime(mediaDate),
+		types.NilInt,
 	)
 	if err != nil {
 		return value, err
