@@ -307,18 +307,58 @@ func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, e
 	if err != nil {
 		return value, err
 	}
-	value, err = updateWorkflowData[T](wf)
+	value, err = UpdateWorkflowData[T](wf)
 	if err != nil {
 		return value, err
 	}
 	return value, nil
 }
 
-func updateWorkflowData[T db.Scanner](wf *common.Workflow[T]) (string, error) {
-	var err error
+func DoShowWorkflowDataInt[T db.Scanner](order string, query *db.IQuery) (WorkflowData, error) {
+	wfData := WorkflowData{}
+	getFlow, err := UnmarshallGetFlow([]byte(order), query)
+	if err != nil {
+		return wfData, err
+	}
+	taStory, err := models.GetTaStoryByPkStory(*query,
+		getFlow.Ticket)
+	if err != nil {
+		return wfData, err
+	}
+	getFlow.PkFlow = types.AsInt(taStory.FkFlow)
+	log.Println("DoShowWorkflowData getFlow pkFlow", getFlow.PkFlow)
+	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{}, pg.TimeField[T], pg.RoleField[T],
+		pg.CountToken[T], pg.ArrayField[T])
+	if err != nil {
+		return wfData, err
+	}
+	wfData, err = UpdateWorkflowDataInt[T](wf)
+	if err != nil {
+		return wfData, err
+	}
+	return wfData, nil
+}
+
+func UpdateWorkflowData[T db.Scanner](wf *common.Workflow[T]) (string, error) {
 	var value string
+	wfData, err := UpdateWorkflowDataInt[T](wf)
+	if err != nil {
+		return value, err
+	}
+	data, err := json.Marshal(wfData)
+	if err != nil {
+		return value, err
+	}
+	value = string(data)
+	return value, nil
+}
+
+func UpdateWorkflowDataInt[T db.Scanner](wf *common.Workflow[T]) (WorkflowData, error) {
 	ctx := context.Background()
-	statuses, _ := wf.Statuses(ctx, false)
+	statuses, err := wf.Statuses(ctx, false)
+	if err != nil {
+		return WorkflowData{}, err
+	}
 	wfData := WorkflowData{Name: wf.Name}
 	wfData.Data = wf.Data
 	wfData.Tasks = make([]TaskData, 0)
@@ -334,12 +374,7 @@ func updateWorkflowData[T db.Scanner](wf *common.Workflow[T]) (string, error) {
 		}
 		wfData.Tasks = append(wfData.Tasks, taskData)
 	}
-	data, err := json.Marshal(wfData)
-	if err != nil {
-		return value, err
-	}
-	value = string(data)
-	return value, nil
+	return wfData, nil
 }
 
 func UnmarshallGetFlow(order []byte, query *db.IQuery) (ShowFlowInput, error) {

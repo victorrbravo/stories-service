@@ -276,7 +276,15 @@ func (str CustomString) ToSnakeCases() string {
 	// Return the joined thing
 	return strings.Join(parts, "_")
 }
-
+func (str CustomString) ToNilValue() string {
+	value := string(str)
+	wordType := strings.TrimPrefix(value, "types.")
+	result := fmt.Sprintf("types.Nil%s", wordType)
+	if strings.Compare(wordType, "String") == 0 {
+		result = result + "()"
+	}
+	return result
+}
 func (str CustomString) ToSnakeCase() string {
 	re := regexp.MustCompile("([A-Z][a-z]+|ID)")
 	var matches [][]string = re.FindAllStringSubmatch(string(str), -1)

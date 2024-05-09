@@ -121,6 +121,33 @@ func Create{{ .Model }}(
 	}
 	return {{ $receiver }}, nil
 }
+func ({{ $receiver }} *{{.Model}}) UpdateByOne(
+    query database.IQuery,
+    options ...func() (string, any)
+) error {
+{{- range onlyNonKeys .Attrs }}
+    .Name.ToCamelCase := {{ .Type.ToNilValue }}
+{{- end }}
+    var err error
+    {{- if not .Attrs }}
+    return nil
+    {{- else }}
+	err = query.Exec(
+	    {{ .Model }}UpdateQuery,
+        {{- range onlyNonKeys .Attrs }}
+        {{ .Name.ToCamelCase }},
+        {{- end }}
+        {{- range onlyKeys .Attrs }}
+        {{ $receiver }}.{{ .Name }},
+        {{- end }}
+    )
+	{{- end }}
+	if err != nil {
+    	return err
+	}
+    return nil
+}
+
 
 func ({{ $receiver }} *{{.Model}}) Update(
     query database.IQuery,

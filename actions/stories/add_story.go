@@ -2,6 +2,7 @@ package stories
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -90,6 +91,10 @@ type Ticket struct {
 	Email   types.String `yaml:"email"`
 }
 
+type ShowStepTips struct {
+	StepID types.Int `yaml:"step_id"`
+}
+
 type AddStoryStatus struct {
 	Ticket    types.Int         `yaml:"ticket"`
 	Status    types.String      `yaml:"status"`
@@ -121,8 +126,8 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		err = NewStoryFlow(order, query)
 	case "new_step_tips":
 		err = NewStepTips(ctx, order, query)
-	case "show_story_tips":
-		err = ShowStoryTips(order, query)
+	case "show_step_tips":
+		value, err = DoShowStepTips(order, query)
 	case "delete_story_flow":
 		err = DoDeleteStoryByID(order, query)
 	case "add_step":
@@ -151,9 +156,51 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 	return value, nil
 }
 
-func ShowStoryTips(order string, query *database.IQuery) error {
-
-	return nil
+func DoShowStepTips(order string, query *database.IQuery) (string, error) {
+	var value string
+	handler, err := Unmarshall[ShowStepTips]([]byte(order))
+	if err != nil {
+		return value, err
+	}
+	taStep, err := models.GetTaTrackingByPkTracking(*query, handler.StepID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return value, errors.New("step not found")
+		}
+		return value, err
+	}
+	taStory, err := models.GetTaStoryByPkStory(*query, taStep.FkStoryTips)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return constants.EmptyStepsArray, nil
+		}
+		return value, err
+	}
+	input := fmt.Sprintf(`
+action: show_flow_data
+ticket: %s
+`,
+		taStory.PkStory.String())
+	log.Println("show_flow_data action", input)
+	wfData, err := DoShowWorkflowDataInt[models.TaTracking](input, query)
+	if err != nil {
+		log.Println("error showing workflow data", err)
+		return value, err
+	}
+	nTasks := len(wfData.Tasks)
+	var tips []string
+	tips = make([]string, nTasks)
+	log.Println("nTasks", nTasks)
+	for index, task := range wfData.Tasks {
+		tips[index] = task.Data.Summary.String()
+	}
+	log.Println("tips", tips)
+	byteValue, err := json.Marshal(tips)
+	if err != nil {
+		return value, err
+	}
+	value = string(byteValue)
+	return value, nil
 }
 
 func NewStepTips(ctx context.Context, order string, query *database.IQuery) error {
@@ -195,7 +242,12 @@ func NewStepTips(ctx context.Context, order string, query *database.IQuery) erro
 		return err
 	}
 
-	err = taStep.Update(*query,
+	err = taStep.UpdateByOne(*query,
+		func() (string, any) {
+			return "fkStoryTips", taNewStory.PkStory
+		})
+
+	/* err = taStep.Update(*query,
 		types.NilInt,
 		types.NilString(),
 		types.NilString(),
@@ -205,7 +257,7 @@ func NewStepTips(ctx context.Context, order string, query *database.IQuery) erro
 		types.NilStringArray,
 		types.NilDateTime,
 		taNewStory.PkStory,
-	)
+	) */
 	if err != nil {
 		log.Println("error updating story", err)
 		return err

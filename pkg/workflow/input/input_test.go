@@ -293,7 +293,7 @@ func TestProcessInputNewStoryTIps(t *testing.T) {
 	input := `
 action: new_step_tips
 step_id: 167
-tips: tips1 for buca1, tips2 for buca1, tips3 for buca1 
+tips: tips1 for bucaramaga, tips2 for bucaramanga2 
 `
 	inputFormated := utils.FormatYaml(input)
 	order := []byte(inputFormated)
@@ -588,7 +588,37 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: show_flow_data
-ticket: 65
+ticket: 67
+`
+	order := []byte(input)
+	response, err := ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response", response)
+}
+
+func TestProcessShowFlowDeleteTips(t *testing.T) {
+
+}
+
+func TestProcessShowFlowTips(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: show_step_tips
+step_id: 167
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)
