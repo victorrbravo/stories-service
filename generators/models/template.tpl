@@ -121,14 +121,27 @@ func Create{{ .Model }}(
 	}
 	return {{ $receiver }}, nil
 }
+
 func ({{ $receiver }} *{{.Model}}) UpdateByOne(
     query database.IQuery,
-    options ...func() (string, any)
+    options ...func() (string, any),
 ) error {
+var err error
 {{- range onlyNonKeys .Attrs }}
-    .Name.ToCamelCase := {{ .Type.ToNilValue }}
+    {{ .Name.ToCamelCase }} := {{ .Type.ToNilValue }}
 {{- end }}
-    var err error
+    for _, option := range options {
+    		actionName, value := option()
+    		switch actionName {
+{{- range onlyNonKeys .Attrs }}
+            case "{{ .Name.ToCamelCase }}":
+            {{ .Name.ToCamelCase }} = value.({{ .Type }})
+{{- end }}
+		default:
+			return errors.New("unsupported field")
+		}
+	}
+
     {{- if not .Attrs }}
     return nil
     {{- else }}

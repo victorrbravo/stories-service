@@ -36,7 +36,7 @@
     },
     {
       "Name": "Invalid",
-      "Type": "bool",
+      "Type": "types.Bool",
       "Scannable": true,
       "Nullable": true,
       "Getter": true,

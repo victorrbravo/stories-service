@@ -27,7 +27,7 @@ type TaSession struct {
 	Token types.String `json:"token"`
 	FkUser types.Int `json:"fk_user"`
 	StartedAt types.DateTime `json:"started_at"`
-	Invalid bool `json:"invalid"`
+	Invalid types.Bool `json:"invalid"`
 }
 
 func (taSession TaSession) ListOfFields() string {
@@ -55,7 +55,7 @@ func CreateTaSession(
 	token types.String,
 	fkUser types.Int,
 	startedAt types.DateTime,
-	invalid bool,
+	invalid types.Bool,
 ) (*TaSession, error) {
 	var err error
     var scanner scanners.Int
@@ -83,12 +83,51 @@ func CreateTaSession(
 	return taSession, nil
 }
 
+func (taSession *TaSession) UpdateByOne(
+    query database.IQuery,
+    options ...func() (string, any),
+) error {
+var err error
+    token := types.NilString()
+    fkUser := types.NilInt
+    startedAt := types.NilDateTime
+    invalid := types.NilBool
+    for _, option := range options {
+    		actionName, value := option()
+    		switch actionName {
+            case "token":
+            token = value.(types.String)
+            case "fkUser":
+            fkUser = value.(types.Int)
+            case "startedAt":
+            startedAt = value.(types.DateTime)
+            case "invalid":
+            invalid = value.(types.Bool)
+		default:
+			return errors.New("unsupported field")
+		}
+	}
+	err = query.Exec(
+	    TaSessionUpdateQuery,
+        token,
+        fkUser,
+        startedAt,
+        invalid,
+        taSession.PkSession,
+    )
+	if err != nil {
+    	return err
+	}
+    return nil
+}
+
+
 func (taSession *TaSession) Update(
     query database.IQuery,
     token types.String,
     fkUser types.Int,
     startedAt types.DateTime,
-    invalid bool,
+    invalid types.Bool,
 ) error {
     var err error
 	err = query.Exec(
@@ -140,7 +179,7 @@ func GetTaSessionByToken(query database.IQuery, value types.String) ([]TaSession
     	}
     	return list, nil
 }
-func GetTaSessionByInvalid(query database.IQuery, value bool) ([]TaSession, error) {
+func GetTaSessionByInvalid(query database.IQuery, value types.Bool) ([]TaSession, error) {
 	    var err error
     	var rows []interface{}
     	var list []TaSession
@@ -176,7 +215,7 @@ func (taSession TaSession) GetStartedAt() types.DateTime {
 	return taSession.StartedAt}
 
 
-func (taSession TaSession) GetInvalid() bool {
+func (taSession TaSession) GetInvalid() types.Bool {
 	return taSession.Invalid}
 
 

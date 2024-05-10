@@ -37,7 +37,7 @@ type attr struct {
 	Name       CustomString
 	FieldName  CustomString
 	Key        bool
-	Type       string
+	Type       CustomString
 	Nullable   bool
 	Scannable  bool
 	Editable   bool
@@ -127,7 +127,7 @@ func (a attr) Random() string {
 func (e entity) KeyType() string {
 	for _, attr := range e.Attrs {
 		if attr.Key {
-			return strings.TrimPrefix(attr.Type, "types.")
+			return strings.TrimPrefix(string(attr.Type), "types.")
 		}
 	}
 	panic(fmt.Errorf("cannot find a key for `%s'", e.Model))
@@ -135,7 +135,7 @@ func (e entity) KeyType() string {
 
 func shouldImportEnums(attrs []attr) bool {
 	for _, each := range attrs {
-		if strings.HasPrefix(each.Type, "enums.") {
+		if strings.HasPrefix(string(each.Type), "enums.") {
 			return true
 		}
 	}
@@ -144,7 +144,7 @@ func shouldImportEnums(attrs []attr) bool {
 
 func shouldImportPostgis(attrs []attr) bool {
 	for _, each := range attrs {
-		if strings.HasPrefix(each.Type, "postgis.") {
+		if strings.HasPrefix(string(each.Type), "postgis.") {
 			return true
 		}
 	}
@@ -153,7 +153,7 @@ func shouldImportPostgis(attrs []attr) bool {
 
 func shouldImportTypes(attrs []attr) bool {
 	for _, each := range attrs {
-		if strings.HasPrefix(each.Type, "types.") {
+		if strings.HasPrefix(string(each.Type), "types.") {
 			return true
 		}
 	}
@@ -282,6 +282,9 @@ func (str CustomString) ToNilValue() string {
 	result := fmt.Sprintf("types.Nil%s", wordType)
 	if strings.Compare(wordType, "String") == 0 {
 		result = result + "()"
+	}
+	if strings.Compare(wordType, "[]byte") == 0 {
+		result = "[]byte{}"
 	}
 	return result
 }

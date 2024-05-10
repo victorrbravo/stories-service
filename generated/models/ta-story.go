@@ -88,6 +88,49 @@ func CreateTaStory(
 	return taStory, nil
 }
 
+func (taStory *TaStory) UpdateByOne(
+    query database.IQuery,
+    options ...func() (string, any),
+) error {
+var err error
+    name := types.NilString()
+    status := types.NilString()
+    summary := types.NilString()
+    userID := types.NilInt
+    fkFlow := types.NilInt
+    for _, option := range options {
+    		actionName, value := option()
+    		switch actionName {
+            case "name":
+            name = value.(types.String)
+            case "status":
+            status = value.(types.String)
+            case "summary":
+            summary = value.(types.String)
+            case "userID":
+            userID = value.(types.Int)
+            case "fkFlow":
+            fkFlow = value.(types.Int)
+		default:
+			return errors.New("unsupported field")
+		}
+	}
+	err = query.Exec(
+	    TaStoryUpdateQuery,
+        name,
+        status,
+        summary,
+        userID,
+        fkFlow,
+        taStory.PkStory,
+    )
+	if err != nil {
+    	return err
+	}
+    return nil
+}
+
+
 func (taStory *TaStory) Update(
     query database.IQuery,
     name types.String,

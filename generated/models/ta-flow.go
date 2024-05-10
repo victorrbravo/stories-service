@@ -71,6 +71,37 @@ func CreateTaFlow(
 	return taFlow, nil
 }
 
+func (taFlow *TaFlow) UpdateByOne(
+    query database.IQuery,
+    options ...func() (string, any),
+) error {
+var err error
+    name := types.NilString()
+    flow := []byte{}
+    for _, option := range options {
+    		actionName, value := option()
+    		switch actionName {
+            case "name":
+            name = value.(types.String)
+            case "flow":
+            flow = value.([]byte)
+		default:
+			return errors.New("unsupported field")
+		}
+	}
+	err = query.Exec(
+	    TaFlowUpdateQuery,
+        name,
+        flow,
+        taFlow.PkFlow,
+    )
+	if err != nil {
+    	return err
+	}
+    return nil
+}
+
+
 func (taFlow *TaFlow) Update(
     query database.IQuery,
     name types.String,

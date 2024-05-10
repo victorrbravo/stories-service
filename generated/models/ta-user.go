@@ -98,6 +98,57 @@ func CreateTaUser(
 	return taUser, nil
 }
 
+func (taUser *TaUser) UpdateByOne(
+    query database.IQuery,
+    options ...func() (string, any),
+) error {
+var err error
+    firstname := types.NilString()
+    lastname := types.NilString()
+    email := types.NilString()
+    password := types.NilString()
+    accountType := types.NilString()
+    activated := types.NilBool
+    username := types.NilString()
+    for _, option := range options {
+    		actionName, value := option()
+    		switch actionName {
+            case "firstname":
+            firstname = value.(types.String)
+            case "lastname":
+            lastname = value.(types.String)
+            case "email":
+            email = value.(types.String)
+            case "password":
+            password = value.(types.String)
+            case "accountType":
+            accountType = value.(types.String)
+            case "activated":
+            activated = value.(types.Bool)
+            case "username":
+            username = value.(types.String)
+		default:
+			return errors.New("unsupported field")
+		}
+	}
+	err = query.Exec(
+	    TaUserUpdateQuery,
+        firstname,
+        lastname,
+        email,
+        password,
+        accountType,
+        activated,
+        username,
+        taUser.PkUser,
+    )
+	if err != nil {
+    	return err
+	}
+    return nil
+}
+
+
 func (taUser *TaUser) Update(
     query database.IQuery,
     firstname types.String,

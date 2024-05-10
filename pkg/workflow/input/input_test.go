@@ -293,7 +293,7 @@ func TestProcessInputNewStoryTIps(t *testing.T) {
 	input := `
 action: new_step_tips
 step_id: 167
-tips: tips1 for bucaramaga, tips2 for bucaramanga2 
+tips: tips1 for bucaramanga, tips2 for boyaca
 `
 	inputFormated := utils.FormatYaml(input)
 	order := []byte(inputFormated)
@@ -588,7 +588,7 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: show_flow_data
-ticket: 67
+ticket: 68
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)

@@ -11,7 +11,7 @@ type TaSession struct {
 	Token types.String `yaml:"token"`
 	FkUser types.Int `yaml:"fk_user"`
 	StartedAt types.DateTime `yaml:"started_at"`
-	Invalid bool `yaml:"invalid"`
+	Invalid types.Bool `yaml:"invalid"`
 }
 
 func  InsertTaSession(order string, query *database.IQuery) error {
