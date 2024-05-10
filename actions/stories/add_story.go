@@ -115,6 +115,10 @@ type DeleteTicket struct {
 	Ticket types.Int `yaml:"ticket"`
 }
 
+type DeleteTipsByStep struct {
+	StepID types.Int `yaml:"step_id"`
+}
+
 func FlowProcessor(action string, order string, query *database.IQuery) (string, error) {
 	var err error
 	var value string
@@ -140,6 +144,8 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		err = DoDeleteFlowStep[models.TaTracking](ctx, order, query)
 	case "delete_ticket":
 		err = DoDeleteStoryByID(order, query)
+	case "delete_step_tips":
+		err = DoDeleteTipsOfStepID(order, query)
 	case "presign_image":
 		value, err = DoPresignImage(order, query)
 	case "get_presigned_image":
@@ -154,6 +160,36 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		return value, err
 	}
 	return value, nil
+}
+
+func DoDeleteTipsOfStepID(order string, query *database.IQuery) error {
+	handler, err := Unmarshall[DeleteTipsByStep]([]byte(order))
+	if err != nil {
+		return err
+	}
+	taTracking, err := models.GetTaTrackingByPkTracking(*query, handler.StepID)
+	if err != nil {
+		log.Println("error getting story", err)
+		return err
+	}
+	storyTipsID := taTracking.FkStoryTips.String()
+	input := fmt.Sprintf(`
+action: delete_ticket
+ticket: %s
+`, storyTipsID)
+	err = (*query).Exec(constants.SetTipsIDNullInTracking, handler.StepID)
+	if err != nil {
+		log.Println("error updating story", err)
+		return err
+	}
+	err = DoDeleteStoryByID(input, query)
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func DoShowStepTips(order string, query *database.IQuery) (string, error) {
@@ -236,6 +272,7 @@ func NewStepTips(ctx context.Context, order string, query *database.IQuery) erro
 		types.NewString(constants.SummaryDefault),
 		taStory.UserID,
 		taFlow.PkFlow,
+		types.NewString("tips"),
 	)
 	if err != nil {
 		log.Println("error creating story", err)
@@ -593,6 +630,7 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 		handler.Summary,
 		handler.UserID,
 		taFlow.PkFlow,
+		types.NewString("story"),
 	)
 	log.Println("creating ta_story err", err)
 	if err != nil {
@@ -757,6 +795,7 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 		types.NilString(),
 		types.NilInt,
 		handler.UserID,
+		types.NilString(),
 	)
 
 	models.CreateTaTracking(*query,
@@ -797,6 +836,7 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, er
 		types.NilString(),
 		types.NilInt,
 		types.NilInt,
+		types.NilString(),
 	)
 	if err != nil {
 		return value, err

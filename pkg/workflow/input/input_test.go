@@ -293,7 +293,7 @@ func TestProcessInputNewStoryTIps(t *testing.T) {
 	input := `
 action: new_step_tips
 step_id: 167
-tips: tips1 for bucaramanga, tips2 for boyaca
+tips: tips1 for Paris, tips2 for Berlin
 `
 	inputFormated := utils.FormatYaml(input)
 	order := []byte(inputFormated)
@@ -873,6 +873,30 @@ func TestProcessDeleteTicket(t *testing.T) {
 	input := `
 action: delete_ticket
 ticket: 43
+`
+	order := []byte(input)
+	_, err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestProcessDeleteTips(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: delete_step_tips
+step_id: 167
 `
 	order := []byte(input)
 	_, err = ProcessInput(order, &query)

@@ -50,6 +50,13 @@
       "Getter": true,
       "Searchable": true,
       "Title": "FkFlow"
+    },
+    {
+      "Name": "StoryType",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Title": "StoryType"
     }
   ]
 }

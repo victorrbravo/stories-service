@@ -13,6 +13,7 @@ type TaStory struct {
 	Summary types.String `yaml:"summary"`
 	UserID types.Int `yaml:"user_id"`
 	FkFlow types.Int `yaml:"fk_flow"`
+	StoryType types.String `yaml:"story_type"`
 }
 
 func  InsertTaStory(order string, query *database.IQuery) error {
@@ -26,6 +27,7 @@ func  InsertTaStory(order string, query *database.IQuery) error {
             handler.Summary,
             handler.UserID,
             handler.FkFlow,
+            handler.StoryType,
     )
     if err != nil {
         return err
@@ -83,6 +85,7 @@ func  UpdateTaStory(order string, query *database.IQuery) error {
             handler.Summary,
             handler.UserID,
             handler.FkFlow,
+            handler.StoryType,
     )
     if err != nil {
         return err
