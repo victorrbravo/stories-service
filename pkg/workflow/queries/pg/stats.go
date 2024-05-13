@@ -299,6 +299,7 @@ func buildSQL[T db.Scanner](wf *common.Workflow[T], name string, sqlString strin
 		PkTracking:    checkPkTracking(wf),
 		VideosField:   current.VideosField,
 		ImagesField:   current.ImagesField,
+		TipsIdField:   current.TipsIdField,
 	}
 	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {

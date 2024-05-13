@@ -80,6 +80,7 @@ type Data struct {
 	ToExport     Exportable        `json:"to_export"`
 	Stats        Values            `json:"stats"`
 	ID           types.Int         `json:"id"`
+	TipsIdField  types.Int         `json:"tips_id_field"`
 }
 
 type JobWorkflow[T db.Scanner] struct {
@@ -135,6 +136,7 @@ type Task struct {
 	Report      types.Bool `json:"report,omitempty"`
 	VideosField string     `json:"videos_field" default:"videos"`
 	ImagesField string     `json:"images_field" default:"images"`
+	TipsIdField string     `json:"tips_id_field" default:"fk_story_tips"`
 }
 
 type Transition struct {

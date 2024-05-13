@@ -15,6 +15,22 @@ import (
 )
 
 const (
+	NoStartChangeNameTaskInFlow = `
+WITH CTE AS (
+flow->'tasks'->'{{.Source}}'->'transition'->'links'->0->'queries' from ta_flow where pk_flow={{.PkFlow}} AS srcSentence	
+)
+UPDATE ta_flow SET flow=jsonb_set(flow, '{tasks, {{.Source}},transition,links,0,queries }'::text[], srcSentence,true)
+UPDATE ta_flow SET flow=jsonb_set(flow, '{tasks, {{.Current}}, }'::text[], srcSentence,true)
+
+`
+
+	StartChangeNameTaskInFlow = `
+WITH CTE AS (
+flow->'tasks'->'{{.Source}}'->'transition'->'links'->0->'queries' from ta_flow where pk_flow={{.PkFlow}} AS srcSentence	
+)
+UPDATE ta_flow SET flow=jsonb_set(flow, '{tasks, {{.Source}},transition,links,0,queries }'::text[], srcSentence,true)
+`
+
 	InsertTaskInFlow = `
 WITH CTE AS (
 SELECT 
@@ -519,7 +535,7 @@ func GetWorkflow[T db.Scanner](pkFlow int, query *db.IQuery) (*common.Workflow[T
 
 func DoAddTaskIntl[T db.Scanner](pkFlow int, task AddTask, query *db.IQuery) (*common.Workflow[T], error) {
 	var currentInsert string
-	fmt.Println("task struct flow", task.PkFlow, "name", task.Name)
+	log.Println("task struct flow", task.PkFlow, "name", task.Name)
 	wf, err := doCheckAddTask[T](pkFlow, &task, query)
 	if err != nil {
 		return wf, err

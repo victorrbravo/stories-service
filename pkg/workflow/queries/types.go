@@ -26,4 +26,5 @@ type DataTemplate struct {
 	PkTracking    string
 	VideosField   string
 	ImagesField   string
+	TipsIdField   string
 }

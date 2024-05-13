@@ -94,6 +94,10 @@ type Ticket struct {
 type ShowStepTips struct {
 	StepID types.Int `yaml:"step_id"`
 }
+type ChangeNameOfTask struct {
+	StepID types.Int    `yaml:"step_id"`
+	Name   types.String `yaml:"name"`
+}
 
 type AddStoryStatus struct {
 	Ticket    types.Int         `yaml:"ticket"`
@@ -146,6 +150,8 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		err = DoDeleteStoryByID(order, query)
 	case "delete_step_tips":
 		err = DoDeleteTipsOfStepID(order, query)
+	case "change_name_of_task":
+		err = DoChangeNameTask(order, query)
 	case "presign_image":
 		value, err = DoPresignImage(order, query)
 	case "get_presigned_image":
@@ -160,6 +166,30 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		return value, err
 	}
 	return value, nil
+}
+
+func DoChangeNameTask(order string, query *database.IQuery) error {
+	handler, err := Unmarshall[ChangeNameOfTask]([]byte(order))
+	if err != nil {
+		return err
+	}
+	taTracking, err := models.GetTaTrackingByPkTracking(*query, handler.StepID)
+	if err != nil {
+		log.Println("error getting step", err)
+		return err
+	}
+	taStory, err := models.GetTaStoryByPkStory(*query, taTracking.FkStory)
+	if err != nil {
+		log.Println("error getting story", err)
+		return err
+	}
+	_, err = models.GetTaFlowByPkFlow(*query, taStory.FkFlow)
+	if err != nil {
+		log.Println("error getting flow", err)
+		return err
+	}
+
+	return nil
 }
 
 func DoDeleteTipsOfStepID(order string, query *database.IQuery) error {
