@@ -148,7 +148,7 @@ func (handler SignupUserHandler) ServeHTTP(writer http.ResponseWriter, request *
 		types.NewString(code),
 		taUser.PkUser,
 		types.Now(),
-		false,
+		types.NewBool(false),
 	)
 	if err != nil {
 		log.Println("Error creating session", err.Error())

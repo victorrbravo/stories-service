@@ -78,7 +78,7 @@ func (handler SendChangePwdHandler) ServeHTTP(writer http.ResponseWriter, reques
 		types.NewString(newCode),
 		taUser.PkUser,
 		types.Now(),
-		false,
+		types.NewBool(false),
 	)
 	if err != nil {
 		log.Println("Error creating session", err.Error())

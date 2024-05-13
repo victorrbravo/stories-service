@@ -63,7 +63,7 @@ func (handler ResendCodeHandler) ServeHTTP(writer http.ResponseWriter, request *
 		types.NewString(newCode),
 		types.NilInt,
 		types.Now(),
-		false,
+		types.NewBool(false),
 	)
 	if err != nil {
 		log.Println(fmt.Sprintf("Error updating token %s", handler.Token))
