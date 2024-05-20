@@ -15,8 +15,8 @@ import (
 )
 
 type CreateHandler struct {
-	FirstName   types.String `json:"first_name"`
-	LastName    types.String `json:"last_name"`
+	FirstName   types.String `json:"firstname"`
+	LastName    types.String `json:"lastname"`
 	Email       types.String `json:"email"`
 	AccountType types.String `json:"account_type"`
 	Query       database.IQuery

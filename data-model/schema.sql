@@ -9,8 +9,8 @@
     create table "ta_user"
     (
         "pk_user"                     serial         PRIMARY KEY,
-        "first_name"             VARCHAR        NOT NULL,
-        "last_name"              VARCHAR        NOT NULL,
+        "firstname"             VARCHAR        NOT NULL,
+        "lastname"              VARCHAR        NOT NULL,
         "email"                  VARCHAR        NOT NULL UNIQUE,
         "created_at"             TIMESTAMP               DEFAULT CURRENT_TIMESTAMP,
         "account_type"           VARCHAR NOT NULL,
@@ -91,6 +91,9 @@ ALTER TABLE ta_user
 alter table ta_story add constraint unique_name UNIQUE(user_id,name);
 alter table ta_tracking add column fk_story_tips int REFERENCES ta_story(pk_story);
 alter table ta_story add column story_type varchar default 'story';
+alter table ta_tracking add column fk_story_sub int REFERENCES ta_story(pk_story);
+alter table ta_tracking drop column distance;
+alter table ta_tracking add column position  GEOMETRY(Point, 4326);
 
     create table "ta_permissions"
     (
@@ -224,7 +227,7 @@ insert into ta_flow (pk_flow,name, flow) values (2,'flow1','
   }
 }
 ');
-insert into ta_user (first_name, last_name, email, account_type, password, activated)  values ('vbravo','vbravo', 'victorrbravo@gmail.com', 'admin', 'vbravo', 'true');
+insert into ta_user (firstname, lastname, email, account_type, password, activated)  values ('vbravo','vbravo', 'victorrbravo@gmail.com', 'admin', 'vbravo', 'true');
 
 insert into ta_tracking (images, videos, roles, fk_status, fk_story) values ('{"image1", "image2"}', '{"video1"}', '{"role1"}', 'Done', 1);
 insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at) values ('{"image3", "image6"}', '{"video3"}', '{"role3"}', 'Progress', 1, '2023-10-30 12:05:12.119 -0500');

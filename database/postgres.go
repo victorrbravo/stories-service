@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	st_errors "stories/errors"
 
 	"github.com/lib/pq"
 
@@ -35,7 +36,7 @@ func parsePostgresError(value *pq.Error) error {
 	case ForeignKeyViolation:
 		return fmt.Errorf(constants.SQLErrorForeignKeyViolation)
 	case UniqueViolation:
-		return fmt.Errorf(constants.SQLErrorDuplicateKey)
+		return st_errors.DuplicateObjectsError
 	case NotNullViolation:
 		return fmt.Errorf(constants.SQLErrorNotNullViolation)
 	}

@@ -1,1 +1,1 @@
-SELECT first_name, last_name FROM ta_user
+SELECT firstname, lastname FROM ta_user

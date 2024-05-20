@@ -1,1 +1,1 @@
-SELECT pk_user, first_name, last_name, email, created_at from ta_user
+SELECT pk_user, firstname, lastname, email, created_at from ta_user

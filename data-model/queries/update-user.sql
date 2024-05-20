@@ -1,4 +1,4 @@
-UPDATE "users" SET "first_name" = COALESCE($1, "first_name"), 
+UPDATE "users" SET "first_name" = COALESCE($1, "firstname"),
 "last_name" = COALESCE($2, "last_name"), 
 "password" = COALESCE($3, "password"),
 "account_type" = COALESCE($4, "account_type"),

@@ -293,7 +293,7 @@ func TestProcessInputNewStoryTIps(t *testing.T) {
 	input := `
 action: new_step_tips
 step_id: 167
-tips: tips1 for Paris, tips2 for Berlin
+tips: tips1 for Paris, tips2 for Berlin, tips3 from Mexico DF
 `
 	inputFormated := utils.FormatYaml(input)
 	order := []byte(inputFormated)

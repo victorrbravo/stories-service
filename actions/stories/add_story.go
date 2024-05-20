@@ -16,6 +16,7 @@ import (
 	"stories/actions/constants"
 	types2 "stories/actions/types"
 	"stories/database"
+	st_errors "stories/errors"
 	"stories/generated/models"
 	"stories/pkg/utils"
 	"stories/pkg/workflow/common"
@@ -99,6 +100,11 @@ type ChangeNameOfTask struct {
 	Name   types.String `yaml:"name"`
 }
 
+type Tip struct {
+	ID  types.Int    `yaml:"id"`
+	Tip types.String `yaml:"tip"`
+}
+
 type AddStoryStatus struct {
 	Ticket    types.Int         `yaml:"ticket"`
 	Status    types.String      `yaml:"status"`
@@ -121,6 +127,7 @@ type DeleteTicket struct {
 
 type DeleteTipsByStep struct {
 	StepID types.Int `yaml:"step_id"`
+	Number types.Int `yaml:"number"`
 }
 
 func FlowProcessor(action string, order string, query *database.IQuery) (string, error) {
@@ -132,7 +139,7 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		value, err = DoGetStepsSchema(order, query)
 	case "new_story_flow":
 		err = NewStoryFlow(order, query)
-	case "new_step_tips":
+	case "new_step_tips": // add multiple tips
 		err = NewStepTips(ctx, order, query)
 	case "show_step_tips":
 		value, err = DoShowStepTips(order, query)
@@ -212,6 +219,7 @@ ticket: %s
 		log.Println("error updating story", err)
 		return err
 	}
+
 	err = DoDeleteStoryByID(input, query)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -254,13 +262,14 @@ ticket: %s
 		return value, err
 	}
 	nTasks := len(wfData.Tasks)
-	var tips []string
-	tips = make([]string, nTasks)
-	log.Println("nTasks", nTasks)
+	var tips []Tip
+	tips = make([]Tip, nTasks)
 	for index, task := range wfData.Tasks {
-		tips[index] = task.Data.Summary.String()
+		tips[index] = Tip{
+			task.Data.ID,
+			task.Data.Summary,
+		}
 	}
-	log.Println("tips", tips)
 	byteValue, err := json.Marshal(tips)
 	if err != nil {
 		return value, err
@@ -281,53 +290,49 @@ func NewStepTips(ctx context.Context, order string, query *database.IQuery) erro
 		return err
 	}
 
-	taStory, err := models.GetTaStoryByPkStory(*query, taStep.FkStory)
-	if err != nil {
-		log.Println("error getting story", err)
-		return err
-	}
+	var taStoryTips *models.TaStory
+	if !types.IsNil(taStep.FkStoryTips) {
+		taStoryTips, err = models.GetTaStoryByPkStory(*query, taStep.FkStoryTips)
+		if err != nil {
+			log.Println("error getting story", err)
+			return err
+		}
 
-	nameFlow := fmt.Sprintf("%s_story_for_%s", constants.FlowTipsSuffix, taStep.PkTracking.String())
-	nameStory := types.NewString(nameFlow)
-	taFlow, err := models.CreateTaFlow(*query,
-		types.NewString(nameFlow),
-		[]byte(DefaultStartWorkflow),
-	)
-	if err != nil {
-		return err
-	}
-	taNewStory, err := models.CreateTaStory(*query,
-		nameStory,
-		start,
-		types.NewString(constants.SummaryDefault),
-		taStory.UserID,
-		taFlow.PkFlow,
-		types.NewString("tips"),
-	)
-	if err != nil {
-		log.Println("error creating story", err)
-		return err
-	}
-
-	err = taStep.UpdateByOne(*query,
-		func() (string, any) {
-			return "fkStoryTips", taNewStory.PkStory
-		})
-
-	/* err = taStep.Update(*query,
-		types.NilInt,
-		types.NilString(),
-		types.NilString(),
-		types.NilString(),
-		types.NilStringArray,
-		types.NilStringArray,
-		types.NilStringArray,
-		types.NilDateTime,
-		taNewStory.PkStory,
-	) */
-	if err != nil {
-		log.Println("error updating story", err)
-		return err
+	} else {
+		nameFlow := fmt.Sprintf("%s_story_for_%s", constants.FlowTipsSuffix, taStep.PkTracking.String())
+		nameStory := types.NewString(nameFlow)
+		taFlow, err := models.CreateTaFlow(*query,
+			types.NewString(nameFlow),
+			[]byte(DefaultStartWorkflow),
+		)
+		if err != nil {
+			return err
+		}
+		taStory, err := models.GetTaStoryByPkStory(*query, taStep.FkStory)
+		if err != nil {
+			log.Println("error getting story", err)
+			return err
+		}
+		taStoryTips, err = models.CreateTaStory(*query,
+			nameStory,
+			start,
+			types.NewString(constants.SummaryDefault),
+			taStory.UserID,
+			taFlow.PkFlow,
+			types.NewString("tips"),
+		)
+		if err != nil {
+			log.Println("error creating story", err)
+			return err
+		}
+		err = taStep.UpdateByOne(*query,
+			func() (string, any) {
+				return "fkStoryTips", taStoryTips.PkStory
+			})
+		if err != nil {
+			log.Println("error updating story", err)
+			return err
+		}
 	}
 
 	for index, tip := range handler.Tips.Array {
@@ -343,15 +348,18 @@ summary: %s
 media_date: %s
 type: step
 
-`, taNewStory.PkStory.String(), status, tip, types.Now().Format(time.RFC3339))
+`, taStoryTips.PkStory.String(), status, tip, types.Now().Format(time.RFC3339))
 		log.Println("add_flow_step action", action)
 		err = DoAddStepFlowAt[models.TaTracking](ctx, action, types2.None, query)
 		if err != nil {
+			if errors.Is(err, st_errors.DuplicateObjectsError) {
+				log.Println("duplicate adding step", err)
+				continue
+			}
 			log.Println("error adding step", err)
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -421,7 +429,7 @@ func DoSuggestShortNameForImage(order string, query *database.IQuery) (string, e
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4VisionPreview,
+			Model: "gpt-4o",
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role: openai.ChatMessageRoleUser,
