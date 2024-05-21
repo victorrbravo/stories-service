@@ -293,7 +293,7 @@ func TestProcessInputNewStoryTIps(t *testing.T) {
 	input := `
 action: new_step_tips
 step_id: 167
-tips: tips1 for Paris, tips2 for Berlin, tips3 from Mexico DF
+tips: tips1 for Oporto, tips2 for Burgos, tips3 from Barcelona
 `
 	inputFormated := utils.FormatYaml(input)
 	order := []byte(inputFormated)
@@ -409,7 +409,9 @@ func TestProcessDeleteFlowStep(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: delete_flow_step
-id: 112
+id: 250
+delete_type: TIPS
+
 `
 	order := []byte(input)
 	_, err = ProcessInput(order, &query)

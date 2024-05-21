@@ -14,7 +14,6 @@ import (
 	"log"
 	"os"
 	"stories/actions/constants"
-	types2 "stories/actions/types"
 	"stories/database"
 	st_errors "stories/errors"
 	"stories/generated/models"
@@ -69,67 +68,6 @@ const (
 `
 )
 
-type GetStoriesAction struct {
-	Email types.String `yaml:"email"`
-}
-
-type PresignAction struct {
-	Name types.String `yaml:"name"`
-}
-
-type SuggestAction struct {
-	ImageID types.String `yaml:"image_id"`
-}
-
-type DeleteFlowStepAction struct {
-	ID types.Int `yaml:"id"`
-}
-
-type Ticket struct {
-	Name    types.String `yaml:"name"`
-	Summary types.String `yaml:"summary"`
-	UserID  types.Int    `yaml:"user_id"`
-	Email   types.String `yaml:"email"`
-}
-
-type ShowStepTips struct {
-	StepID types.Int `yaml:"step_id"`
-}
-type ChangeNameOfTask struct {
-	StepID types.Int    `yaml:"step_id"`
-	Name   types.String `yaml:"name"`
-}
-
-type Tip struct {
-	ID  types.Int    `yaml:"id"`
-	Tip types.String `yaml:"tip"`
-}
-
-type AddStoryStatus struct {
-	Ticket    types.Int         `yaml:"ticket"`
-	Status    types.String      `yaml:"status"`
-	Amount    types.String      `yaml:"amount"`
-	Images    types.StringArray `yaml:"images"`
-	Videos    types.StringArray `yaml:"videos"`
-	StepType  types.String      `yaml:"type"`
-	UserID    types.Int         `yaml:"user_id"`
-	Summary   types.String      `yaml:"summary"`
-	MediaDate types.String      `yaml:"media_date"`
-}
-type StepTips struct {
-	StepID types.Int         `yaml:"step_id"`
-	Tips   types.StringArray `yaml:"tips"`
-}
-
-type DeleteTicket struct {
-	Ticket types.Int `yaml:"ticket"`
-}
-
-type DeleteTipsByStep struct {
-	StepID types.Int `yaml:"step_id"`
-	Number types.Int `yaml:"number"`
-}
-
 func FlowProcessor(action string, order string, query *database.IQuery) (string, error) {
 	var err error
 	var value string
@@ -148,9 +86,9 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 	case "add_step":
 		_, err = DoAddStep(order, query)
 	case "add_flow_step":
-		err = DoAddStepFlowAt[models.TaTracking](ctx, order, types2.None, query)
+		err = DoAddStepFlowAt[models.TaTracking](ctx, order, None, query)
 	case "add_flow_step_ordered":
-		err = DoAddStepFlowAt[models.TaTracking](ctx, order, types2.DateTime, query)
+		err = DoAddStepFlowAt[models.TaTracking](ctx, order, DateTime, query)
 	case "delete_flow_step":
 		err = DoDeleteFlowStep[models.TaTracking](ctx, order, query)
 	case "delete_ticket":
@@ -350,7 +288,7 @@ type: step
 
 `, taStoryTips.PkStory.String(), status, tip, types.Now().Format(time.RFC3339))
 		log.Println("add_flow_step action", action)
-		err = DoAddStepFlowAt[models.TaTracking](ctx, action, types2.None, query)
+		err = DoAddStepFlowAt[models.TaTracking](ctx, action, None, query)
 		if err != nil {
 			if errors.Is(err, st_errors.DuplicateObjectsError) {
 				log.Println("duplicate adding step", err)
@@ -692,12 +630,12 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 }
 
 func DoDeleteFlowStep[T database.Scanner](ctx context.Context, order string, query *database.IQuery) error {
-	deleteStep, err := Unmarshall[DeleteFlowStepAction]([]byte(order))
+	handler, err := Unmarshall[DeleteFlowStepAction]([]byte(order))
 	if err != nil {
 		return err
 	}
 
-	taTracking, err := models.GetTaTrackingByPkTracking(*query, deleteStep.ID)
+	taTracking, err := models.GetTaTrackingByPkTracking(*query, handler.ID)
 	if err != nil {
 		return err
 	}
@@ -719,10 +657,43 @@ func DoDeleteFlowStep[T database.Scanner](ctx context.Context, order string, que
 	if err != nil {
 		return err
 	}
+	wf, err := GetWorkflow[models.TaTracking](intPkFlow, query)
+	taFlow, err := models.GetTaFlowByPkFlow(*query, taStory.FkFlow)
+	if err != nil {
+		log.Println("error getting flow", err)
+		return err
+	}
+	if handler.DeleteType == TipsStepType {
+		if wf == nil || len(wf.Tasks) == 1 {
+			trackings, err := models.GetTaTrackingByFkStoryTips(*query, taStory.PkStory)
+			if err != nil {
+				return err
+			}
+			if len(trackings) == 0 {
+				return st_errors.NoTrackingFoundError
+			}
+			tipTracking := trackings[0]
+			err = (*query).Exec(constants.SetTipsIDNullInTracking, tipTracking.PkTracking)
+			if err != nil {
+				log.Println("error updating story", err)
+				return err
+			}
+			err = taStory.Delete(*query)
+			if err != nil {
+				log.Println("error deleting story", err)
+				return err
+			}
+			err = taFlow.Delete(*query)
+			if err != nil {
+				log.Println("error deleting flow", err)
+				return err
+			}
+		}
+	}
 	return nil
 }
 
-func DoAddStepFlowAt[T database.Scanner](ctx context.Context, order string, insert types2.OrderInsert, query *database.IQuery) error {
+func DoAddStepFlowAt[T database.Scanner](ctx context.Context, order string, insert OrderInsert, query *database.IQuery) error {
 	addStep, err := UnmarshallAddStep([]byte(order), query)
 	if err != nil {
 		return err
@@ -739,7 +710,7 @@ func DoAddStepFlowAt[T database.Scanner](ctx context.Context, order string, inse
 	}
 	var prevTask *common.Task
 	isLast := true
-	if insert == types2.DateTime {
+	if insert == DateTime {
 		var getFlow ShowFlowInput
 		getFlow.PkFlow = intFkFlow
 		getFlow.Ticket = addStep.Ticket

@@ -6,3 +6,4 @@ import (
 )
 
 var DuplicateObjectsError = errors.New(constants.SQLErrorDuplicateKey)
+var NoTrackingFoundError = errors.New(constants.NoTrackingFound)

@@ -44,6 +44,21 @@ func (boolean *Bool) Scan(src interface{}) error {
 	return nil
 }
 
+func (v *Bool) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var value bool
+	value = v.value
+	if err := unmarshal(&value); err != nil {
+		return err
+	}
+	*v = NewBool(value)
+
+	return nil
+}
+
+func (value *Bool) MarshalYAML() (interface{}, error) {
+	return value.value, nil
+}
+
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (boolean *Bool) UnmarshalJSON(src []byte) error {
 	valueValue := string(src)

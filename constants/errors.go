@@ -16,6 +16,7 @@ const (
 	EmptyPageInPagedQuery                      = "the page you requested does not exist"
 	SQLErrorForeignKeyViolation                = "cannot proceed because others depend on me or vice-versa"
 	SQLErrorDuplicateKey                       = "cannot create duplicate objects"
+	NoTrackingFound                            = "no tracking records found"
 	SQLErrorNotNullViolation                   = "one of the fields that is mandatory was not specified"
 	SQLErrorPlaceholder                        = "error (%s-%0X), please contact support"
 	InvalidAuthorizationHeader                 = "invalid authorization header"
