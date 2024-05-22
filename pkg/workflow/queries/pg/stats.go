@@ -300,6 +300,7 @@ func buildSQL[T db.Scanner](wf *common.Workflow[T], name string, sqlString strin
 		VideosField:   current.VideosField,
 		ImagesField:   current.ImagesField,
 		TipsIdField:   current.TipsIdField,
+		SubIdField:    current.SubIdField,
 	}
 	err = tmpl.Execute(&outputBuffer, data)
 	if err != nil {

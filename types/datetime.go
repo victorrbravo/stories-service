@@ -32,6 +32,7 @@ func (date DateTime) Format(format string) string {
 	}
 	return native.Format(format)
 }
+
 func FromTime(datetime time.Time) DateTime {
 	return DateTime{datetime, true}
 }
@@ -170,6 +171,24 @@ func (date DateTime) Add(duration time.Duration) DateTime {
 func (date DateTime) Sub(what DateTime) time.Duration {
 	native := time.Time(date.DateTime)
 	return native.Sub(time.Time(what.DateTime))
+}
+
+func NewDateTime(value string) (DateTime, error) {
+	if value == "" {
+		return NilDateTime, nil
+	}
+	t, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		t, err = time.Parse(withoutTimezone, value)
+		if err != nil {
+			t, err = time.Parse(standardFormat, value)
+			if err != nil {
+				return NilDateTime, err
+			}
+			return NilDateTime, err
+		}
+	}
+	return DateTime{t, true}, nil
 }
 
 // Now wrapper around the native function

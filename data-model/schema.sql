@@ -4,7 +4,9 @@
     drop table IF exists "ta_user" cascade ;
     drop table IF exists "ta_signed_in" cascade;
     drop table IF exists "ta_session" cascade;
-
+    drop table IF exists "ta_permissions" cascade;
+    drop table IF exists "ta_social_story" cascade;
+    drop table IF exists "ta_stories_shared" cascade;
 
     create table "ta_user"
     (
@@ -16,7 +18,7 @@
         "account_type"           VARCHAR NOT NULL,
         "password"               VARCHAR        NOT NULL,
         "activated"              BOOLEAN        DEFAULT FALSE,
-        "status"                VARCHAR DEFAULT ''::varchar,
+        "status"                VARCHAR DEFAULT ''::varchar
     );
 
     create table "ta_signed_in"
@@ -84,7 +86,7 @@
     );
 
 ALTER TABLE ta_session ADD COLUMN "pk_session" SERIAL PRIMARY KEY;
-ALTER TABLE ta_user ADD_COLUMN username VARCHAR(255) DEFAULT '';
+ALTER TABLE ta_user ADD COLUMN username VARCHAR(255) DEFAULT '';
 ALTER TABLE ta_user ALTER COLUMN username SET NOT NULL;
 ALTER TABLE ta_user
         ADD CONSTRAINT unique_username UNIQUE (username);
@@ -94,6 +96,7 @@ alter table ta_story add column story_type varchar default 'story';
 alter table ta_tracking add column fk_story_sub int REFERENCES ta_story(pk_story);
 alter table ta_tracking drop column distance;
 alter table ta_tracking add column position  GEOMETRY(Point, 4326);
+alter table ta_tracking ADD column label varchar(50);
 
     create table "ta_permissions"
     (
@@ -127,8 +130,6 @@ alter table ta_user add column name varchar;
 
 -- Data for table `ta_user`
 insert into ta_story (name, status) values ('story1', 'Start');
-
-
 insert into ta_story (name, status) values ('story1', 'ToDo');
 insert into ta_story (name, status) values ('story1', 'Progress');
 insert into ta_story (name, status) values ('story1', 'ToDo');
@@ -169,7 +170,7 @@ insert into ta_story (name, status) values ('story1', 'Done');
 
 
 
-insert into ta_flow (pk_flow,name, flow) values (2,'flow1','
+insert into ta_flow (pk_flow,name, flow) values (2,'flow2','
 {
   "id": "3f12f5a5-57ac-4861-8771-f85de203f863",
   "name": "Workflow1",

@@ -40,6 +40,11 @@ type ChangeNameOfTask struct {
 	StepID types.Int    `yaml:"step_id"`
 	Name   types.String `yaml:"name"`
 }
+type ChangeStepField struct {
+	StepID    types.Int    `yaml:"step_id"`
+	Amount    types.String `yaml:"amount_spent"`
+	UpdatedAt types.String `yaml:"updated_at"`
+}
 
 type Tip struct {
 	ID  types.Int    `yaml:"id"`

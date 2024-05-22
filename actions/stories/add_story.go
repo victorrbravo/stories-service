@@ -81,6 +81,8 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		err = NewStepTips(ctx, order, query)
 	case "show_step_tips":
 		value, err = DoShowStepTips(order, query)
+	case "change_step_field":
+		value, err = DoChangeStepField(order, query)
 	case "delete_story_flow":
 		err = DoDeleteStoryByID(order, query)
 	case "add_step":
@@ -109,6 +111,43 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 	}
 	if err != nil {
 		return value, err
+	}
+	return value, nil
+}
+
+func DoChangeStepField(order string, query *database.IQuery) (string, error) {
+	var value string
+	handler, err := Unmarshall[ChangeStepField]([]byte(order))
+	if err != nil {
+		return value, err
+	}
+	taTracking, err := models.GetTaTrackingByPkTracking(*query, handler.StepID)
+	if err != nil {
+		log.Println("error getting step", err)
+		return value, err
+	}
+	if !types.IsNil(handler.Amount) {
+		err = taTracking.UpdateByOne(*query, func() (string, any) {
+			return "amountSpent", handler.Amount
+		})
+		if err != nil {
+			log.Println("error updating step", err)
+			return value, err
+		}
+	}
+	if !types.IsNil(handler.UpdatedAt) {
+		dt, err := types.NewDateTime(handler.UpdatedAt.String())
+		if err != nil {
+			return value, err
+		}
+		err = taTracking.UpdateByOne(*query, func() (string, any) {
+			return "updatedAt", dt
+		})
+		if err != nil {
+			log.Println("error updating step", err)
+			return value, err
+		}
+		value = fmt.Sprintf(`{"update_at": "%s"}`, dt.String())
 	}
 	return value, nil
 }

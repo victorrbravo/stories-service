@@ -27,4 +27,5 @@ type DataTemplate struct {
 	VideosField   string
 	ImagesField   string
 	TipsIdField   string
+	SubIdField    string
 }

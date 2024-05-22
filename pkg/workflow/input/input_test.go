@@ -291,9 +291,8 @@ func TestProcessInputNewStoryTIps(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: new_step_tips
-step_id: 167
-tips: tips1 for Oporto, tips2 for Burgos, tips3 from Barcelona
+action: new_step_tips step_id: 167
+tips: tips1 for Oporto, tips2 for Burgos, tips3 from Barcelona, tips4 from Madrid
 `
 	inputFormated := utils.FormatYaml(input)
 	order := []byte(inputFormated)
@@ -409,7 +408,7 @@ func TestProcessDeleteFlowStep(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: delete_flow_step
-id: 250
+id: 256
 delete_type: TIPS
 
 `
@@ -621,6 +620,34 @@ func TestProcessShowFlowTips(t *testing.T) {
 	input := `
 action: show_step_tips
 step_id: 167
+`
+	order := []byte(input)
+	response, err := ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response", response)
+}
+
+func TestProcessChangeStepField(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: change_step_field
+step_id: 167
+amount_spent: 5560.25
+updated_at: 2024-03-24T18:57:09Z
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)

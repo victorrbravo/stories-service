@@ -81,6 +81,7 @@ type Data struct {
 	Stats        Values            `json:"stats"`
 	ID           types.Int         `json:"id"`
 	TipsIdField  types.Int         `json:"tips_id_field"`
+	SubIdField   types.Int         `json:"fk_story_sub"`
 }
 
 type JobWorkflow[T db.Scanner] struct {
@@ -137,6 +138,7 @@ type Task struct {
 	VideosField string     `json:"videos_field" default:"videos"`
 	ImagesField string     `json:"images_field" default:"images"`
 	TipsIdField string     `json:"tips_id_field" default:"fk_story_tips"`
+	SubIdField  string     `json:"sub_id_field" default:"fk_story_sub"`
 }
 
 type Transition struct {
