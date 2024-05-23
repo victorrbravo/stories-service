@@ -6,15 +6,75 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
-
+	"github.com/twpayne/go-geom"
+	"github.com/twpayne/go-geom/encoding/ewkb"
+	"github.com/twpayne/go-geom/encoding/wkb"
+	"log"
+	"regexp"
 	"stories/constants"
+	"strconv"
 )
 
 type Coordinates struct {
-	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
+	Latitude  float64 `json:"latitude"`
 	notNil    bool
+}
+
+var NilCoordinates = Coordinates{-1, -1, false}
+
+func (v *Coordinates) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var value string
+	if err := unmarshal(&value); err != nil {
+		return err
+	}
+	lon, lat, err := parseCoordinatesInYaml(value)
+	if err != nil {
+		return err
+	}
+	*v = Coordinates{lon, lat, true}
+	return nil
+}
+
+func (coordinates *Coordinates) MarshalYAML() (interface{}, error) {
+	if !coordinates.notNil {
+		return constants.YAMLNil, nil
+	} else {
+		value := fmt.Sprintf("(%f,%f)", coordinates.Latitude, coordinates.Longitude)
+		return value, nil
+	}
+}
+
+func (c Coordinates) isNil() bool {
+	return !c.notNil
+}
+
+func parseCoordinatesInYaml(input string) (float64, float64, error) {
+	// Regular expression pattern to match float values inside parentheses
+	re := regexp.MustCompile(`\(([-+]?[0-9]*\.?[0-9]+),([-+]?[0-9]*\.?[0-9]+)\)`)
+
+	// Find string submatches
+	matches := re.FindStringSubmatch(input)
+
+	// Check if matches were found
+	if len(matches) < 3 {
+		return 0, 0, fmt.Errorf("invalid input format")
+	}
+
+	// Convert the string matches to float64
+	x, err := strconv.ParseFloat(matches[1], 64)
+	if err != nil {
+		return 0, 0, fmt.Errorf("error parsing x value: %w", err)
+	}
+
+	y, err := strconv.ParseFloat(matches[2], 64)
+	if err != nil {
+		return 0, 0, fmt.Errorf("error parsing y value: %w", err)
+	}
+
+	return x, y, nil
 }
 
 func (coordinates *Coordinates) UnmarshalJSON(input []byte) error {
@@ -79,38 +139,45 @@ func parseCoordinates(data []byte, byteOrder binary.ByteOrder) (Coordinates, err
 }
 
 func (coordinates *Coordinates) Scan(value interface{}) error {
-	var err error
-	var byteOrder uint8
-	var data []byte
 	if value == nil {
 		coordinates.notNil = false
 		return nil
 	}
-	data, err = hex.DecodeString(string(value.([]byte)))
+	geomBytes, ok := value.([]byte)
+	fmt.Println("ok", ok)
+
+	g, err := ewkb.Unmarshal(geomBytes)
 	if err != nil {
-		return fmt.Errorf(constants.BadConversionFromByte, value)
+		log.Fatalf("failed to unmarshal WKB: %v", err)
 	}
-	byteOrder = data[0:1][0]
-	// The first byte defines byteOrder, 0 means big-endian and 1 little endian
-	switch byteOrder {
-	case 0:
-		*coordinates, err = parseCoordinates(data, binary.BigEndian)
-		break
-	case 1:
-		*coordinates, err = parseCoordinates(data, binary.LittleEndian)
-		break
-	default:
-		return fmt.Errorf("invalid endiannes, first byte must be either 01 or 00")
+	// Type assert to a geom.Point
+	point, ok := g.(*geom.Point)
+	if !ok {
+		return errors.New("expected a Point geometry")
 	}
-	if err != nil {
-		return err
-	}
-	coordinates.notNil = true
+
+	coordinates.Longitude = point.Coords().X()
+	coordinates.Latitude = point.Coords().Y()
 	return nil
 }
 
 func (coordinates Coordinates) Value() (driver.Value, error) {
-	return fmt.Sprintf("POINT (%f %f)", coordinates.Latitude, coordinates.Longitude), nil
+	//return fmt.Sprintf("POINT (%f %f)", coordinates.Latitude, coordinates.Longitude), nil
+	if coordinates.notNil == false {
+		return nil, nil
+	}
+	point := geom.NewPoint(geom.XY).MustSetCoords(geom.Coord{coordinates.Longitude, coordinates.Latitude})
+
+	wkbData, err := wkb.Marshal(point, binary.LittleEndian)
+	if err != nil {
+		log.Println("Failed to convert point to WKB: %v", err)
+		return "", err
+	}
+
+	// Encode WKB to hexadecimal string
+	hexString := fmt.Sprintf("%s", hex.EncodeToString(wkbData))
+	return hexString, nil
+
 }
 
 func NewCoordinates(latitude float64, longitude float64) Coordinates {

@@ -1,13 +1,15 @@
 module stories
 
-go 1.20
+go 1.21
+
+toolchain go1.21.5
 
 require (
 	github.com/alecthomas/participle/v2 v2.1.0
 	github.com/aws/aws-sdk-go v1.49.21
 	github.com/bzick/tokenizer v1.4.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/lib/pq v1.10.4
+	github.com/lib/pq v1.10.9
 	github.com/sashabaranov/go-openai v1.18.1
 	github.com/stretchr/testify v1.8.4
 	github.com/twinj/uuid v1.0.0
@@ -16,7 +18,10 @@ require (
 	oss.terrastruct.com/d2 v0.6.1
 )
 
-require github.com/go-playground/validator/v10 v10.19.0
+require (
+	github.com/go-playground/validator/v10 v10.19.0
+	github.com/twpayne/go-geom v1.5.4
+)
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
@@ -38,10 +43,10 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
 	github.com/yuin/goldmark v1.5.3 // indirect
-	golang.org/x/exp v0.0.0-20221126150942-6ab00d035af9 // indirect
+	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225 // indirect
 	golang.org/x/image v0.3.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
-	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gonum.org/v1/plot v0.12.0 // indirect

@@ -126,6 +126,15 @@ func DoChangeStepField(order string, query *database.IQuery) (string, error) {
 		log.Println("error getting step", err)
 		return value, err
 	}
+	if !types.IsNil(handler.Position) {
+		err = taTracking.UpdateByOne(*query, func() (string, any) {
+			return "position", handler.Position
+		})
+		if err != nil {
+			log.Println("error updating position for this step", err)
+			return value, err
+		}
+	}
 	if !types.IsNil(handler.Amount) {
 		err = taTracking.UpdateByOne(*query, func() (string, any) {
 			return "amountSpent", handler.Amount
@@ -664,6 +673,8 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 		roles,
 		types.Now(),
 		types.NilInt,
+		types.NilInt,
+		types.NilCoordinates,
 	)
 	return nil
 }
@@ -856,6 +867,8 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 		roles,
 		types.Now(),
 		types.NilInt,
+		types.NilInt,
+		types.NilCoordinates,
 	)
 
 	return nil
@@ -899,6 +912,8 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, er
 		roles,
 		types.FromTime(mediaDate),
 		types.NilInt,
+		types.NilInt,
+		types.NilCoordinates,
 	)
 	if err != nil {
 		return value, err

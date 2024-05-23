@@ -191,7 +191,7 @@ func TestProcessInputCreateStory(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_story
-name: checkKey
+name: Bucaramanga
 summary: Check if the key field values were created autommatically
 status: ToDo
 `
@@ -645,7 +645,8 @@ func TestProcessChangeStepField(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: change_step_field
-step_id: 167
+step_id: 137
+position: (70.27235,-82.3008)
 amount_spent: 5560.25
 updated_at: 2024-03-24T18:57:09Z
 `

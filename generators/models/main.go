@@ -195,14 +195,18 @@ func checkIfHasFieldNameForUpdateOrDelete(fieldname CustomString, name CustomStr
 	if len(fieldTitle) > 0 {
 		title = fmt.Sprintf(`\"%s\"`, fieldTitle)
 	}
+
 	return CustomString(title)
 }
 
-func checkIfHasFieldNameForSelect(fieldname CustomString, name CustomString) CustomString {
+func checkIfHasFieldNameForSelect(fieldname CustomString, name CustomString, fieldType CustomString) CustomString {
 	var title string = fmt.Sprintf(`\"%s\"`, string(name.ToSnakeCase()))
 	var fieldTitle string = strings.Trim(string(fieldname.ToSnakeCase()), " ")
 	if len(fieldTitle) > 0 {
 		title = fmt.Sprintf(`\"%s\" AS \"%s\"`, fieldTitle, string(name.ToSnakeCase()))
+	}
+	if strings.Compare(string(fieldType), "types.Coordinates") == 0 {
+		title = fmt.Sprintf(`ST_AsBinary(\"%s\") AS \"%s\"`, string(name.ToSnakeCase()), string(name.ToSnakeCase()))
 	}
 	return CustomString(title)
 }

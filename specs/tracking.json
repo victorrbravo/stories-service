@@ -82,6 +82,24 @@
       "Getter": true,
       "Searchable": true,
       "Title": "FkStoryTips"
+    },
+    {
+      "Name": "FkStorySub",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Searchable": true,
+      "Title": "FkStorySub"
+    },
+    {
+      "Name": "Position",
+      "Type": "types.Coordinates",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Searchable": true,
+      "Title": "Position"
     }
   ]
 }

@@ -17,6 +17,8 @@ type TaTracking struct {
 	Roles types.StringArray `yaml:"roles"`
 	UpdatedAt types.DateTime `yaml:"updated_at"`
 	FkStoryTips types.Int `yaml:"fk_story_tips"`
+	FkStorySub types.Int `yaml:"fk_story_sub"`
+	Position types.Coordinates `yaml:"position"`
 }
 
 func  InsertTaTracking(order string, query *database.IQuery) error {
@@ -34,6 +36,8 @@ func  InsertTaTracking(order string, query *database.IQuery) error {
             handler.Roles,
             handler.UpdatedAt,
             handler.FkStoryTips,
+            handler.FkStorySub,
+            handler.Position,
     )
     if err != nil {
         return err
@@ -95,6 +99,8 @@ func  UpdateTaTracking(order string, query *database.IQuery) error {
             handler.Roles,
             handler.UpdatedAt,
             handler.FkStoryTips,
+            handler.FkStorySub,
+            handler.Position,
     )
     if err != nil {
         return err
@@ -118,6 +124,32 @@ func  GetTaTrackingByFkStoryTips(order string, query *database.IQuery) ([]models
     }
     taTrackings, err := models.GetTaTrackingByFkStoryTips(*query,
             handler.FkStoryTips,
+    )
+    if err != nil {
+        return taTrackings, err
+    }
+    return taTrackings, nil
+}
+func  GetTaTrackingByFkStorySub(order string, query *database.IQuery) ([]models.TaTracking, error) {
+    handler, err := UnmarshallTaTracking([]byte(order))
+    if err != nil {
+        return nil, err
+    }
+    taTrackings, err := models.GetTaTrackingByFkStorySub(*query,
+            handler.FkStorySub,
+    )
+    if err != nil {
+        return taTrackings, err
+    }
+    return taTrackings, nil
+}
+func  GetTaTrackingByPosition(order string, query *database.IQuery) ([]models.TaTracking, error) {
+    handler, err := UnmarshallTaTracking([]byte(order))
+    if err != nil {
+        return nil, err
+    }
+    taTrackings, err := models.GetTaTrackingByPosition(*query,
+            handler.Position,
     )
     if err != nil {
         return taTrackings, err
