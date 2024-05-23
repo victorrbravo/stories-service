@@ -28,4 +28,6 @@ type DataTemplate struct {
 	ImagesField   string
 	TipsIdField   string
 	SubIdField    string
+	Position      string
+	Description   string
 }

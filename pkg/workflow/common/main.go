@@ -82,6 +82,9 @@ type Data struct {
 	ID           types.Int         `json:"id"`
 	TipsIdField  types.Int         `json:"tips_id_field"`
 	SubIdField   types.Int         `json:"fk_story_sub"`
+	Position     types.Coordinates `json:"position"`
+	Description  types.String      `json:"description"`
+	DistanceDiff types.Float       `json:"distance_diff"`
 }
 
 type JobWorkflow[T db.Scanner] struct {
@@ -139,6 +142,8 @@ type Task struct {
 	ImagesField string     `json:"images_field" default:"images"`
 	TipsIdField string     `json:"tips_id_field" default:"fk_story_tips"`
 	SubIdField  string     `json:"sub_id_field" default:"fk_story_sub"`
+	Position    string     `json:"position" default:"position"`
+	Description string     `json:"description" default:"description"`
 }
 
 type Transition struct {

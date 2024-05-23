@@ -62,6 +62,7 @@ type AddStoryStatus struct {
 	UserID    types.Int         `yaml:"user_id"`
 	Summary   types.String      `yaml:"summary"`
 	MediaDate types.String      `yaml:"media_date"`
+	Position  types.Coordinates `yaml:"position"`
 }
 type StepTips struct {
 	StepID types.Int         `yaml:"step_id"`

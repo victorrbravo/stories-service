@@ -33,6 +33,16 @@ CASE WHEN diff IS NULL THEN '0s' ELSE diff END AS maxtime
 FROM cte WHERE {{.Key2Link}}='{{.Status}}' AND  {{.Key1Link}}='{{.Token}}'  ;
 `
 
+	SelectPositionFieldToken = `
+WITH cte AS (
+SELECT {{.Key2Link}} ,{{.Key1Link}} , {{.TimeField}},{{.PkField}},roles,images,
+	ST_Distance(ST_Transform({{.Position}},3857), ST_Transform(LEAD({{.Position}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})), 3857)) AS diff
+FROM {{.TrackingTable}} JOIN {{.TableName}} ON {{.Key1Link}}={{.PkField}} ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})  
+)
+SELECT 
+CASE WHEN diff IS NULL THEN -1 ELSE diff END AS distance
+FROM cte {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}};
+`
 	SelectTimeFieldToken = `
 WITH cte AS (
 SELECT {{.Key2Link}} ,{{.Key1Link}} , {{.TimeField}},{{.PkField}},roles,images,
@@ -48,7 +58,7 @@ FROM cte {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{
 `
 
 	SelectRoleToken = `
-SELECT {{.InfoField}},{{.TimeField}},{{.AmountField}}, {{.TrackingTable}}.{{.SummaryField}}, {{.PkTracking}}, {{.VideosField}}, {{.ImagesField}}, {{.TipsIdField}}, {{.SubIdField}}  FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
+SELECT {{.InfoField}},{{.TimeField}},{{.AmountField}}, {{.TrackingTable}}.{{.SummaryField}}, {{.PkTracking}}, {{.VideosField}}, {{.ImagesField}}, {{.TipsIdField}}, {{.SubIdField}}, ST_AsBinary({{.Position}}), {{.Description}}  FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
 {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}}
 `
 	SelectArrayToken = `
@@ -69,6 +79,35 @@ SELECT {{.Fields}} FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}
 
 func getLinkFields[T db.Scanner](ctx context.Context, wf *common.Workflow[T]) (string, string) {
 	return wf.ExtractKeys()
+}
+
+func DistanceField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
+	var distance scanners.Float
+	newQuery := wf.Query
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
+		for name, current := range wf.Tasks {
+			if types.AsBool(current.Report) == false {
+				continue
+			}
+			newSQL, err := buildSQL(wf, name, SelectPositionFieldToken)
+			if err != nil {
+				log.Println("Error PositionField err", err)
+				continue
+			}
+			_, err = (*newQuery).QueryOne(newSQL, &distance)
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
+				log.Println("error position query err", err, "newSQL", newSQL)
+				continue
+			}
+			if types.IsNil(distance.Value) {
+				current.Data.DistanceDiff = types.NewFloat(-1)
+			} else {
+				current.Data.DistanceDiff = distance.Value
+			}
+		}
+		return wf, nil
+	}
+	return nil
 }
 
 func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
@@ -109,7 +148,7 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 }
 
 func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
-	var role scanners.TupleEightIntArrayInt
+	var role scanners.TupleTen
 	newQuery := wf.Query
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
@@ -137,6 +176,8 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			current.Data.Videos = role.Sixth
 			current.Data.TipsIdField = role.Seventh
 			current.Data.SubIdField = role.Eight
+			current.Data.Position = role.Ninth
+			current.Data.Description = role.Tenth
 		}
 		return wf, nil
 	}

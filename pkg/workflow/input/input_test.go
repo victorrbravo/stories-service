@@ -350,11 +350,19 @@ status: Testing Name
 images: 
  - ABC897B7-71DA-4C08-B7E8-B7F2F071D445
 amount: 3500.00
-summary: In CC Cacique
+summary: Last Step
 media_date: 2024-03-24T18:05:26Z
 type: step
+position: (10.2232,-72.2344)
 `
-	order := []byte(input)
+	input1 := `
+add_flow_step ticket: 44 status: Anas images: CEB643EB-0C3E-4A40-BE55-20ADBF725963.jpg, amount: 0 summary: Anaq media_date: 2024-05-23T19:24:11Z type: step  position: (-72.48998475267784,7.893156618818504)
+`
+	fmt.Println("input", input)
+	fmt.Println("-------------------------------")
+	formatInput := utils.FormatYaml(input1)
+	fmt.Println("formatInput", formatInput)
+	order := []byte(formatInput)
 	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
@@ -645,10 +653,8 @@ func TestProcessChangeStepField(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: change_step_field
-step_id: 137
-position: (70.27235,-82.3008)
-amount_spent: 5560.25
-updated_at: 2024-03-24T18:57:09Z
+step_id: 6
+position: (70.27255,-82.3224)
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)

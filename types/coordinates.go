@@ -144,8 +144,6 @@ func (coordinates *Coordinates) Scan(value interface{}) error {
 		return nil
 	}
 	geomBytes, ok := value.([]byte)
-	fmt.Println("ok", ok)
-
 	g, err := ewkb.Unmarshal(geomBytes)
 	if err != nil {
 		log.Fatalf("failed to unmarshal WKB: %v", err)
@@ -158,6 +156,7 @@ func (coordinates *Coordinates) Scan(value interface{}) error {
 
 	coordinates.Longitude = point.Coords().X()
 	coordinates.Latitude = point.Coords().Y()
+	coordinates.notNil = true
 	return nil
 }
 

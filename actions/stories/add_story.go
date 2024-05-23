@@ -913,7 +913,7 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, er
 		types.FromTime(mediaDate),
 		types.NilInt,
 		types.NilInt,
-		types.NilCoordinates,
+		status.Position,
 	)
 	if err != nil {
 		return value, err

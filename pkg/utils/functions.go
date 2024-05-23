@@ -108,6 +108,20 @@ func FormatYaml(input string) string {
 	return value
 }
 
+func IsCoordinates(value string) bool {
+	// Regular expression pattern to match float values inside parentheses
+	re := regexp.MustCompile(`\(([-+]?[0-9]*\.?[0-9]+),([-+]?[0-9]*\.?[0-9]+)\)`)
+
+	// Find string submatches
+	matches := re.FindStringSubmatch(value)
+
+	// Check if matches were found
+	if len(matches) < 3 {
+		return false
+	}
+	return true
+}
+
 func formatYamlArray(input string) string {
 	var result string
 	fEnd := func(r rune) bool {
@@ -130,16 +144,18 @@ func formatYamlArray(input string) string {
 		value := strings.TrimFunc(fields[1], fEnd)
 		items := strings.Split(value, ",")
 		if len(items) > 1 {
-			value = "\n"
-			for _, item := range items {
-				newValue := strings.TrimSpace(item)
-				if newValue == "" {
-					continue
+			if !IsCoordinates(value) {
+				value = "\n"
+				for _, item := range items {
+					newValue := strings.TrimSpace(item)
+					if newValue == "" {
+						continue
+					}
+					newItem := fmt.Sprintf(" - %s\n", newValue)
+					value = value + newItem
 				}
-				newItem := fmt.Sprintf(" - %s\n", newValue)
-				value = value + newItem
+				value = strings.TrimRight(value, "\n")
 			}
-			value = strings.TrimRight(value, "\n")
 		}
 		newline := fmt.Sprintf("%s: %s\n", field, value)
 		result = result + newline
