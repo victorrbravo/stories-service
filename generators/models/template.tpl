@@ -240,20 +240,47 @@ func Delete{{ $.Model }}By{{- .Name -}}(query database.IQuery, value {{ .Type }}
 func Get{{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}(query database.IQuery,{{- range .Searcher }}
 {{ .Name.ToCamelCase }} {{.Type}},
 {{- end }}
-) (*{{ $.Model }}, error) {
-	var err error
-	var {{ $receiver }} {{ $.Model }}
-	var value{{ $.Model }} interface{}
-	value{{ $.Model }}, err = query.QueryOne({{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query, &{{ $receiver }},{{- range .Searcher }}
+) ([]{{ $.Model }}, error) {
+	    var err error
+        var rows []interface{}
+        var list []{{ $.Model }}
+	rows, err = query.QueryMany({{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query, &{{ $.Model }}{},{{- range .Searcher }}
     {{ .Name.ToCamelCase }},
 {{- end }}
 )
 	if err != nil {
-		return  nil, err
-	}
-    {{ $receiver }} = value{{ $.Model }}.({{ $.Model }})
-	return &{{ $receiver }}, nil
+        if err == sql.ErrNoRows {
+        	return make([]{{ $.Model }}, 0), nil
+        }
+        return nil, err
+       }
+       for _, row := range rows {
+        	list = append(list, row.({{ $.Model }}))
+        }
+       return list, nil
 }
+
+func Get{{ $.Model.Plural }}By{{- range $index, $attr := .Searcher }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Paged(query database.IQuery,
+{{- range .Searcher }}
+{{ .Name.ToCamelCase }} {{.Type}},
+{{- end }}
+pageBase types.PageBase) (types.Page, error) {
+	var err error
+	var page types.Page
+	page, err = query.QueryManyPaged({{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query,  &{{ $.Model }}{},
+	pageBase.PageNumber,
+	pageBase.PageSize,
+	{{- range .Searcher }}
+        {{ .Name.ToCamelCase }},
+    {{- end }}
+	)
+	if err != nil {
+    		return  page, err
+    }
+	return page, nil
+}
+
+
 {{- end }}
 
 {{ range .Attrs }}
@@ -274,6 +301,7 @@ func Get{{ $.Model }}By{{- .Name -}}(query database.IQuery, value {{ .Type }}) (
     	}
     	return list, nil
 }
+
 {{- end }}
 {{- end }}
 

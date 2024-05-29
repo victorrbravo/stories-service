@@ -35,10 +35,12 @@ type Ticket struct {
 
 type ShowStepTips struct {
 	StepID types.Int `yaml:"step_id"`
+	TipsID types.Int `yaml:"tips_id"`
 }
+
 type ChangeNameOfTask struct {
-	StepID types.Int    `yaml:"step_id"`
-	Name   types.String `yaml:"name"`
+	StepID types.Int    `yaml:"step_id" json:"step_id"`
+	Name   types.String `yaml:"name" json:"name"`
 }
 type ChangeStepField struct {
 	StepID    types.Int         `yaml:"step_id"`
@@ -47,9 +49,14 @@ type ChangeStepField struct {
 	Position  types.Coordinates `yaml:"position"`
 }
 
+type DataTip struct {
+	Tips  []Tip `yaml:"tips" json:"tips"`
+	Count int   `yaml:"count" json:"count"`
+}
+
 type Tip struct {
-	ID  types.Int    `yaml:"id"`
-	Tip types.String `yaml:"tip"`
+	ID  types.Int    `yaml:"id" json:"id"`
+	Tip types.String `yaml:"tip" json:"tip"`
 }
 
 type AddStoryStatus struct {

@@ -19,6 +19,7 @@ const (
     TaStoryByFkFlowQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\" FROM \"ta_story\" WHERE \"fk_flow\" = $1"
     TaStoryUpdateQuery = "UPDATE \"ta_story\" SET \"name\" = COALESCE($1, \"name\"), \"status\" = COALESCE($2, \"status\"), \"summary\" = COALESCE($3, \"summary\"), \"user_id\" = COALESCE($4, \"user_id\"), \"fk_flow\" = COALESCE($5, \"fk_flow\"), \"story_type\" = COALESCE($6, \"story_type\") WHERE \"pk_story\" = $7"
     TaStoryDeleteQuery = "DELETE FROM \"ta_story\" WHERE \"pk_story\" = $1"
+    TaStoryByStoryTypeAndUserIDQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\" FROM \"ta_story\" WHERE \"story_type\" = $1 AND \"user_id\" = $2"
     TaStoryListOfFields = " ta_story.\"pk_story\", ta_story.\"name\", ta_story.\"status\", ta_story.\"summary\", ta_story.\"user_id\", ta_story.\"fk_flow\", ta_story.\"story_type\""
 )
 
@@ -185,6 +186,47 @@ func GetTaStoryByPkStory(query database.IQuery, value types.Int) (*TaStory, erro
 }
 
 
+
+func GetTaStoryByStoryTypeAndUserID(query database.IQuery,
+storyType types.String,
+userID types.Int,
+) ([]TaStory, error) {
+	    var err error
+        var rows []interface{}
+        var list []TaStory
+	rows, err = query.QueryMany(TaStoryByStoryTypeAndUserIDQuery, &TaStory{},
+    storyType,
+    userID,
+)
+	if err != nil {
+        if err == sql.ErrNoRows {
+        	return make([]TaStory, 0), nil
+        }
+        return nil, err
+       }
+       for _, row := range rows {
+        	list = append(list, row.(TaStory))
+        }
+       return list, nil
+}
+
+func GetTaStoriesByStoryTypeAndUserIDPaged(query database.IQuery,
+storyType types.String,
+userID types.Int,
+pageBase types.PageBase) (types.Page, error) {
+	var err error
+	var page types.Page
+	page, err = query.QueryManyPaged(TaStoryByStoryTypeAndUserIDQuery,  &TaStory{},
+	pageBase.PageNumber,
+	pageBase.PageSize,
+        storyType,
+        userID,
+	)
+	if err != nil {
+    		return  page, err
+    }
+	return page, nil
+}
 
 
 func GetTaStoryByUserID(query database.IQuery, value types.Int) ([]TaStory, error) {

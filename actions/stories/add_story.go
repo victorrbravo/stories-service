@@ -222,14 +222,18 @@ func DoShowStepTips(order string, query *database.IQuery) (string, error) {
 	if err != nil {
 		return value, err
 	}
-	taStep, err := models.GetTaTrackingByPkTracking(*query, handler.StepID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return value, errors.New("step not found")
+	tipsId := handler.TipsID
+	if types.IsNil(tipsId) {
+		taStep, err := models.GetTaTrackingByPkTracking(*query, handler.StepID)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return value, errors.New("step not found")
+			}
+			return value, err
 		}
-		return value, err
+		tipsId = taStep.FkStoryTips
 	}
-	taStory, err := models.GetTaStoryByPkStory(*query, taStep.FkStoryTips)
+	taStory, err := models.GetTaStoryByPkStory(*query, tipsId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return constants.EmptyStepsArray, nil
@@ -249,6 +253,7 @@ ticket: %s
 	}
 	nTasks := len(wfData.Tasks)
 	var tips []Tip
+	var dataTip DataTip
 	tips = make([]Tip, nTasks)
 	for index, task := range wfData.Tasks {
 		tips[index] = Tip{
@@ -256,7 +261,9 @@ ticket: %s
 			task.Data.Summary,
 		}
 	}
-	byteValue, err := json.Marshal(tips)
+	dataTip.Tips = tips
+	dataTip.Count = nTasks
+	byteValue, err := json.Marshal(dataTip)
 	if err != nil {
 		return value, err
 	}
@@ -365,7 +372,8 @@ func DoGetStoriesByEmail(order string, query *database.IQuery) (string, error) {
 		return value, errors.New("user not found")
 	}
 	taUser := taUsers[0]
-	taStories, err := models.GetTaStoryByUserID(*query, taUser.PkUser)
+	storyType := types.NewString("story")
+	taStories, err := models.GetTaStoryByStoryTypeAndUserID(*query, storyType, taUser.PkUser)
 	if err != nil {
 		log.Println("DoGetStoriesByEmail error getting stories")
 		return value, err

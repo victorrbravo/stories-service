@@ -545,7 +545,7 @@ func TestProcessGetStoriesByEmail(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: get_stories_by_email
-email: victorrbravo1@gmail.com
+email: victorrbravo@gmail.com
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)
@@ -626,8 +626,8 @@ func TestProcessShowFlowTips(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: show_step_tips
-step_id: 167
+action: show_step_tips 
+tips_id: 20
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)

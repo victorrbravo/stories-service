@@ -1,5 +1,21 @@
 {
   "Model": "TaStory",
+  "Searcher": [
+    {
+      "Name": "StoryType",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Title": "StoryType"
+    },
+    {
+      "Name": "UserID",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Nullable": true,
+      "Title": "UserID"
+    }
+  ],
   "Attrs": [
     {
       "Name": "PkStory",
