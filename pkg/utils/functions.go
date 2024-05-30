@@ -81,6 +81,7 @@ func SetDefaults[T any](p *T) {
 
 func FormatYaml(input string) string {
 	// Define the regular expression pattern
+	const TAB_STRING = "     "
 	pattern := `(\r?\n)?[a-zA-Z_]+:\s*`
 
 	// Compile the regular expression
@@ -89,17 +90,18 @@ func FormatYaml(input string) string {
 	// Find the matching expression in the input string
 	results := regexpPattern.FindAll([]byte(input), -1)
 	stackTab := NewStack()
+	tab := ""
 	fReplace := func(x []byte) string {
 		pattern := `^\r?\n`
 		regexpPattern := regexp.MustCompile(pattern)
 		value := regexpPattern.ReplaceAllString(string(x), "")
 		if !stackTab.IsEmpty() {
-			tab, _ := stackTab.Peek()
+			tab, _ = stackTab.Peek()
 			value = tab + value
 		}
 		if strings.HasSuffix(value, "\t") {
 			value = value[:len(value)-1]
-			stackTab.Push("\t")
+			stackTab.Push(TAB_STRING)
 		}
 		value = "\r\n" + value
 		if !strings.HasSuffix(value, " ") {
@@ -113,7 +115,7 @@ func FormatYaml(input string) string {
 	}
 	input = strings.TrimLeft(input, "\r\n")
 
-	value := formatYamlArray(input)
+	value := formatYamlArray(input, tab)
 	return value
 }
 
@@ -131,10 +133,16 @@ func IsCoordinates(value string) bool {
 	return true
 }
 
-func formatYamlArray(input string) string {
+func formatYamlArray(input string, tabSuffix string) string {
 	var result string
 	fEnd := func(r rune) bool {
 		if r == ' ' || r == '\n' || r == '\r' {
+			return true
+		}
+		return false
+	}
+	fEndField := func(r rune) bool {
+		if r == '\n' || r == '\r' {
 			return true
 		}
 		return false
@@ -149,7 +157,7 @@ func formatYamlArray(input string) string {
 		if len(fields) != 2 {
 			continue
 		}
-		field := strings.TrimFunc(fields[0], fEnd)
+		field := strings.TrimFunc(fields[0], fEndField)
 		value := strings.TrimFunc(fields[1], fEnd)
 		items := strings.Split(value, ",")
 		if len(items) > 1 {
@@ -160,7 +168,7 @@ func formatYamlArray(input string) string {
 					if newValue == "" {
 						continue
 					}
-					newItem := fmt.Sprintf(" - %s\n", newValue)
+					newItem := fmt.Sprintf("%s  - %s\n", tabSuffix, newValue)
 					value = value + newItem
 				}
 				value = strings.TrimRight(value, "\n")

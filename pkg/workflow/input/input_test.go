@@ -382,22 +382,11 @@ func TestProcessAddFlowStepSub(t *testing.T) {
 		t.Error(err)
 	}
 	query := pgQuery.NewQuery()
-	input := `action: new_step_sub
-step_id: 123
-task:
-  status: ground meat
-  images:
-     - ABC897B7-71DA-4C08-B7E8-B7F2F071D445
-  amount: 2.5
-  summary: Buy tomatoes
-  media_date: 2024-03-24T18:05:26Z
-  type: step
-  position: (10.2232,-72.2344)
-`
+	input := "action: new_step_sub step_id: 123 task: \tstatus: mix tomatoes images: ABC897B7-71DA-4C08-B7E8-B7F2F071D445, amount: 2.5 summary: Buy tomatoes media_date: 2024-03-24T18:05:26Z type: step position: (10.2232,-72.2344)"
 
 	formatInput := utils.FormatYaml(input)
 	fmt.Println("formatInput", formatInput)
-	order := []byte(input)
+	order := []byte(formatInput)
 	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
