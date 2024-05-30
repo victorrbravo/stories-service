@@ -9,6 +9,7 @@ const (
 	False                   string = "false"
 	LimitPreffix                   = 3
 	FlowTipsSuffix                 = "tips"
+	SubSuffix                      = "sub"
 	SummaryDefault                 = "No summary"
 	EmptyStepsArray                = "[]"
 	SetTipsIDNullInTracking        = "UPDATE ta_tracking SET fk_story_tips = NULL WHERE pk_tracking = $1"

@@ -8,6 +8,13 @@ import (
 )
 
 func TestFormatYamlFlowStep(t *testing.T) {
+
+	input1 := `
+action: update_user step_id: 123 task:	name: victor user_id: 12
+`
+	value1 := FormatYaml(input1)
+	fmt.Println("value1\n", value1)
+
 	input := `
  action: add_flow_step ticket: 44 status: Shopping mall images: ABC897B7-71DA-4C08-B7E8-B7F2F071D445, amount: 3500.00 summary: In CC Cacique media_date: 2024-03-24T18:05:26Z type: step
 `

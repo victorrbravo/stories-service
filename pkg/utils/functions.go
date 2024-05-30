@@ -88,10 +88,19 @@ func FormatYaml(input string) string {
 
 	// Find the matching expression in the input string
 	results := regexpPattern.FindAll([]byte(input), -1)
+	stackTab := NewStack()
 	fReplace := func(x []byte) string {
 		pattern := `^\r?\n`
 		regexpPattern := regexp.MustCompile(pattern)
 		value := regexpPattern.ReplaceAllString(string(x), "")
+		if !stackTab.IsEmpty() {
+			tab, _ := stackTab.Peek()
+			value = tab + value
+		}
+		if strings.HasSuffix(value, "\t") {
+			value = value[:len(value)-1]
+			stackTab.Push("\t")
+		}
 		value = "\r\n" + value
 		if !strings.HasSuffix(value, " ") {
 			value = value + " "

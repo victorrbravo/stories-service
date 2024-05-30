@@ -76,6 +76,11 @@ type StepTips struct {
 	Tips   types.StringArray `yaml:"tips"`
 }
 
+type StepSub struct {
+	StepID types.Int      `yaml:"step_id"`
+	Task   AddStoryStatus `yaml:"task"`
+}
+
 type DeleteTicket struct {
 	Ticket types.Int `yaml:"ticket"`
 }

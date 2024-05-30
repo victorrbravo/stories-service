@@ -369,6 +369,41 @@ add_flow_step ticket: 44 status: Anas images: CEB643EB-0C3E-4A40-BE55-20ADBF7259
 	}
 }
 
+func TestProcessAddFlowStepSub(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `action: new_step_sub
+step_id: 123
+task:
+  status: ground meat
+  images:
+     - ABC897B7-71DA-4C08-B7E8-B7F2F071D445
+  amount: 2.5
+  summary: Buy tomatoes
+  media_date: 2024-03-24T18:05:26Z
+  type: step
+  position: (10.2232,-72.2344)
+`
+
+	formatInput := utils.FormatYaml(input)
+	fmt.Println("formatInput", formatInput)
+	order := []byte(input)
+	_, err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 // Test for insert by Date
 func TestProcessAddFlowStepOrderByDate(t *testing.T) {
 	var err error
@@ -597,7 +632,7 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: show_flow_data
-ticket: 44
+ticket: 49
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)

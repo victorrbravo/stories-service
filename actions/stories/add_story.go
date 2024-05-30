@@ -77,6 +77,8 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		value, err = DoGetStepsSchema(order, query)
 	case "new_story_flow":
 		err = NewStoryFlow(order, query)
+	case "new_step_sub": // add sub
+		err = NewStepSub(ctx, order, query)
 	case "new_step_tips": // add multiple tips
 		err = NewStepTips(ctx, order, query)
 	case "show_step_tips":
@@ -352,6 +354,94 @@ type: step
 			log.Println("error adding step", err)
 			return err
 		}
+	}
+	return nil
+}
+
+func NewStepSub(ctx context.Context, order string, query *database.IQuery) error {
+	handler, err := Unmarshall[StepSub]([]byte(order))
+	if err != nil {
+		return err
+	}
+	start := types.NewString(constants.Start)
+	taStep, err := models.GetTaTrackingByPkTracking(*query, handler.StepID)
+	if err != nil {
+		return err
+	}
+
+	var taStorySub *models.TaStory
+	if !types.IsNil(taStep.FkStorySub) {
+		taStorySub, err = models.GetTaStoryByPkStory(*query, taStep.FkStorySub)
+		if err != nil {
+			log.Println("error getting story", err)
+			return err
+		}
+
+	} else {
+		nameFlow := fmt.Sprintf("%s_story_for_%s", constants.SubSuffix, taStep.PkTracking.String())
+		nameStory := types.NewString(nameFlow)
+		taFlow, err := models.CreateTaFlow(*query,
+			types.NewString(nameFlow),
+			[]byte(DefaultStartWorkflow),
+		)
+		if err != nil {
+			return err
+		}
+		taStory, err := models.GetTaStoryByPkStory(*query, taStep.FkStory)
+		if err != nil {
+			log.Println("error getting story", err)
+			return err
+		}
+		taStorySub, err = models.CreateTaStory(*query,
+			nameStory,
+			start,
+			types.NewString(constants.SummaryDefault),
+			taStory.UserID,
+			taFlow.PkFlow,
+			types.NewString("sub"),
+		)
+		if err != nil {
+			log.Println("error creating story", err)
+			return err
+		}
+		err = taStep.UpdateByOne(*query,
+			func() (string, any) {
+				return "fkStorySub", taStorySub.PkStory
+			})
+		if err != nil {
+			log.Println("error updating story", err)
+			return err
+		}
+		stringArr := []string{}
+		images := types.NewStringArray(stringArr)
+		roles := types.NewStringArray(stringArr)
+		_, err = models.CreateTaTracking(*query,
+			taStorySub.PkStory,
+			start,
+			types.NilString(),
+			types.NilString(),
+			types.NewStringArray(stringArr),
+			images,
+			roles,
+			types.Now(),
+			types.NilInt,
+			types.NilInt,
+			types.NilCoordinates,
+		)
+		if err != nil {
+			log.Println("error creating story", err)
+			return err
+		}
+	}
+	handler.Task.Ticket = taStorySub.PkStory
+	err = DoAddStepFlowAtIntl[models.TaTracking](ctx, handler.Task, None, query)
+	if err != nil {
+		if errors.Is(err, st_errors.DuplicateObjectsError) {
+			log.Println("duplicate adding step", err)
+			return err
+		}
+		log.Println("error adding step", err)
+		return err
 	}
 	return nil
 }
@@ -751,11 +841,8 @@ func DoDeleteFlowStep[T database.Scanner](ctx context.Context, order string, que
 	return nil
 }
 
-func DoAddStepFlowAt[T database.Scanner](ctx context.Context, order string, insert OrderInsert, query *database.IQuery) error {
-	addStep, err := UnmarshallAddStep([]byte(order), query)
-	if err != nil {
-		return err
-	}
+func DoAddStepFlowAtIntl[T database.Scanner](ctx context.Context, addStep AddStoryStatus, insert OrderInsert, query *database.IQuery) error {
+	var err error
 	var addTask AddTask
 	fkFLow, err := DoAddStepIntl(addStep, query)
 	if err != nil {
@@ -815,6 +902,18 @@ func DoAddStepFlowAt[T database.Scanner](ctx context.Context, order string, inse
 	addTask.Sentence = types.NewString(wf.Sentence(addTask.Name.String()))
 	utils.SetDefaults(&addTask)
 	wf, err = DoAddTaskIntl[T](intFkFlow, addTask, query)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DoAddStepFlowAt[T database.Scanner](ctx context.Context, order string, insert OrderInsert, query *database.IQuery) error {
+	addStep, err := UnmarshallAddStep([]byte(order), query)
+	if err != nil {
+		return err
+	}
+	err = DoAddStepFlowAtIntl[T](ctx, addStep, insert, query)
 	if err != nil {
 		return err
 	}
