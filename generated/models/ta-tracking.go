@@ -12,17 +12,17 @@ import (
  * Generated queries (these can be used perfectly instead of writing them by hand
  */
 const (
-    TaTrackingCreateQuery = "INSERT INTO \"ta_tracking\" (\"fk_story\",\"fk_status\",\"summary\",\"amount_spent\",\"images\",\"videos\",\"roles\",\"updated_at\",\"fk_story_tips\",\"fk_story_sub\",\"position\") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING (\"pk_tracking\")"
-    AllTaTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\", \"fk_story_tips\", \"fk_story_sub\", ST_AsBinary(\"position\") AS \"position\" FROM \"ta_tracking\""
-    TaTrackingByPkTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\", \"fk_story_tips\", \"fk_story_sub\", ST_AsBinary(\"position\") AS \"position\" FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
-    TaTrackingByFkStoryQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\", \"fk_story_tips\", \"fk_story_sub\", ST_AsBinary(\"position\") AS \"position\" FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
+    TaTrackingCreateQuery = "INSERT INTO \"ta_tracking\" (\"fk_story\",\"fk_status\",\"summary\",\"amount_spent\",\"images\",\"videos\",\"roles\",\"updated_at\",\"fk_story_tips\",\"fk_story_sub\",\"position\",\"meta_order\") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING (\"pk_tracking\")"
+    AllTaTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\", \"fk_story_tips\", \"fk_story_sub\", ST_AsBinary(\"position\") AS \"position\", \"meta_order\" FROM \"ta_tracking\""
+    TaTrackingByPkTrackingQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\", \"fk_story_tips\", \"fk_story_sub\", ST_AsBinary(\"position\") AS \"position\", \"meta_order\" FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
+    TaTrackingByFkStoryQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\", \"fk_story_tips\", \"fk_story_sub\", ST_AsBinary(\"position\") AS \"position\", \"meta_order\" FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
     TaTrackingByFkStoryDeleteQuery = "DELETE FROM \"ta_tracking\" WHERE \"fk_story\" = $1"
-    TaTrackingByFkStoryTipsQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\", \"fk_story_tips\", \"fk_story_sub\", ST_AsBinary(\"position\") AS \"position\" FROM \"ta_tracking\" WHERE \"fk_story_tips\" = $1"
-    TaTrackingByFkStorySubQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\", \"fk_story_tips\", \"fk_story_sub\", ST_AsBinary(\"position\") AS \"position\" FROM \"ta_tracking\" WHERE \"fk_story_sub\" = $1"
-    TaTrackingByPositionQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\", \"fk_story_tips\", \"fk_story_sub\", ST_AsBinary(\"position\") AS \"position\" FROM \"ta_tracking\" WHERE \"position\" = $1"
-    TaTrackingUpdateQuery = "UPDATE \"ta_tracking\" SET \"fk_story\" = COALESCE($1, \"fk_story\"), \"fk_status\" = COALESCE($2, \"fk_status\"), \"summary\" = COALESCE($3, \"summary\"), \"amount_spent\" = COALESCE($4, \"amount_spent\"), \"images\" = COALESCE($5, \"images\"), \"videos\" = COALESCE($6, \"videos\"), \"roles\" = COALESCE($7, \"roles\"), \"updated_at\" = COALESCE($8, \"updated_at\"), \"fk_story_tips\" = COALESCE($9, \"fk_story_tips\"), \"fk_story_sub\" = COALESCE($10, \"fk_story_sub\"), \"position\" = COALESCE($11, \"position\") WHERE \"pk_tracking\" = $12"
+    TaTrackingByFkStoryTipsQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\", \"fk_story_tips\", \"fk_story_sub\", ST_AsBinary(\"position\") AS \"position\", \"meta_order\" FROM \"ta_tracking\" WHERE \"fk_story_tips\" = $1"
+    TaTrackingByFkStorySubQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\", \"fk_story_tips\", \"fk_story_sub\", ST_AsBinary(\"position\") AS \"position\", \"meta_order\" FROM \"ta_tracking\" WHERE \"fk_story_sub\" = $1"
+    TaTrackingByPositionQuery = "SELECT \"pk_tracking\", \"fk_story\", \"fk_status\", \"summary\", \"amount_spent\", \"images\", \"videos\", \"roles\", \"updated_at\", \"fk_story_tips\", \"fk_story_sub\", ST_AsBinary(\"position\") AS \"position\", \"meta_order\" FROM \"ta_tracking\" WHERE \"position\" = $1"
+    TaTrackingUpdateQuery = "UPDATE \"ta_tracking\" SET \"fk_story\" = COALESCE($1, \"fk_story\"), \"fk_status\" = COALESCE($2, \"fk_status\"), \"summary\" = COALESCE($3, \"summary\"), \"amount_spent\" = COALESCE($4, \"amount_spent\"), \"images\" = COALESCE($5, \"images\"), \"videos\" = COALESCE($6, \"videos\"), \"roles\" = COALESCE($7, \"roles\"), \"updated_at\" = COALESCE($8, \"updated_at\"), \"fk_story_tips\" = COALESCE($9, \"fk_story_tips\"), \"fk_story_sub\" = COALESCE($10, \"fk_story_sub\"), \"position\" = COALESCE($11, \"position\"), \"meta_order\" = COALESCE($12, \"meta_order\") WHERE \"pk_tracking\" = $13"
     TaTrackingDeleteQuery = "DELETE FROM \"ta_tracking\" WHERE \"pk_tracking\" = $1"
-    TaTrackingListOfFields = " ta_tracking.\"pk_tracking\", ta_tracking.\"fk_story\", ta_tracking.\"fk_status\", ta_tracking.\"summary\", ta_tracking.\"amount_spent\", ta_tracking.\"images\", ta_tracking.\"videos\", ta_tracking.\"roles\", ta_tracking.\"updated_at\", ta_tracking.\"fk_story_tips\", ta_tracking.\"fk_story_sub\", ta_tracking.ST_AsBinary(\"position\") AS \"position\""
+    TaTrackingListOfFields = " ta_tracking.\"pk_tracking\", ta_tracking.\"fk_story\", ta_tracking.\"fk_status\", ta_tracking.\"summary\", ta_tracking.\"amount_spent\", ta_tracking.\"images\", ta_tracking.\"videos\", ta_tracking.\"roles\", ta_tracking.\"updated_at\", ta_tracking.\"fk_story_tips\", ta_tracking.\"fk_story_sub\", ta_tracking.ST_AsBinary(\"position\") AS \"position\", ta_tracking.\"meta_order\""
 )
 
 type TaTracking struct {
@@ -38,6 +38,7 @@ type TaTracking struct {
 	FkStoryTips types.Int `json:"fk_story_tips"`
 	FkStorySub types.Int `json:"fk_story_sub"`
 	Position types.Coordinates `json:"position"`
+	MetaOrder types.String `json:"meta_order"`
 }
 
 func (taTracking TaTracking) ListOfFields() string {
@@ -60,6 +61,7 @@ func (taTracking TaTracking) ScanRow(rows database.RowInterface) (interface{}, e
 		&taTracking.FkStoryTips,
 		&taTracking.FkStorySub,
 		&taTracking.Position,
+		&taTracking.MetaOrder,
 	)
 	if err != nil {
 		return nil, err
@@ -80,6 +82,7 @@ func CreateTaTracking(
 	fkStoryTips types.Int,
 	fkStorySub types.Int,
 	position types.Coordinates,
+	metaOrder types.String,
 ) (*TaTracking, error) {
 	var err error
     var scanner scanners.Int
@@ -98,6 +101,7 @@ func CreateTaTracking(
 		fkStoryTips,
 		fkStorySub,
 		position,
+		metaOrder,
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -117,6 +121,7 @@ func CreateTaTracking(
 	    FkStoryTips: fkStoryTips,
 	    FkStorySub: fkStorySub,
 	    Position: position,
+	    MetaOrder: metaOrder,
 	}
 	return taTracking, nil
 }
@@ -137,6 +142,7 @@ var err error
     fkStoryTips := types.NilInt
     fkStorySub := types.NilInt
     position := types.NilCoordinates
+    metaOrder := types.NilString()
     for _, option := range options {
     		actionName, value := option()
     		switch actionName {
@@ -162,6 +168,8 @@ var err error
             fkStorySub = value.(types.Int)
             case "position":
             position = value.(types.Coordinates)
+            case "metaOrder":
+            metaOrder = value.(types.String)
 		default:
 			return errors.New("unsupported field")
 		}
@@ -179,6 +187,7 @@ var err error
         fkStoryTips,
         fkStorySub,
         position,
+        metaOrder,
         taTracking.PkTracking,
     )
 	if err != nil {
@@ -201,6 +210,7 @@ func (taTracking *TaTracking) Update(
     fkStoryTips types.Int,
     fkStorySub types.Int,
     position types.Coordinates,
+    metaOrder types.String,
 ) error {
     var err error
 	err = query.Exec(
@@ -216,6 +226,7 @@ func (taTracking *TaTracking) Update(
         fkStoryTips,
         fkStorySub,
         position,
+        metaOrder,
         taTracking.PkTracking,
     )
 	if err != nil {
@@ -232,6 +243,7 @@ func (taTracking *TaTracking) Update(
     taTracking.FkStoryTips = fkStoryTips
     taTracking.FkStorySub = fkStorySub
     taTracking.Position = position
+    taTracking.MetaOrder = metaOrder
     return nil
 }
 
@@ -371,6 +383,10 @@ func (taTracking TaTracking) GetFkStorySub() types.Int {
 
 func (taTracking TaTracking) GetPosition() types.Coordinates {
 	return taTracking.Position}
+
+
+func (taTracking TaTracking) GetMetaOrder() types.String {
+	return taTracking.MetaOrder}
 
 
 func (taTracking *TaTracking) Delete(query database.IQuery) error {

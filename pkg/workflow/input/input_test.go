@@ -346,7 +346,7 @@ func TestProcessAddFlowStep(t *testing.T) {
 	input := `
 action: add_flow_step
 ticket: 44
-status: Testing Name
+status: StepNewWithMeta2
 images: 
  - ABC897B7-71DA-4C08-B7E8-B7F2F071D445
 amount: 3500.00
@@ -355,14 +355,11 @@ media_date: 2024-03-24T18:05:26Z
 type: step
 position: (10.2232,-72.2344)
 `
-	input1 := `
-add_flow_step ticket: 44 status: Anas images: CEB643EB-0C3E-4A40-BE55-20ADBF725963.jpg, amount: 0 summary: Anaq media_date: 2024-05-23T19:24:11Z type: step  position: (-72.48998475267784,7.893156618818504)
-`
 	fmt.Println("input", input)
-	fmt.Println("-------------------------------")
-	formatInput := utils.FormatYaml(input1)
-	fmt.Println("formatInput", formatInput)
-	order := []byte(formatInput)
+	input1 := `
+	action: add_flow_step ticket: 44 status: NewOrderOne images: CEB643EB-0C3E-4A40-BE55-20ADBF725963.jpg, amount: 0 summary: Anaq media_date: 2024-05-23T19:24:11Z type: step  position: (-72.48998475267784,7.893156618818504)
+	`
+	order := []byte(input1)
 	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
@@ -439,16 +436,15 @@ func TestProcessDeleteFlowStep(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: delete_flow_step
-id: 256
-delete_type: TIPS
-
+action: delete_flow_step id: 172
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	value, err := ProcessInput(order, &query)
 	if err != nil {
+
 		t.Error(err)
 	}
+	fmt.Println("delete step value\n", value)
 }
 
 func TestProcessShowFlowGraph(t *testing.T) {

@@ -60,7 +60,7 @@ type Tip struct {
 }
 
 type AddStoryStatus struct {
-	Ticket    types.Int         `yaml:"ticket"`
+	Ticket    types.Int         `yaml:"ticket,omitempty"`
 	Status    types.String      `yaml:"status"`
 	Amount    types.String      `yaml:"amount"`
 	Images    types.StringArray `yaml:"images"`
@@ -70,7 +70,9 @@ type AddStoryStatus struct {
 	Summary   types.String      `yaml:"summary"`
 	MediaDate types.String      `yaml:"media_date"`
 	Position  types.Coordinates `yaml:"position"`
+	metaOrder types.String      `yaml:"meta_order"`
 }
+
 type StepTips struct {
 	StepID types.Int         `yaml:"step_id"`
 	Tips   types.StringArray `yaml:"tips"`

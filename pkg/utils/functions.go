@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/dgrijalva/jwt-go"
+	"gopkg.in/yaml.v3"
 	"image/jpeg"
 	"io/ioutil"
 	"log"
@@ -79,9 +80,18 @@ func SetDefaults[T any](p *T) {
 	}
 }
 
+func ValidateYAML(input string) bool {
+	var data interface{}
+	err := yaml.Unmarshal([]byte(input), &data)
+	return err == nil
+}
+
 func FormatYaml(input string) string {
 	// Define the regular expression pattern
 	const TAB_STRING = "     "
+	if ValidateYAML(input) {
+		return input
+	}
 	pattern := `(\r?\n)?[a-zA-Z_]+:\s*`
 
 	// Compile the regular expression

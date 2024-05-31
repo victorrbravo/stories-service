@@ -31,9 +31,11 @@ const (
 	durationInSec   = 3600 // Duration for which the URL will be valid (in seconds)
 	JsonUrlTemplate = `
 	{ "url": "%s" }
-`
-	JsonResponseTemplate = `{ "response": "%s" }`
-	DefaultStartWorkflow = `
+	`
+	JsonDeleteFlowStepResponseTemplate = `{  "meta_order": "%s" }`
+	YamlTaskFieldName                  = "task:\n"
+	JsonResponseTemplate               = `{ "response": "%s" }`
+	DefaultStartWorkflow               = `
 {
       "id": "3f12f5a5-57ac-4861-8771-f85de203f862",
       "name": "Stories",
@@ -94,7 +96,7 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 	case "add_flow_step_ordered":
 		err = DoAddStepFlowAt[models.TaTracking](ctx, order, DateTime, query)
 	case "delete_flow_step":
-		err = DoDeleteFlowStep[models.TaTracking](ctx, order, query)
+		value, err = DoDeleteFlowStep[models.TaTracking](ctx, order, query)
 	case "delete_ticket":
 		err = DoDeleteStoryByID(order, query)
 	case "delete_step_tips":
@@ -427,6 +429,7 @@ func NewStepSub(ctx context.Context, order string, query *database.IQuery) error
 			types.NilInt,
 			types.NilInt,
 			types.NilCoordinates,
+			types.NewString(order),
 		)
 		if err != nil {
 			log.Println("error creating story", err)
@@ -694,16 +697,6 @@ func UnmarshallTicket(order []byte) (Ticket, error) {
 	return ticket, nil
 }
 
-func UnmarshallAddStep(order []byte, query *database.IQuery) (AddStoryStatus, error) {
-	var change AddStoryStatus
-	var err error
-	err = yaml.Unmarshal(order, &change)
-	if err != nil {
-		return change, err
-	}
-	return change, nil
-}
-
 func NewStoryFlow(order string, query *database.IQuery) error {
 	handler, err := UnmarshallTicket([]byte(order))
 	if err != nil {
@@ -773,28 +766,32 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 		types.NilInt,
 		types.NilInt,
 		types.NilCoordinates,
+		types.NewString(order),
 	)
 	return nil
 }
 
-func DoDeleteFlowStep[T database.Scanner](ctx context.Context, order string, query *database.IQuery) error {
-	handler, err := Unmarshall[DeleteFlowStepAction]([]byte(order))
+func DoDeleteFlowStep[T database.Scanner](ctx context.Context, order string, query *database.IQuery) (string, error) {
+	var value string
+	yamlOrder := utils.FormatYaml(order)
+	handler, err := Unmarshall[DeleteFlowStepAction]([]byte(yamlOrder))
 	if err != nil {
-		return err
+		return value, err
 	}
 
 	taTracking, err := models.GetTaTrackingByPkTracking(*query, handler.ID)
 	if err != nil {
-		return err
+		return value, err
 	}
 
 	taStory, err := models.GetTaStoryByPkStory(*query, taTracking.FkStory)
 	if err != nil {
-		return err
+		return value, err
 	}
+	value = fmt.Sprintf(JsonDeleteFlowStepResponseTemplate, taTracking.MetaOrder)
 	err = taTracking.Delete(*query)
 	if err != nil {
-		return err
+		return value, err
 	}
 
 	intPkFlow := types.AsInt(taStory.FkFlow)
@@ -803,42 +800,42 @@ func DoDeleteFlowStep[T database.Scanner](ctx context.Context, order string, que
 	curTask.Name = taTracking.FkStatus
 	err = DoDeleteTaskInt[T](curTask, query)
 	if err != nil {
-		return err
+		return value, err
 	}
 	wf, err := GetWorkflow[models.TaTracking](intPkFlow, query)
 	taFlow, err := models.GetTaFlowByPkFlow(*query, taStory.FkFlow)
 	if err != nil {
 		log.Println("error getting flow", err)
-		return err
+		return value, err
 	}
 	if handler.DeleteType == TipsStepType {
 		if wf == nil || len(wf.Tasks) == 1 {
 			trackings, err := models.GetTaTrackingByFkStoryTips(*query, taStory.PkStory)
 			if err != nil {
-				return err
+				return value, err
 			}
 			if len(trackings) == 0 {
-				return st_errors.NoTrackingFoundError
+				return value, st_errors.NoTrackingFoundError
 			}
 			tipTracking := trackings[0]
 			err = (*query).Exec(constants.SetTipsIDNullInTracking, tipTracking.PkTracking)
 			if err != nil {
 				log.Println("error updating story", err)
-				return err
+				return value, err
 			}
 			err = taStory.Delete(*query)
 			if err != nil {
 				log.Println("error deleting story", err)
-				return err
+				return value, err
 			}
 			err = taFlow.Delete(*query)
 			if err != nil {
 				log.Println("error deleting flow", err)
-				return err
+				return value, err
 			}
 		}
 	}
-	return nil
+	return value, nil
 }
 
 func DoAddStepFlowAtIntl[T database.Scanner](ctx context.Context, addStep AddStoryStatus, insert OrderInsert, query *database.IQuery) error {
@@ -909,10 +906,13 @@ func DoAddStepFlowAtIntl[T database.Scanner](ctx context.Context, addStep AddSto
 }
 
 func DoAddStepFlowAt[T database.Scanner](ctx context.Context, order string, insert OrderInsert, query *database.IQuery) error {
-	addStep, err := UnmarshallAddStep([]byte(order), query)
+	yamlOrder := utils.FormatYaml(order)
+	addStep, err := Unmarshall[AddStoryStatus]([]byte(yamlOrder))
 	if err != nil {
 		return err
 	}
+	strOrder := adaptStringBeforeYaml(order)
+	addStep.metaOrder = types.NewString(strOrder)
 	err = DoAddStepFlowAtIntl[T](ctx, addStep, insert, query)
 	if err != nil {
 		return err
@@ -941,7 +941,7 @@ func areDatesCorrect(taskDate types.String, currDate types.String) (time.Time, t
 }
 
 func DoAddStepFlow(order string, query *database.IQuery) error {
-	handler, err := UnmarshallAddStep([]byte(order), query)
+	handler, err := Unmarshall[AddStoryStatus]([]byte(order))
 	if err != nil {
 		return err
 	}
@@ -976,6 +976,7 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 		types.NilInt,
 		types.NilInt,
 		types.NilCoordinates,
+		types.NewString(order),
 	)
 
 	return nil
@@ -1021,6 +1022,7 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, er
 		types.NilInt,
 		types.NilInt,
 		status.Position,
+		status.metaOrder,
 	)
 	if err != nil {
 		return value, err
@@ -1029,7 +1031,7 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, er
 }
 
 func DoAddStep(order string, query *database.IQuery) (AddStoryStatus, error) {
-	handler, err := UnmarshallAddStep([]byte(order), query)
+	handler, err := Unmarshall[AddStoryStatus]([]byte(order))
 	if err != nil {
 		return handler, err
 	}
@@ -1041,7 +1043,7 @@ func DoAddStep(order string, query *database.IQuery) (AddStoryStatus, error) {
 }
 
 func DoDeleteStoryByID(order string, query *database.IQuery) error {
-	handler, err := UnmarshallAddStep([]byte(order), query)
+	handler, err := Unmarshall[AddStoryStatus]([]byte(order))
 	if err != nil {
 		return err
 	}

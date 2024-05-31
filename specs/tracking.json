@@ -100,6 +100,15 @@
       "Getter": true,
       "Searchable": true,
       "Title": "Position"
+    },
+    {
+      "Name": "MetaOrder",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Searchable": false,
+      "Title": "MetaOrder"
     }
   ]
 }

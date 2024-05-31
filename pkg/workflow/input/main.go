@@ -6,6 +6,7 @@ import (
 	"stories/constants"
 	"stories/database"
 	pg "stories/generated/inputs"
+	"stories/pkg/utils"
 	"strings"
 )
 
@@ -19,7 +20,8 @@ func ProcessInput(action []byte, query *database.IQuery) (string, error) {
 	var getAction GetAction
 	var jsonResponse = constants.EmptyJson
 	var value string
-	err := yaml.Unmarshal(action, &getAction)
+	yamlAction := utils.FormatYaml(string(action))
+	err := yaml.Unmarshal([]byte(yamlAction), &getAction)
 	if err != nil {
 		return jsonResponse, err
 	}
