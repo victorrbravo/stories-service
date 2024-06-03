@@ -36,7 +36,7 @@ func adaptStringBeforeYaml(input string) string {
 	result = strings.TrimSpace(result)
 
 	// Add "task:" at the beginning of the string
-	result = "task: \t" + result
+	result = "task:     " + result
 
 	return result
 }

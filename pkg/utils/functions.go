@@ -109,8 +109,9 @@ func FormatYaml(input string) string {
 			tab, _ = stackTab.Peek()
 			value = tab + value
 		}
-		if strings.HasSuffix(value, "\t") {
-			value = value[:len(value)-1]
+		if strings.HasSuffix(value, TAB_STRING) {
+			lenTab := len(TAB_STRING)
+			value = value[:len(value)-lenTab]
 			stackTab.Push(TAB_STRING)
 		}
 		value = "\r\n" + value
