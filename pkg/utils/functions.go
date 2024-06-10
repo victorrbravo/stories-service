@@ -132,7 +132,7 @@ func FormatYaml(input string) string {
 
 func IsCoordinates(value string) bool {
 	// Regular expression pattern to match float values inside parentheses
-	re := regexp.MustCompile(`\(([-+]?[0-9]*\.?[0-9]+),([-+]?[0-9]*\.?[0-9]+)\)`)
+	re := regexp.MustCompile(`\(([-+]?[0-9]*\.?[0-9]+),\s*([-+]?[0-9]*\.?[0-9]+)\)`)
 
 	// Find string submatches
 	matches := re.FindStringSubmatch(value)

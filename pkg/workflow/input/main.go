@@ -2,6 +2,7 @@ package input
 
 import (
 	"gopkg.in/yaml.v3"
+	"log"
 	"stories/actions/stories"
 	"stories/constants"
 	"stories/database"
@@ -21,11 +22,14 @@ func ProcessInput(action []byte, query *database.IQuery) (string, error) {
 	var jsonResponse = constants.EmptyJson
 	var value string
 	yamlAction := utils.FormatYaml(string(action))
+	log.Println("yamlAction  action:", string(action))
 	err := yaml.Unmarshal([]byte(yamlAction), &getAction)
+	log.Println("getAction err:", err)
 	if err != nil {
 		return jsonResponse, err
 	}
 	order := string(action)
+	log.Println("pass action order:", order)
 	value, err = Processor(getAction.Action, order, query, pg.MainProcessor, stories.FlowProcessor,
 		stories.WorkflowProcessor)
 	if err != nil {

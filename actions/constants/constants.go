@@ -13,4 +13,6 @@ const (
 	SummaryDefault                 = "No summary"
 	EmptyStepsArray                = "[]"
 	SetTipsIDNullInTracking        = "UPDATE ta_tracking SET fk_story_tips = NULL WHERE pk_tracking = $1"
+	// actions
+	AddFlowStepAction = "add_flow_step"
 )

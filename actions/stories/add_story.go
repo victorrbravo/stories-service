@@ -91,7 +91,7 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		err = DoDeleteStoryByID(order, query)
 	case "add_step":
 		_, err = DoAddStep(order, query)
-	case "add_flow_step":
+	case constants.AddFlowStepAction:
 		err = DoAddStepFlowAt[models.TaTracking](ctx, order, None, query)
 	case "add_flow_step_ordered":
 		err = DoAddStepFlowAt[models.TaTracking](ctx, order, DateTime, query)
@@ -361,16 +361,21 @@ type: step
 }
 
 func NewStepSub(ctx context.Context, order string, query *database.IQuery) error {
+	log.Println("entering NewStepSub new_step_sub")
 	handler, err := Unmarshall[StepSub]([]byte(order))
 	if err != nil {
+		log.Println("new_step_sub handler err", err)
 		return err
 	}
+	log.Println("new_step_sub handler start")
+
 	start := types.NewString(constants.Start)
 	taStep, err := models.GetTaTrackingByPkTracking(*query, handler.StepID)
 	if err != nil {
+		log.Println("error getting step", err)
 		return err
 	}
-
+	log.Println("new_step_sub taStep ID", taStep.PkTracking)
 	var taStorySub *models.TaStory
 	if !types.IsNil(taStep.FkStorySub) {
 		taStorySub, err = models.GetTaStoryByPkStory(*query, taStep.FkStorySub)
@@ -391,7 +396,7 @@ func NewStepSub(ctx context.Context, order string, query *database.IQuery) error
 		}
 		taStory, err := models.GetTaStoryByPkStory(*query, taStep.FkStory)
 		if err != nil {
-			log.Println("error getting story", err)
+			log.Println("taStory error getting story", err)
 			return err
 		}
 		taStorySub, err = models.CreateTaStory(*query,
@@ -436,6 +441,7 @@ func NewStepSub(ctx context.Context, order string, query *database.IQuery) error
 			return err
 		}
 	}
+	log.Println("sub-story")
 	handler.Task.Ticket = taStorySub.PkStory
 	err = DoAddStepFlowAtIntl[models.TaTracking](ctx, handler.Task, None, query)
 	if err != nil {
@@ -698,7 +704,8 @@ func UnmarshallTicket(order []byte) (Ticket, error) {
 }
 
 func NewStoryFlow(order string, query *database.IQuery) error {
-	handler, err := UnmarshallTicket([]byte(order))
+	yamlOrder := utils.FormatYaml(order)
+	handler, err := UnmarshallTicket([]byte(yamlOrder))
 	if err != nil {
 		return err
 	}
@@ -788,7 +795,8 @@ func DoDeleteFlowStep[T database.Scanner](ctx context.Context, order string, que
 	if err != nil {
 		return value, err
 	}
-	value = fmt.Sprintf(JsonDeleteFlowStepResponseTemplate, taTracking.MetaOrder)
+	metaOrder := taTracking.MetaOrder
+	value = fmt.Sprintf(JsonDeleteFlowStepResponseTemplate, metaOrder)
 	err = taTracking.Delete(*query)
 	if err != nil {
 		return value, err

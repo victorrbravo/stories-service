@@ -346,7 +346,7 @@ func TestProcessAddFlowStep(t *testing.T) {
 	input := `
 action: add_flow_step
 ticket: 44
-status: StepNewWithMeta2
+status: StepNewWithMeta3
 images: 
  - ABC897B7-71DA-4C08-B7E8-B7F2F071D445
 amount: 3500.00
@@ -356,10 +356,37 @@ type: step
 position: (10.2232,-72.2344)
 `
 	fmt.Println("input", input)
-	input1 := `
-	action: add_flow_step ticket: 44 status: NewOrderOne images: CEB643EB-0C3E-4A40-BE55-20ADBF725963.jpg, amount: 0 summary: Anaq media_date: 2024-05-23T19:24:11Z type: step  position: (-72.48998475267784,7.893156618818504)
-	`
+	input1 := `action: add_flow_step ticket: 36 status: Preparing videos: 5FC7B644-1F56-4984-9154-63E78846BD4E.mov, amount: 0 summary: Preparing media_date: 2024-06-10T20:52:42Z type: step position:  (-72.4900176935573, 7.893132814213494)`
 	order := []byte(input1)
+	_, err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestProcessUpdateTracking(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: update_tracking
+pk_tracking: 147
+amount_spent: 31200.00
+images:
+   - 41026416-FD28-4357-A2FA-5C42DC257C77
+   - ABC897B7-71DA-4C08-B7E8-B7F2F071D445
+`
+	fmt.Println("input", input)
+	order := []byte(input)
 	_, err = ProcessInput(order, &query)
 	if err != nil {
 		t.Error(err)
@@ -436,7 +463,7 @@ func TestProcessDeleteFlowStep(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: delete_flow_step id: 173
+action: delete_flow_step id: 174
 `
 	order := []byte(input)
 	value, err := ProcessInput(order, &query)

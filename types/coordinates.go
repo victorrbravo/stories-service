@@ -53,7 +53,7 @@ func (c Coordinates) isNil() bool {
 
 func parseCoordinatesInYaml(input string) (float64, float64, error) {
 	// Regular expression pattern to match float values inside parentheses
-	re := regexp.MustCompile(`\(([-+]?[0-9]*\.?[0-9]+),([-+]?[0-9]*\.?[0-9]+)\)`)
+	re := regexp.MustCompile(`\(([-+]?[0-9]*\.?[0-9]+),\s*([-+]?[0-9]*\.?[0-9]+)\)`)
 
 	// Find string submatches
 	matches := re.FindStringSubmatch(input)
