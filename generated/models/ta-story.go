@@ -12,15 +12,15 @@ import (
  * Generated queries (these can be used perfectly instead of writing them by hand
  */
 const (
-    TaStoryCreateQuery = "INSERT INTO \"ta_story\" (\"name\",\"status\",\"summary\",\"user_id\",\"fk_flow\",\"story_type\") VALUES ($1, $2, $3, $4, $5, $6) RETURNING (\"pk_story\")"
-    AllTaStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\" FROM \"ta_story\""
-    TaStoryByPkStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\" FROM \"ta_story\" WHERE \"pk_story\" = $1"
-    TaStoryByUserIDQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\" FROM \"ta_story\" WHERE \"user_id\" = $1"
-    TaStoryByFkFlowQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\" FROM \"ta_story\" WHERE \"fk_flow\" = $1"
-    TaStoryUpdateQuery = "UPDATE \"ta_story\" SET \"name\" = COALESCE($1, \"name\"), \"status\" = COALESCE($2, \"status\"), \"summary\" = COALESCE($3, \"summary\"), \"user_id\" = COALESCE($4, \"user_id\"), \"fk_flow\" = COALESCE($5, \"fk_flow\"), \"story_type\" = COALESCE($6, \"story_type\") WHERE \"pk_story\" = $7"
+    TaStoryCreateQuery = "INSERT INTO \"ta_story\" (\"name\",\"status\",\"summary\",\"user_id\",\"fk_flow\",\"story_type\",\"updated_at\") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING (\"pk_story\")"
+    AllTaStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\" FROM \"ta_story\" ORDER BY \"updated_at desc\" "
+    TaStoryByPkStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\" FROM \"ta_story\" WHERE \"pk_story\" = $1"
+    TaStoryByUserIDQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\" FROM \"ta_story\" WHERE \"user_id\" = $1"
+    TaStoryByFkFlowQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\" FROM \"ta_story\" WHERE \"fk_flow\" = $1"
+    TaStoryUpdateQuery = "UPDATE \"ta_story\" SET \"name\" = COALESCE($1, \"name\"), \"status\" = COALESCE($2, \"status\"), \"summary\" = COALESCE($3, \"summary\"), \"user_id\" = COALESCE($4, \"user_id\"), \"fk_flow\" = COALESCE($5, \"fk_flow\"), \"story_type\" = COALESCE($6, \"story_type\"), \"updated_at\" = COALESCE($7, \"updated_at\") WHERE \"pk_story\" = $8"
     TaStoryDeleteQuery = "DELETE FROM \"ta_story\" WHERE \"pk_story\" = $1"
-    TaStoryByStoryTypeAndUserIDQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\" FROM \"ta_story\" WHERE \"story_type\" = $1 AND \"user_id\" = $2"
-    TaStoryListOfFields = " ta_story.\"pk_story\", ta_story.\"name\", ta_story.\"status\", ta_story.\"summary\", ta_story.\"user_id\", ta_story.\"fk_flow\", ta_story.\"story_type\""
+    TaStoryByStoryTypeAndUserIDQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\" FROM \"ta_story\" WHERE \"story_type\" = $1 AND \"user_id\" = $2 ORDER BY updated_at DESC"
+    TaStoryListOfFields = " ta_story.\"pk_story\", ta_story.\"name\", ta_story.\"status\", ta_story.\"summary\", ta_story.\"user_id\", ta_story.\"fk_flow\", ta_story.\"story_type\", ta_story.\"updated_at\""
 )
 
 type TaStory struct {
@@ -31,6 +31,7 @@ type TaStory struct {
 	UserID types.Int `json:"user_id"`
 	FkFlow types.Int `json:"fk_flow"`
 	StoryType types.String `json:"story_type"`
+	UpdatedAt types.DateTime `json:"updated_at"`
 }
 
 func (taStory TaStory) ListOfFields() string {
@@ -48,6 +49,7 @@ func (taStory TaStory) ScanRow(rows database.RowInterface) (interface{}, error) 
 		&taStory.UserID,
 		&taStory.FkFlow,
 		&taStory.StoryType,
+		&taStory.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -63,6 +65,7 @@ func CreateTaStory(
 	userID types.Int,
 	fkFlow types.Int,
 	storyType types.String,
+	updatedAt types.DateTime,
 ) (*TaStory, error) {
 	var err error
     var scanner scanners.Int
@@ -76,6 +79,7 @@ func CreateTaStory(
 		userID,
 		fkFlow,
 		storyType,
+		updatedAt,
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -90,6 +94,7 @@ func CreateTaStory(
 	    UserID: userID,
 	    FkFlow: fkFlow,
 	    StoryType: storyType,
+	    UpdatedAt: updatedAt,
 	}
 	return taStory, nil
 }
@@ -105,6 +110,7 @@ var err error
     userID := types.NilInt
     fkFlow := types.NilInt
     storyType := types.NilString()
+    updatedAt := types.NilDateTime
     for _, option := range options {
     		actionName, value := option()
     		switch actionName {
@@ -120,6 +126,8 @@ var err error
             fkFlow = value.(types.Int)
             case "storyType":
             storyType = value.(types.String)
+            case "updatedAt":
+            updatedAt = value.(types.DateTime)
 		default:
 			return errors.New("unsupported field")
 		}
@@ -132,6 +140,7 @@ var err error
         userID,
         fkFlow,
         storyType,
+        updatedAt,
         taStory.PkStory,
     )
 	if err != nil {
@@ -149,6 +158,7 @@ func (taStory *TaStory) Update(
     userID types.Int,
     fkFlow types.Int,
     storyType types.String,
+    updatedAt types.DateTime,
 ) error {
     var err error
 	err = query.Exec(
@@ -159,6 +169,7 @@ func (taStory *TaStory) Update(
         userID,
         fkFlow,
         storyType,
+        updatedAt,
         taStory.PkStory,
     )
 	if err != nil {
@@ -170,6 +181,7 @@ func (taStory *TaStory) Update(
     taStory.UserID = userID
     taStory.FkFlow = fkFlow
     taStory.StoryType = storyType
+    taStory.UpdatedAt = updatedAt
     return nil
 }
 

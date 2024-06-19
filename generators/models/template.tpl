@@ -52,7 +52,11 @@ const (
     {{ .Model }}UpdateQuery = "UPDATE {{ .Schema }}\"{{ .TableName.ToSnakeCase }}\" SET {{- range $index, $attr := onlyNonKeys .Attrs }} {{- if $index }},{{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = COALESCE(${{ add $index 1 }}, {{ checkUpdateOrDelete $attr.FieldName $attr.Name }}) {{- end }} WHERE {{- $count := len (onlyNonKeys .Attrs) -}} {{ range $index, $attr := onlyKeys .Attrs }} {{- if $index }}AND{{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = ${{ add $index $count 1 }} {{- end }}"
     {{ .Model }}DeleteQuery = "DELETE FROM {{ .Schema }}\"{{ .TableName.ToSnakeCase }}\" WHERE {{- range $index, $attr := onlyKeys .Attrs }} {{- if $index }}AND{{- end }} \"{{ $attr.Name.ToSnakeCase  }}\" = ${{ add $index 1 }} {{- end }}"
     {{- if .Searcher }}
-    {{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name  .Type }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" WHERE {{- $count := 0 -}} {{ range $index, $attr := .Searcher }} {{- if $index }} AND {{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = ${{ add $index $count 1 }} {{- end }}"
+    {{- if checkIsNotEmpty .OrderBy }}
+    {{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name  .Type }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" WHERE {{- $count := 0 -}} {{ range $index, $attr := .Searcher }} {{- if $index }} AND {{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = ${{ add $index $count 1 }} {{- end }} ORDER BY {{ .OrderBy }}"
+    {{- else }}
+    {{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name  .Type }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" WHERE {{- $count := 0 -}} {{ range $index, $attr := .Searcher }} {{- if $index }} AND {{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = ${{ add $index $count 1 }} {{- end }} "
+    {{- end }}
     {{- end }}
     {{ $.Model }}ListOfFields = "{{- range $index, $attr := .Attrs }} {{- if $index }},{{- end }} {{ $.TableName.ToSnakeCase }}.{{ checkForSelect .FieldName .Name  .Type }} {{- end }}"
 )

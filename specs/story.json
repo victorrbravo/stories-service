@@ -73,7 +73,15 @@
       "Scannable": true,
       "Nullable": true,
       "Title": "StoryType"
+    },
+    {
+      "Name": "UpdatedAt",
+      "Type": "types.DateTime",
+      "Scannable": true,
+      "Nullable": true,
+      "Title": "UpdatedAt"
     }
-  ]
+  ],
+  "OrderBy": "updated_at DESC"
 }
 

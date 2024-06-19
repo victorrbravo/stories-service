@@ -98,6 +98,8 @@ alter table ta_tracking drop column distance;
 alter table ta_tracking add column position  GEOMETRY(Point, 4326);
 alter table ta_tracking ADD column label varchar(50);
 alter table ta_tracking ADD column meta_order varchar;
+alter table ta_story ADD column updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL;
+
 
     create table "ta_permissions"
     (

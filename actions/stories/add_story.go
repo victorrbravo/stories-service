@@ -317,6 +317,7 @@ func NewStepTips(ctx context.Context, order string, query *database.IQuery) erro
 			taStory.UserID,
 			taFlow.PkFlow,
 			types.NewString("tips"),
+			types.Now(),
 		)
 		if err != nil {
 			log.Println("error creating story", err)
@@ -406,6 +407,7 @@ func NewStepSub(ctx context.Context, order string, query *database.IQuery) error
 			taStory.UserID,
 			taFlow.PkFlow,
 			types.NewString("sub"),
+			types.Now(),
 		)
 		if err != nil {
 			log.Println("error creating story", err)
@@ -753,6 +755,7 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 		handler.UserID,
 		taFlow.PkFlow,
 		types.NewString("story"),
+		types.Now(),
 	)
 	log.Println("creating ta_story err", err)
 	if err != nil {
@@ -970,6 +973,7 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 		types.NilInt,
 		handler.UserID,
 		types.NilString(),
+		types.Now(),
 	)
 
 	models.CreateTaTracking(*query,
@@ -1014,6 +1018,7 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, er
 		types.NilInt,
 		types.NilInt,
 		types.NilString(),
+		types.Now(),
 	)
 	if err != nil {
 		return value, err
