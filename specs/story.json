@@ -82,6 +82,6 @@
       "Title": "UpdatedAt"
     }
   ],
-  "OrderBy": "updated_at DESC"
+  "OrderBy": "updated_at ASC"
 }
 

@@ -110,12 +110,15 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 
 	case "suggest_short_name_for_image":
 		value, err = DoSuggestShortNameForImage(order, query)
+	case "get_stories_by_email_grouped":
+		value, err = DoGetStoriesByEmailGrouped(order, query)
 	case "get_stories_by_email":
 		value, err = DoGetStoriesByEmail(order, query)
 	}
 	if err != nil {
 		return value, err
 	}
+
 	return value, nil
 }
 
@@ -457,6 +460,57 @@ func NewStepSub(ctx context.Context, order string, query *database.IQuery) error
 	return nil
 }
 
+func DoGetStoriesByEmailGrouped(order string, query *database.IQuery) (string, error) {
+	var value string
+	var err error
+	byDateTime := make(map[string][]models.TaStory)
+	handler, err := Unmarshall[GetStoriesAction]([]byte(order))
+	if err != nil {
+		log.Println("DoGetStoriesByEmail error unmarshalling")
+		return value, err
+	}
+	taStories, err := DoGetStoriesByEmailIntl(handler, query)
+	if err != nil {
+		log.Println("DoGetStoriesByEmail error unmarshalling")
+		return value, err
+	}
+	for _, story := range taStories {
+		onlyDate := story.UpdatedAt.ToOnlyDate()
+		byDateTime[onlyDate] = append(byDateTime[onlyDate], story)
+	}
+	var mapResponse MapResponse
+	mapResponse.Values = byDateTime
+	data, err := json.Marshal(mapResponse)
+	if err != nil {
+		log.Println("DoGetStoriesByEmail error marshalling")
+		return value, err
+	}
+	value = string(data)
+	return value, err
+}
+
+func DoGetStoriesByEmailIntl(handler GetStoriesAction, query *database.IQuery) ([]models.TaStory, error) {
+	var taStories []models.TaStory
+	taUsers, err := models.GetTaUserByEmail(*query, handler.Email)
+	if err != nil {
+		log.Println("DoGetStoriesByEmail error getting user")
+		return taStories, err
+	}
+	if taUsers == nil || len(taUsers) == 0 {
+		return taStories, errors.New("user not found")
+	}
+	taUser := taUsers[0]
+	storyType := types.NewString("story")
+	taStories, err = models.GetTaStoryByStoryTypeAndUserID(*query, storyType, taUser.PkUser)
+	if err != nil {
+		log.Println("DoGetStoriesByEmail error getting stories")
+		return taStories, err
+	}
+	if taStories == nil {
+		taStories = []models.TaStory{}
+	}
+	return taStories, nil
+}
 func DoGetStoriesByEmail(order string, query *database.IQuery) (string, error) {
 	value := "[]"
 	handler, err := Unmarshall[GetStoriesAction]([]byte(order))
@@ -464,25 +518,16 @@ func DoGetStoriesByEmail(order string, query *database.IQuery) (string, error) {
 		log.Println("DoGetStoriesByEmail error unmarshalling")
 		return value, err
 	}
-	taUsers, err := models.GetTaUserByEmail(*query, handler.Email)
-	if err != nil {
-		log.Println("DoGetStoriesByEmail error getting user")
-		return value, err
-	}
-	if taUsers == nil || len(taUsers) == 0 {
-		return value, errors.New("user not found")
-	}
-	taUser := taUsers[0]
-	storyType := types.NewString("story")
-	taStories, err := models.GetTaStoryByStoryTypeAndUserID(*query, storyType, taUser.PkUser)
+	taStories, err := DoGetStoriesByEmailIntl(handler, query)
 	if err != nil {
 		log.Println("DoGetStoriesByEmail error getting stories")
 		return value, err
 	}
-	if taStories == nil {
-		taStories = []models.TaStory{}
-	}
 	data, err := json.Marshal(taStories)
+	if err != nil {
+		log.Println("DoGetStoriesByEmail error marshalling")
+		return value, err
+	}
 	value = string(data)
 	return value, nil
 }

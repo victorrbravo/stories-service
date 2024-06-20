@@ -13,13 +13,13 @@ import (
  */
 const (
     TaStoryCreateQuery = "INSERT INTO \"ta_story\" (\"name\",\"status\",\"summary\",\"user_id\",\"fk_flow\",\"story_type\",\"updated_at\") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING (\"pk_story\")"
-    AllTaStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\" FROM \"ta_story\" ORDER BY \"updated_at desc\" "
+    AllTaStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\" FROM \"ta_story\" ORDER BY \"updated_at asc\" "
     TaStoryByPkStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\" FROM \"ta_story\" WHERE \"pk_story\" = $1"
     TaStoryByUserIDQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\" FROM \"ta_story\" WHERE \"user_id\" = $1"
     TaStoryByFkFlowQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\" FROM \"ta_story\" WHERE \"fk_flow\" = $1"
     TaStoryUpdateQuery = "UPDATE \"ta_story\" SET \"name\" = COALESCE($1, \"name\"), \"status\" = COALESCE($2, \"status\"), \"summary\" = COALESCE($3, \"summary\"), \"user_id\" = COALESCE($4, \"user_id\"), \"fk_flow\" = COALESCE($5, \"fk_flow\"), \"story_type\" = COALESCE($6, \"story_type\"), \"updated_at\" = COALESCE($7, \"updated_at\") WHERE \"pk_story\" = $8"
     TaStoryDeleteQuery = "DELETE FROM \"ta_story\" WHERE \"pk_story\" = $1"
-    TaStoryByStoryTypeAndUserIDQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\" FROM \"ta_story\" WHERE \"story_type\" = $1 AND \"user_id\" = $2 ORDER BY updated_at DESC"
+    TaStoryByStoryTypeAndUserIDQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\" FROM \"ta_story\" WHERE \"story_type\" = $1 AND \"user_id\" = $2 ORDER BY updated_at ASC"
     TaStoryListOfFields = " ta_story.\"pk_story\", ta_story.\"name\", ta_story.\"status\", ta_story.\"summary\", ta_story.\"user_id\", ta_story.\"fk_flow\", ta_story.\"story_type\", ta_story.\"updated_at\""
 )
 

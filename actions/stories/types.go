@@ -1,6 +1,9 @@
 package stories
 
-import "stories/types"
+import (
+	"stories/generated/models"
+	"stories/types"
+)
 
 type OrderInsert string
 
@@ -24,6 +27,10 @@ type SuggestAction struct {
 type DeleteFlowStepAction struct {
 	ID         types.Int      `yaml:"id"`
 	DeleteType DeleteStepType `yaml:"delete_type"`
+}
+
+type MapResponse struct {
+	Values map[string][]models.TaStory `json:"values"`
 }
 
 type Ticket struct {

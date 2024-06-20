@@ -19,6 +19,7 @@ var NilDateTime = DateTime{time.Time{}, false}
 
 const (
 	Iso8601         = "2006-01-02T15:04:05.999Z07:00"
+	Iso8601Seconds  = "2006-01-02T15:04:05Z07:00"
 	withoutTimezone = "2006-01-02T15:04:05"
 	onlyDate        = "2006-01-02"
 	iso8601Quoted   = "\"" + Iso8601 + "\""
@@ -66,7 +67,15 @@ func (date DateTime) Value() (driver.Value, error) {
 
 // String implements the `Stringer' interface
 func (date DateTime) String() string {
-	return date.Format("01/02/2006 03:04 PM")
+	return date.Format(standardFormat)
+}
+
+func (date DateTime) ToIso8601Seconds() string {
+	return date.Format(Iso8601Seconds)
+}
+
+func (date DateTime) ToOnlyDate() string {
+	return date.Format(onlyDate)
 }
 
 func (date DateTime) WithoutTimezone() string {

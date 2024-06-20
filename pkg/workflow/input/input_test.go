@@ -603,6 +603,32 @@ action: get_stories_by_email email: victorrbravo@gmail.com
 	fmt.Println("response", response)
 }
 
+func TestProcessGetStoriesByEmailGrouped(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: get_stories_by_email_grouped email: victorrbravo@gmail.com
+`
+	input1 := utils.FormatYaml(input)
+	order := []byte(input1)
+	response, err := ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("response", response)
+}
+
 func TestProcessGePresignedImage(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{
@@ -644,8 +670,7 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: show_flow_data
-ticket: 49
-`
+ticket: 44`
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)
 	if err != nil {
