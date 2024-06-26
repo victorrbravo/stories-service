@@ -35,7 +35,7 @@ FROM cte WHERE {{.Key2Link}}='{{.Status}}' AND  {{.Key1Link}}='{{.Token}}'  ;
 
 	SelectPositionFieldToken = `
 WITH cte AS (
-SELECT {{.Key2Link}} ,{{.Key1Link}} , {{.TimeField}},{{.PkField}},roles,images,
+SELECT {{.Key2Link}} ,{{.Key1Link}}, {{.TrackingTable}}.{{.TimeField}},{{.PkField}},roles,images,
 	ST_Distance(ST_Transform({{.Position}},3857), ST_Transform(LEAD({{.Position}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})), 3857)) AS diff
 FROM {{.TrackingTable}} JOIN {{.TableName}} ON {{.Key1Link}}={{.PkField}} ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})  
 )
@@ -45,7 +45,7 @@ FROM cte {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{
 `
 	SelectTimeFieldToken = `
 WITH cte AS (
-SELECT {{.Key2Link}} ,{{.Key1Link}} , {{.TrackingTable}}.{{.TimeField}},{{.PkField}},roles,images,
+SELECT {{.Key2Link}} ,{{.Key1Link}},{{.TrackingTable}}.{{.TimeField}},{{.PkField}},roles,images,
 CASE
 	WHEN EXTRACT (epoch from (LEAD({{.TrackingTable}}.{{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})) - {{.TrackingTable}}.{{.TimeField}})) < 0 then INTERVAL '0 hour'
 	ELSE LEAD({{.TrackingTable}}.{{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})) - {{.TrackingTable}}.{{.TimeField}}
@@ -58,7 +58,7 @@ FROM cte {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{
 `
 
 	SelectRoleToken = `
-SELECT {{.InfoField}},{{.TimeField}},{{.AmountField}}, {{.TrackingTable}}.{{.SummaryField}}, {{.PkTracking}}, {{.VideosField}}, {{.ImagesField}}, {{.TipsIdField}}, {{.SubIdField}}, ST_AsBinary({{.Position}}), {{.Description}}  FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
+SELECT {{.InfoField}},{{.TrackingTable}}.{{.TimeField}},{{.AmountField}}, {{.TrackingTable}}.{{.SummaryField}}, {{.PkTracking}}, {{.VideosField}}, {{.ImagesField}}, {{.TipsIdField}}, {{.SubIdField}}, ST_AsBinary({{.Position}}), {{.Description}}  FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
 {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}}
 `
 	SelectArrayToken = `
@@ -67,7 +67,7 @@ SELECT images, videos, roles  FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {
 `
 
 	SelectTimeToken = `
-SELECT {{.TimeField}} FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
+SELECT {{.TrackingTable}}.{{.TimeField}} FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
 {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}}
 `
 
@@ -85,6 +85,7 @@ func DistanceField[T db.Scanner](wf *common.Workflow[T], parameters ...interface
 	var distance scanners.Float
 	newQuery := wf.Query
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
+		distanceSum := 0.0
 		for name, current := range wf.Tasks {
 			if types.AsBool(current.Report) == false {
 				continue
@@ -103,8 +104,10 @@ func DistanceField[T db.Scanner](wf *common.Workflow[T], parameters ...interface
 				current.Data.DistanceDiff = types.NewFloat(-1)
 			} else {
 				current.Data.DistanceDiff = distance.Value
+				distanceSum = distanceSum + types.AsFloat(distance.Value)
 			}
 		}
+		wf.Data.DistanceDiff = types.NewFloat(distanceSum)
 		return wf, nil
 	}
 	return nil
@@ -115,6 +118,7 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 	var outputBuffer bytes.Buffer
 	newQuery := wf.Query
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
+		timeSum := 0 * time.Second
 		for name, current := range wf.Tasks {
 			if types.AsBool(current.Report) == false {
 				continue
@@ -135,12 +139,19 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 				value = types.NewString(durationTime.String())
 			}
 			strValue := types.AsString(value)
-			currentDuration, err := time.ParseDuration(strValue)
+			currentDuration, err := ParsePostgresInterval(strValue)
 			if err == nil {
 				log.Println("time diff |", fmt.Sprintf("%s", currentDuration))
+				timeSum = timeSum + currentDuration
 			}
 			current.Data.UpdateAtDiff = value
 			outputBuffer.Reset()
+		}
+		daysDuration, err := ConvertToDaysHours(timeSum.String())
+		if err == nil {
+			wf.Data.UpdateAtDiff = types.NewString(daysDuration)
+		} else {
+			wf.Data.UpdateAtDiff = types.NewString(timeSum.String())
 		}
 		return wf, nil
 	}
@@ -151,6 +162,7 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 	var role scanners.TupleTen
 	newQuery := wf.Query
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
+		amountSum := 0.0
 		for name, current := range wf.Tasks {
 			if types.AsBool(current.Report) == false {
 				continue
@@ -169,6 +181,10 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			}
 			current.Data.InfoField = role.First
 			current.Data.TimeField = role.Second
+			amountField, err := ParseDollarAmount(role.Third.String())
+			if err == nil {
+				amountSum = amountSum + amountField
+			}
 			current.Data.AmountField = role.Third
 			current.Data.Summary = role.Four
 			current.Data.ID = role.ID
@@ -179,6 +195,7 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			current.Data.Position = role.Ninth
 			current.Data.Description = role.Tenth
 		}
+		wf.Data.AmountField = types.NewString(FormatToMoney(amountSum))
 		return wf, nil
 	}
 }
