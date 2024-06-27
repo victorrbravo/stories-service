@@ -359,12 +359,6 @@ func (wf *Workflow[T]) Last(ctx context.Context) (*Task, error) {
 }
 
 func (wf *Workflow[T]) Statuses(ctx context.Context, quotes bool) ([]string, error) {
-	if wf.statuses != nil && len(wf.statuses) > 0 {
-		if quotes == false {
-			wf.statuses = utils.Map(wf.statuses, func(x string) string { return strings.Trim(x, "'") })
-		}
-		return wf.statuses, nil
-	}
 	return wf.calculateStatuses(ctx, quotes)
 }
 

@@ -84,28 +84,42 @@ func getLinkFields[T db.Scanner](ctx context.Context, wf *common.Workflow[T]) (s
 func DistanceField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var distance scanners.Float
 	newQuery := wf.Query
+	ctx := context.Background()
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		distanceSum := 0.0
-		for name, current := range wf.Tasks {
+		nTasks := len(wf.Tasks)
+		n := 0
+		statuses, err := wf.Statuses(ctx, false)
+		if err != nil {
+			return wf, err
+		}
+		for _, name := range statuses {
+			current := wf.Tasks[name]
 			if types.AsBool(current.Report) == false {
+				n++
 				continue
 			}
 			newSQL, err := buildSQL(wf, name, SelectPositionFieldToken)
 			if err != nil {
 				log.Println("Error PositionField err", err)
+				n++
 				continue
 			}
 			_, err = (*newQuery).QueryOne(newSQL, &distance)
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				log.Println("error position query err", err, "newSQL", newSQL)
+				n++
 				continue
 			}
 			if types.IsNil(distance.Value) {
 				current.Data.DistanceDiff = types.NewFloat(-1)
 			} else {
 				current.Data.DistanceDiff = distance.Value
-				distanceSum = distanceSum + types.AsFloat(distance.Value)
+				if n > 0 && n < (nTasks-1) {
+					distanceSum = distanceSum + types.AsFloat(distance.Value)
+				}
 			}
+			n++
 		}
 		wf.Data.DistanceDiff = types.NewFloat(distanceSum)
 		return wf, nil
@@ -117,11 +131,17 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 	var duration scanners.String
 	var outputBuffer bytes.Buffer
 	newQuery := wf.Query
+	ctx := context.Background()
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		timeSum := 0 * time.Second
 		nTasks := len(wf.Tasks)
 		n := 0
-		for name, current := range wf.Tasks {
+		statuses, err := wf.Statuses(ctx, false)
+		if err != nil {
+			return wf, err
+		}
+		for _, name := range statuses {
+			current := wf.Tasks[name]
 			if types.AsBool(current.Report) == false {
 				n++
 				continue
@@ -145,8 +165,8 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			}
 			strValue := types.AsString(value)
 			currentDuration, err := ParsePostgresInterval(strValue)
-			if err == nil && n < (nTasks-1) && n > 0 {
-				log.Println("time diff |", fmt.Sprintf("%s", currentDuration))
+			if err == nil && (n < (nTasks - 1)) && (n > 0) {
+				log.Println("time diff |", fmt.Sprintf("%s task:|%s|", currentDuration, name))
 				timeSum = timeSum + currentDuration
 			}
 			current.Data.UpdateAtDiff = value
@@ -167,15 +187,24 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var role scanners.TupleTen
 	newQuery := wf.Query
+	ctx := context.Background()
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		amountSum := 0.0
-		for name, current := range wf.Tasks {
+		n := 0
+		statuses, err := wf.Statuses(ctx, false)
+		if err != nil {
+			return wf, err
+		}
+		for _, name := range statuses {
+			current := wf.Tasks[name]
 			if types.AsBool(current.Report) == false {
+				n++
 				continue
 			}
 			newSQL, err := buildSQL(wf, name, SelectRoleToken)
 			if err != nil {
 				log.Println("Error Role err", err)
+				n++
 				continue
 			}
 			_, err = (*newQuery).QueryOne(newSQL, &role)
@@ -183,12 +212,13 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 				if !errors.Is(err, sql.ErrNoRows) {
 					log.Println("Error Count SQL err", err)
 				}
+				n++
 				continue
 			}
 			current.Data.InfoField = role.First
 			current.Data.TimeField = role.Second
 			amountField, err := ParseDollarAmount(role.Third.String())
-			if err == nil {
+			if err == nil && n > 0 {
 				amountSum = amountSum + amountField
 			}
 			current.Data.AmountField = role.Third
@@ -200,6 +230,7 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			current.Data.SubIdField = role.Eight
 			current.Data.Position = role.Ninth
 			current.Data.Description = role.Tenth
+			n++
 		}
 		wf.Data.AmountField = types.NewString(FormatToMoney(amountSum))
 		return wf, nil
