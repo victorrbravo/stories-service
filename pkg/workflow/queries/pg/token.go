@@ -119,18 +119,23 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 	newQuery := wf.Query
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		timeSum := 0 * time.Second
+		nTasks := len(wf.Tasks)
+		n := 0
 		for name, current := range wf.Tasks {
 			if types.AsBool(current.Report) == false {
+				n++
 				continue
 			}
 			newSQL, err := buildSQL(wf, name, SelectTimeFieldToken)
 			if err != nil {
 				log.Println("Error TimeField err", err)
+				n++
 				continue
 			}
 			durationValue, err := (*newQuery).QueryOne(newSQL, &duration)
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				log.Println("error query err", err, "newSQL", newSQL)
+				n++
 				continue
 			}
 			durationTime, ok := durationValue.(types.String)
@@ -140,12 +145,13 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			}
 			strValue := types.AsString(value)
 			currentDuration, err := ParsePostgresInterval(strValue)
-			if err == nil {
+			if err == nil && n < (nTasks-1) && n > 0 {
 				log.Println("time diff |", fmt.Sprintf("%s", currentDuration))
 				timeSum = timeSum + currentDuration
 			}
 			current.Data.UpdateAtDiff = value
 			outputBuffer.Reset()
+			n++
 		}
 		daysDuration, err := ConvertToDaysHours(timeSum.String())
 		if err == nil {
