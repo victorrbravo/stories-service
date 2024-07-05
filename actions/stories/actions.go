@@ -204,6 +204,7 @@ type ShowFlowInput struct {
 	Ticket         types.Int                       `yaml:"ticket"`
 	ShowEmptyTasks bool                            `yaml:"show_empty_tasks" default:"false"`
 	Task           WorkflowType[models.TaTracking] `yaml:"task,omitempty"`
+	Filter         types.String                    `yaml:"filter,omitempty"`
 }
 
 type AddTask struct {
@@ -405,7 +406,9 @@ func UnmarshallGetFlow(order []byte, query *db.IQuery) (ShowFlowInput, error) {
 	return getFlow, nil
 }
 
-func UpdateWorkflow[T db.Scanner](getFlow ShowFlowInput, query *db.IQuery, values []interface{}, funcs ...func(*common.Workflow[T], ...interface{}) pg.Monad[T]) (*common.Workflow[T], error) {
+func UpdateWorkflow[T db.Scanner](getFlow ShowFlowInput, query *db.IQuery,
+	values []interface{},
+	funcs ...func(*common.Workflow[T], ...interface{}) pg.Monad[T]) (*common.Workflow[T], error) {
 	wf, err := GetWorkflow[T](getFlow.PkFlow, query)
 	if err != nil {
 		return wf, err

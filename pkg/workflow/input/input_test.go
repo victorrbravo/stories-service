@@ -670,7 +670,9 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: show_flow_data
-ticket: 4`
+ticket: 4
+filter: updated_at>='2024-03-24T18:05:26Z' and updated_at<='2024-03-24T18:05:26Z'
+`
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)
 	if err != nil {
@@ -1004,7 +1006,7 @@ func TestProcessDeleteTips(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: delete_step_tips
-step_id: 167
+step_id: 123
 `
 	order := []byte(input)
 	_, err = ProcessInput(order, &query)

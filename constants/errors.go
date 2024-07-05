@@ -57,6 +57,7 @@ const (
 	CanntReadAStringArrayFromNonString         = "cannot read a string array from non-string value"
 	CanntReadAProductTypeFromNonString         = "cannot read a Product Type from non-string value"
 	CanntReadALevelTypeFromNonString           = "cannot read a Level Type from non-string value"
+	CanntReadAContentTypeFromNonString         = "cannot read a Content Type from non-string value"
 	PasswordDontMatch                          = "'Password' and 'Repeat Password' fields don't match"
 	PasswordAretheSame                         = "old password and new password are the same"
 	CannotReadFile                             = "can not read file"

@@ -15,6 +15,7 @@ type TaStory struct {
 	FkFlow types.Int `yaml:"fk_flow"`
 	StoryType types.String `yaml:"story_type"`
 	UpdatedAt types.DateTime `yaml:"updated_at"`
+	ContentType types.ContentType `yaml:"content_type"`
 }
 
 func  InsertTaStory(order string, query *database.IQuery) error {
@@ -30,6 +31,7 @@ func  InsertTaStory(order string, query *database.IQuery) error {
             handler.FkFlow,
             handler.StoryType,
             handler.UpdatedAt,
+            handler.ContentType,
     )
     if err != nil {
         return err
@@ -89,6 +91,7 @@ func  UpdateTaStory(order string, query *database.IQuery) error {
             handler.FkFlow,
             handler.StoryType,
             handler.UpdatedAt,
+            handler.ContentType,
     )
     if err != nil {
         return err

@@ -34,10 +34,11 @@ type MapResponse struct {
 }
 
 type Ticket struct {
-	Name    types.String `yaml:"name"`
-	Summary types.String `yaml:"summary"`
-	UserID  types.Int    `yaml:"user_id"`
-	Email   types.String `yaml:"email"`
+	Name        types.String      `yaml:"name"`
+	Summary     types.String      `yaml:"summary"`
+	UserID      types.Int         `yaml:"user_id"`
+	Email       types.String      `yaml:"email"`
+	ContentType types.ContentType `yaml:"content_type"`
 }
 
 type ShowStepTips struct {

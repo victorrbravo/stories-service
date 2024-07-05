@@ -202,16 +202,21 @@ func DoDeleteTipsOfStepID(order string, query *database.IQuery) error {
 		log.Println("error getting story", err)
 		return err
 	}
-	storyTipsID := taTracking.FkStoryTips.String()
-	input := fmt.Sprintf(`
-action: delete_ticket
-ticket: %s
-`, storyTipsID)
+	storyTipsID := taTracking.FkStoryTips
+
+	if types.IsNil(storyTipsID) {
+		log.Println("error getting storyTipsID is", storyTipsID)
+		return nil
+	}
 	err = (*query).Exec(constants.SetTipsIDNullInTracking, handler.StepID)
 	if err != nil {
 		log.Println("error updating story", err)
 		return err
 	}
+	input := fmt.Sprintf(`
+action: delete_ticket
+ticket: %s
+`, storyTipsID)
 
 	err = DoDeleteStoryByID(input, query)
 	if err != nil {
@@ -219,7 +224,6 @@ ticket: %s
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -321,6 +325,7 @@ func NewStepTips(ctx context.Context, order string, query *database.IQuery) erro
 			taFlow.PkFlow,
 			types.NewString("tips"),
 			types.Now(),
+			types.Senda,
 		)
 		if err != nil {
 			log.Println("error creating story", err)
@@ -411,6 +416,7 @@ func NewStepSub(ctx context.Context, order string, query *database.IQuery) error
 			taFlow.PkFlow,
 			types.NewString("sub"),
 			types.Now(),
+			types.Senda,
 		)
 		if err != nil {
 			log.Println("error creating story", err)
@@ -801,6 +807,7 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 		taFlow.PkFlow,
 		types.NewString("story"),
 		types.Now(),
+		handler.ContentType,
 	)
 	log.Println("creating ta_story err", err)
 	if err != nil {
@@ -1019,6 +1026,7 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 		handler.UserID,
 		types.NilString(),
 		types.Now(),
+		types.Senda,
 	)
 
 	models.CreateTaTracking(*query,
@@ -1064,6 +1072,7 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, er
 		types.NilInt,
 		types.NilString(),
 		types.Now(),
+		types.NewNilContentType(),
 	)
 	if err != nil {
 		return value, err

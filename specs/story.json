@@ -80,6 +80,13 @@
       "Scannable": true,
       "Nullable": true,
       "Title": "UpdatedAt"
+    },
+    {
+      "Name": "ContentType",
+      "Type": "types.ContentType",
+      "Scannable": true,
+      "Nullable": true,
+      "Title": "ContentType"
     }
   ],
   "OrderBy": "updated_at ASC"
