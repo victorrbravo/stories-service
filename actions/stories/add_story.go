@@ -1116,25 +1116,32 @@ func DoDeleteStoryByID(order string, query *database.IQuery) error {
 	}
 	taStory, err := models.GetTaStoryByPkStory(*query, handler.Ticket)
 	if err != nil {
+		log.Println("error getting story", err)
 		return err
 	}
 	log.Println("taStory FkFlow", taStory.FkFlow)
 	taFlow, err := models.GetTaFlowByPkFlow(*query, taStory.FkFlow)
 	if err != nil {
+		log.Println("error getting flow", err)
 		return err
 	}
 
 	err = models.DeleteTaTrackingByFkStory(*query, handler.Ticket)
 	if err != nil {
-		return err
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Println("error deleting tracking", err)
+			return err
+		}
 	}
 	err = taStory.Delete(*query)
 	if err != nil {
+		log.Println("error deleting story", err)
 		return err
 	}
 	err = taFlow.Delete(*query)
 	log.Println("error deleting flow", err)
 	if err != nil {
+		log.Println("error deleting flow", err)
 		return err
 	}
 	return nil
