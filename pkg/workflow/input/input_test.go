@@ -526,6 +526,34 @@ name: coffe.jpg
 	fmt.Println("response", response)
 }
 
+func TestProcessGenerateMoveTaskInFlowx(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: move_task
+id_flow: 10
+current: Cream
+target: Coffee maker
+`
+	order := []byte(input)
+	response, err := ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("response", response)
+}
+
 func TestProcessGetStepsSchema(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{

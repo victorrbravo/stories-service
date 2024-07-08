@@ -1,6 +1,7 @@
 package stories
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -20,8 +21,10 @@ import (
 	"stories/pkg/utils"
 	"stories/pkg/workflow/common"
 	"stories/pkg/workflow/queries/pg"
+	"stories/scanners"
 	"stories/types"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -114,6 +117,8 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		value, err = DoGetStoriesByEmailGrouped(order, query)
 	case "get_stories_by_email":
 		value, err = DoGetStoriesByEmail(order, query)
+	case "move_task":
+		value, err = DoMoveTaskInFlow[models.TaTracking](order, query)
 	}
 	if err != nil {
 		return value, err
@@ -164,6 +169,77 @@ func DoChangeStepField(order string, query *database.IQuery) (string, error) {
 			return value, err
 		}
 		value = fmt.Sprintf(`{"update_at": "%s"}`, dt.String())
+	}
+	return value, nil
+}
+
+func DoMoveTaskInFlow[T database.Scanner](order string, query *database.IQuery) (string, error) {
+	var value string
+	var tupleThree scanners.TupleThree
+
+	handler, err := Unmarshall[MoveTaskInFlow]([]byte(order))
+	if err != nil {
+		return value, err
+	}
+	intFkFlow := types.AsInt(handler.PkFlow)
+	wf, err := GetWorkflow[T](intFkFlow, query)
+	if err != nil {
+		return value, err
+	}
+	target := handler.Target.String()
+	next, err := wf.NextStatus(target)
+	if err != nil {
+		return value, err
+	}
+	if types.IsNil(handler.Target) {
+		target = constants.Start
+	}
+	current := handler.Current.String()
+	if wf.Contains(current) != nil {
+		return value, errors.New(fmt.Sprintf("'%s' current step not found", current))
+	}
+	previous, err := wf.PreviousStatus(current)
+	if err != nil {
+		return value, err
+	}
+	var outputBuffer bytes.Buffer
+	tmpl, err := template.New("GetPoints").Parse(GetTaskPoints)
+	err = tmpl.Execute(&outputBuffer, struct {
+		Target   string
+		Current  string
+		Next     string
+		Previous string
+		PkFlow   int
+	}{
+		Target:   target,
+		Current:  current,
+		Next:     next,
+		Previous: previous,
+		PkFlow:   intFkFlow,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	sqlPoints := outputBuffer.String()
+	_, err = (*query).QueryOne(sqlPoints, &tupleThree)
+	if err != nil {
+		return value, err
+	}
+	jsonPath := fmt.Sprintf("{tasks, %s,transition }", current)
+	err = (*query).Exec(UpdateTransitionFlow, jsonPath, tupleThree.First)
+	if err != nil {
+		return value, err
+	}
+	jsonPath = fmt.Sprintf("{tasks, %s,transition }", target)
+	err = (*query).Exec(UpdateTransitionFlow, jsonPath, tupleThree.First)
+	if err != nil {
+		return value, err
+	}
+	jsonPath = fmt.Sprintf("{tasks, %s,transition }", next)
+	err = (*query).Exec(UpdateTransitionFlow, jsonPath, tupleThree.First)
+	if err != nil {
+		return value, err
 	}
 	return value, nil
 }

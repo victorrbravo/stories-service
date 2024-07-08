@@ -57,6 +57,12 @@ type ChangeStepField struct {
 	Position  types.Coordinates `yaml:"position"`
 }
 
+type MoveTaskInFlow struct {
+	PkFlow  types.Int    `yaml:"id_flow"`
+	Current types.String `yaml:"current"`
+	Target  types.String `yaml:"target"`
+}
+
 type DataTip struct {
 	Tips  []Tip `yaml:"tips" json:"tips"`
 	Count int   `yaml:"count" json:"count"`
