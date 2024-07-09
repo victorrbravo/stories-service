@@ -59,6 +59,7 @@ type ChangeStepField struct {
 
 type MoveTaskInFlow struct {
 	PkFlow  types.Int    `yaml:"id_flow"`
+	PkStory types.Int    `yaml:"id_story"`
 	Current types.String `yaml:"current"`
 	Target  types.String `yaml:"target"`
 }

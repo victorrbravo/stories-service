@@ -540,10 +540,9 @@ func TestProcessGenerateMoveTaskInFlowx(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: move_task
-id_flow: 10
-current: Cream
-target: Coffee maker
+action: move_task 
+id_story: 43 
+current: Biscuits
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)

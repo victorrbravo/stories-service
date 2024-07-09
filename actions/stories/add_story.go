@@ -181,18 +181,29 @@ func DoMoveTaskInFlow[T database.Scanner](order string, query *database.IQuery) 
 	if err != nil {
 		return value, err
 	}
-	intFkFlow := types.AsInt(handler.PkFlow)
+	var intFkFlow int
+	if !types.IsNil(handler.PkFlow) {
+		intFkFlow = types.AsInt(handler.PkFlow)
+	} else {
+		if types.IsNil(handler.PkStory) {
+			return value, errors.New("story id not found")
+		}
+		taStory, err := models.GetTaStoryByPkStory(*query, handler.PkStory)
+		if err != nil {
+			return value, err
+		}
+		intFkFlow = types.AsInt(taStory.FkFlow)
+	}
 	wf, err := GetWorkflow[T](intFkFlow, query)
 	if err != nil {
 		return value, err
 	}
 	target := handler.Target.String()
-	next, err := wf.NextStatus(target)
-	if err != nil {
-		return value, err
-	}
 	if types.IsNil(handler.Target) {
 		target = constants.Start
+	}
+	if wf.Contains(target) != nil {
+		return value, errors.New(fmt.Sprintf("'%s' target step not found", target))
 	}
 	current := handler.Current.String()
 	if wf.Contains(current) != nil {
@@ -207,13 +218,11 @@ func DoMoveTaskInFlow[T database.Scanner](order string, query *database.IQuery) 
 	err = tmpl.Execute(&outputBuffer, struct {
 		Target   string
 		Current  string
-		Next     string
 		Previous string
 		PkFlow   int
 	}{
 		Target:   target,
 		Current:  current,
-		Next:     next,
 		Previous: previous,
 		PkFlow:   intFkFlow,
 	})
@@ -226,17 +235,17 @@ func DoMoveTaskInFlow[T database.Scanner](order string, query *database.IQuery) 
 	if err != nil {
 		return value, err
 	}
-	jsonPath := fmt.Sprintf("{tasks, %s,transition }", current)
-	err = (*query).Exec(UpdateTransitionFlow, jsonPath, tupleThree.First)
+	jsonPath := fmt.Sprintf("{tasks, %s,transition }", previous)
+	err = (*query).Exec(UpdateTransitionFlow, jsonPath, tupleThree.Second)
 	if err != nil {
 		return value, err
 	}
 	jsonPath = fmt.Sprintf("{tasks, %s,transition }", target)
-	err = (*query).Exec(UpdateTransitionFlow, jsonPath, tupleThree.First)
+	err = (*query).Exec(UpdateTransitionFlow, jsonPath, tupleThree.Third)
 	if err != nil {
 		return value, err
 	}
-	jsonPath = fmt.Sprintf("{tasks, %s,transition }", next)
+	jsonPath = fmt.Sprintf("{tasks, %s,transition }", current)
 	err = (*query).Exec(UpdateTransitionFlow, jsonPath, tupleThree.First)
 	if err != nil {
 		return value, err

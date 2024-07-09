@@ -202,9 +202,8 @@ UPDATE ta_flow SET flow=flow #- '{tasks, {{.Name}} }' WHERE pk_flow={{.PkFlow}};
 const GetTaskPoints = `
 WITH CTE AS (
 SELECT flow -> 'tasks' -> '{{.Target}}' -> 'transition' AS tr1,
-flow -> 'tasks' -> '{{.Next}}' -> 'transition' AS tr2,
-flow -> 'tasks' -> '{{.Current}}' -> 'transition' AS tr3
-flow -> 'tasks' -> '{{.Previous}}' -> 'transition' AS tr4
+flow -> 'tasks' -> '{{.Current}}' -> 'transition' AS tr2,
+flow -> 'tasks' -> '{{.Previous}}' -> 'transition' AS tr3
 FROM ta_flow where pk_flow={{.PkFlow}}
 )
 SELECT tr1, tr2, tr3 FROM CTE
