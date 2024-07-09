@@ -209,7 +209,7 @@ FROM ta_flow where pk_flow={{.PkFlow}}
 SELECT tr1, tr2, tr3 FROM CTE
 `
 const UpdateTransitionFlow = `
-UPDATE ta_flow SET flow=jsonb_set(flow, $1::text[], $2::jsonb,true)
+UPDATE ta_flow SET flow=jsonb_set(flow, $1::text[], $2::jsonb,true) WHERE pk_flow=$3
 `
 
 type ShowFlowInput struct {

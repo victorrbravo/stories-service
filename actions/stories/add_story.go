@@ -236,17 +236,17 @@ func DoMoveTaskInFlow[T database.Scanner](order string, query *database.IQuery) 
 		return value, err
 	}
 	jsonPath := fmt.Sprintf("{tasks, %s,transition }", previous)
-	err = (*query).Exec(UpdateTransitionFlow, jsonPath, tupleThree.Second)
+	err = (*query).Exec(UpdateTransitionFlow, jsonPath, tupleThree.Second, intFkFlow)
 	if err != nil {
 		return value, err
 	}
 	jsonPath = fmt.Sprintf("{tasks, %s,transition }", target)
-	err = (*query).Exec(UpdateTransitionFlow, jsonPath, tupleThree.Third)
+	err = (*query).Exec(UpdateTransitionFlow, jsonPath, tupleThree.Third, intFkFlow)
 	if err != nil {
 		return value, err
 	}
 	jsonPath = fmt.Sprintf("{tasks, %s,transition }", current)
-	err = (*query).Exec(UpdateTransitionFlow, jsonPath, tupleThree.First)
+	err = (*query).Exec(UpdateTransitionFlow, jsonPath, tupleThree.First, intFkFlow)
 	if err != nil {
 		return value, err
 	}
