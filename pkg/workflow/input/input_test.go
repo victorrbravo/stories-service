@@ -553,6 +553,34 @@ current: Biscuits
 	fmt.Println("response", response)
 }
 
+func TestProcessGenerateChangeStepReport(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: change_step_report 
+id_story: 43 
+name: Cream
+report: true
+`
+	order := []byte(input)
+	response, err := ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("response", response)
+}
+
 func TestProcessGetStepsSchema(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{

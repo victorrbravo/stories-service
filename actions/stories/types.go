@@ -64,6 +64,13 @@ type MoveTaskInFlow struct {
 	Target  types.String `yaml:"target"`
 }
 
+type UpdateAttrInFlow struct {
+	PkFlow  types.Int    `yaml:"id_flow"`
+	PkStory types.Int    `yaml:"id_story"`
+	Report  types.Bool   `yaml:"report"`
+	Name    types.String `yaml:"name"`
+}
+
 type DataTip struct {
 	Tips  []Tip `yaml:"tips" json:"tips"`
 	Count int   `yaml:"count" json:"count"`
