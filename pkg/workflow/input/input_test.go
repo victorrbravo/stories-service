@@ -393,6 +393,34 @@ images:
 	}
 }
 
+func TestProcessUpdateTrackingUpdated(t *testing.T) {
+	var err error
+	config := db.DatabaseConfig{
+		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
+		Password: "stories",
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input1 := "action: updated_tracking pk_tracking: 147 updated_at: 2024-07-15T20:33:00Z"
+	formmated := utils.FormatYaml(input1)
+	input := `
+action: update_tracking
+pk_tracking: 147
+updated_at: 2024-03-26T10:10:00Z
+`
+	fmt.Println("input", input)
+	order := []byte(formmated)
+	_, err = ProcessInput(order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestProcessAddFlowStepSub(t *testing.T) {
 	var err error
 	config := db.DatabaseConfig{

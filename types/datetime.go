@@ -158,6 +158,19 @@ func (date *DateTime) UnmarshalJSON(data []byte) error {
 	return err
 }
 
+func (v *DateTime) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var value string
+	if err := unmarshal(&value); err != nil {
+		return err
+	}
+	date, err := NewDateTime(value)
+	if err != nil {
+		return err
+	}
+	*v = date
+	return nil
+}
+
 // Before wrapper around the native function
 func (date DateTime) Before(other DateTime) bool {
 	native := time.Time(date.DateTime)
