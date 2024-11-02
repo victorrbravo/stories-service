@@ -366,7 +366,9 @@ func ReducesFilter[T db.Scanner](wf common.Workflow[T], name string) (string, er
 func ClausesWheres[T db.Scanner](wf common.Workflow[T]) map[int]WhereTask {
 	ctx := context.Background()
 	values := make(map[int]WhereTask)
+	wf.ExcludeReport(true)
 	statuses, err := wf.Statuses(ctx, false)
+	wf.ExcludeReport(false)
 	if err != nil {
 		log.Println("Error WhereClauses Statuses")
 		return values

@@ -112,7 +112,9 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		value, err = DoGetPresignedImage(order, query)
 
 	case "suggest_short_name_for_image":
-		value, err = DoSuggestShortNameForImage(order, query)
+		value, err = DoImageQuestionToAI(order, query, "Summarize the image in two words or less")
+	case "suggest_words_for_image":
+		value, err = DoImageQuestionToAI(order, query, "Can you say almost 10 words associated with the image separated by commas")
 	case "get_stories_by_email_grouped":
 		value, err = DoGetStoriesByEmailGrouped(order, query)
 	case "get_stories_by_email":
@@ -121,12 +123,50 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		value, err = DoMoveTaskInFlow[models.TaTracking](order, query)
 	case "change_step_report":
 		value, err = DoChangeReport[models.TaTracking](order, query)
+	case "reset_step_report":
+		value, err = DoResetStepReport[models.TaTracking](order, query)
 	}
 	if err != nil {
 		return value, err
 	}
 
 	return value, nil
+}
+
+func DoResetStepReport[T database.Scanner](order string, query *database.IQuery) (string, error) {
+	var value string
+	handler, err := Unmarshall[UpdateAttrInFlow]([]byte(order))
+	if err != nil {
+		return value, err
+	}
+	var intFkFlow int
+	if !types.IsNil(handler.PkFlow) {
+		intFkFlow = types.AsInt(handler.PkFlow)
+	} else {
+		if types.IsNil(handler.PkStory) {
+			return value, errors.New("story id not found")
+		}
+		taStory, err := models.GetTaStoryByPkStory(*query, handler.PkStory)
+		if err != nil {
+			return value, err
+		}
+		intFkFlow = types.AsInt(taStory.FkFlow)
+	}
+	wf, err := GetWorkflow[T](intFkFlow, query)
+	if err != nil {
+		return value, err
+	}
+	log.Println("report number of task:", len(wf.Tasks))
+	for name, _ := range wf.Tasks {
+		jsonPath := fmt.Sprintf("{tasks, %s,report}", name)
+		err = (*query).Exec(UpdateAttributeFlow, jsonPath, types.NewBool(true), intFkFlow)
+		log.Printf("task: |%s| inFkFlow:|%v| jsonPath: |%s|", name, intFkFlow, jsonPath)
+		if err != nil {
+			log.Printf("DB error task:%s sql: %s", name, UpdateAttributeFlow)
+		}
+	}
+	log.Println("all was reset")
+	return value, err
 }
 
 func DoChangeReport[T database.Scanner](order string, query *database.IQuery) (string, error) {
@@ -152,7 +192,7 @@ func DoChangeReport[T database.Scanner](order string, query *database.IQuery) (s
 	if err != nil {
 		return value, err
 	}
-	if wf.Contains(handler.Name.String()) != nil {
+	if wf.ContainsAll(handler.Name.String()) != nil {
 		return value, errors.New(fmt.Sprintf("'%s' step not found", handler.Name))
 	}
 	jsonPath := fmt.Sprintf("{tasks, %s,report}", handler.Name)
@@ -659,16 +699,16 @@ func DoGetStoriesByEmail(order string, query *database.IQuery) (string, error) {
 	return value, nil
 }
 
-func DoSuggestShortNameForImage(order string, query *database.IQuery) (string, error) {
+func DoImageQuestionToAI(order string, query *database.IQuery, question string) (string, error) {
 	value := fmt.Sprintf(JsonResponseTemplate, "")
 	var err error
-	log.Println("DoSuggestShortNameForImage order ", order)
+	log.Println("DoImageQuestionToAI order ", order)
 	handler, err := Unmarshall[SuggestAction]([]byte(order))
 	if err != nil {
 		log.Println("error unmarshalling")
 		return value, err
 	}
-	log.Println("DoSuggestShortNameForImage DownloadFromS3 ", handler.ImageID)
+	log.Println("DoImageQuestionToAI DownloadFromS3 ", handler.ImageID)
 	imagePath, err := utils.DownloadFromS3(bucketName, handler.ImageID.String())
 
 	if err != nil {
@@ -703,7 +743,7 @@ func DoSuggestShortNameForImage(order string, query *database.IQuery) (string, e
 					MultiContent: []openai.ChatMessagePart{
 						{
 							Type: "text",
-							Text: "Summarize the image in two words or less",
+							Text: question,
 						},
 						{
 							Type:     "image_url",

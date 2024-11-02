@@ -197,16 +197,14 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		}
 		for _, name := range statuses {
 			current := wf.Tasks[name]
-			if types.AsBool(current.Report) == false {
-				n++
-				continue
-			}
 			newSQL, err := buildSQL(wf, name, SelectRoleToken)
 			if err != nil {
-				log.Println("Error Role err", err)
+				log.Println("RoleField Error Role err", err)
 				n++
 				continue
 			}
+			log.Printf("RoleField name: |%v| newSQL: |%v|", name, newSQL)
+
 			_, err = (*newQuery).QueryOne(newSQL, &role)
 			if err != nil {
 				if !errors.Is(err, sql.ErrNoRows) {

@@ -123,6 +123,7 @@ type Workflow[T db.Scanner] struct {
 	ValueScanner      T                `json:"omitempty"`
 	statuses          []string         `json:"omitempty"`
 	JsonResponse      string           `json:"json_response"`
+	excludeReported   bool
 }
 
 type Variable struct {
@@ -216,6 +217,12 @@ func (wf *Workflow[T]) AddLink(ctx context.Context, taskName string, linkTask *T
 	}
 	return nil
 }
+func (wf *Workflow[T]) ContainsAll(current string) error {
+	wf.ExcludeReport(true)
+	err := wf.Contains(current)
+	wf.ExcludeReport(false)
+	return err
+}
 
 func (wf *Workflow[T]) Contains(current string) error {
 	var err error
@@ -306,7 +313,10 @@ func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool) ([]st
 		if !ok {
 			return list, fmt.Errorf("Incorrect value for task name %s", current)
 		}
-		current = task.Transition.Links[0].Task
+		current, err = wf.findNextTask(task)
+		if err != nil {
+			return list, err
+		}
 		if len(current) == 0 || strings.Compare(current, EndTask) == 0 {
 			break
 		}
@@ -323,6 +333,36 @@ func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool) ([]st
 	wf.statuses = list
 	return list, nil
 
+}
+
+func (wf *Workflow[T]) findNextTask(task *Task) (string, error) {
+	nextName := ""
+	var next *Task
+	var ok bool
+	if task == nil {
+		return nextName, fmt.Errorf("findNextTask, Task is nil")
+	}
+	next = task
+	for {
+		nextName = next.Transition.Links[0].Task
+		if len(nextName) == 0 || strings.Compare(nextName, EndTask) == 0 {
+			return nextName, nil
+		}
+		next, ok = wf.Tasks[nextName]
+		if !ok {
+
+			return "", fmt.Errorf("findNextTask Incorrect value for task name %s", nextName)
+		}
+		if wf.excludeReported == false && types.AsBool(next.Report) == false {
+			continue
+		}
+		break
+	}
+
+	return nextName, nil
+}
+func (wf *Workflow[T]) ExcludeReport(exclude bool) {
+	wf.excludeReported = exclude
 }
 
 func (wf *Workflow[T]) Sentence(name string) string {

@@ -394,9 +394,7 @@ func UpdateWorkflowDataInt[T db.Scanner](wf *common.Workflow[T]) (WorkflowData, 
 	wfData.Tasks = make([]TaskData, 0)
 	for _, status := range statuses {
 		current := wf.Tasks[status]
-		if types.AsBool(current.Report) == false {
-			continue
-		}
+		log.Printf("UpdateWorkflowDataInt status: |%s| amount: |%v|", status, current.Data.AmountField)
 		taskData := TaskData{
 			Name:       current.Name,
 			Transition: current.Transition,
