@@ -394,7 +394,6 @@ func UpdateWorkflowDataInt[T db.Scanner](wf *common.Workflow[T]) (WorkflowData, 
 	wfData.Tasks = make([]TaskData, 0)
 	for _, status := range statuses {
 		current := wf.Tasks[status]
-		log.Printf("UpdateWorkflowDataInt status: |%s| amount: |%v|", status, current.Data.AmountField)
 		taskData := TaskData{
 			Name:       current.Name,
 			Transition: current.Transition,
@@ -568,7 +567,6 @@ func DoAddTaskIntl[T db.Scanner](pkFlow int, task AddTask, query *db.IQuery) (*c
 	if err != nil {
 		return wf, err
 	}
-	fmt.Println("sqlInsert", sqlInsert)
 	err = (*query).Exec(sqlInsert)
 	if err != nil {
 		return wf, err

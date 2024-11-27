@@ -375,10 +375,15 @@ func ClausesWheres[T db.Scanner](wf common.Workflow[T]) map[int]WhereTask {
 	}
 	index := 0
 	str := ""
+	firstTask, ok := wf.Tasks[common.StartTask]
+	if !ok {
+		log.Println("Error: wf Tasks does not contain Start (StartTask")
+		return values
+	}
 	for _, name := range statuses {
 		current, _ := wf.Tasks[name]
 		if index == 0 {
-			values[index] = WhereTask{name, wf.Initial.String()}
+			values[index] = WhereTask{name, firstTask.Transition.Links[0].Query}
 		} else {
 			values[index] = WhereTask{name, str}
 		}

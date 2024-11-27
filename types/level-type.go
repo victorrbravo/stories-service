@@ -4,8 +4,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
-	"log"
-
 	"stories/constants"
 )
 
@@ -64,7 +62,6 @@ func (pt *LevelType) Scan(src interface{}) error {
 	case string:
 		*pt = LevelType(value)
 	case []byte:
-		log.Println("value", value)
 		*pt = LevelType(string(value))
 	default:
 		return fmt.Errorf(constants.CanntReadALevelTypeFromNonString)

@@ -75,17 +75,31 @@ func FormatToMoney(amount float64) string {
 
 func ParseDollarAmount(input string) (float64, error) {
 	// Check for and remove the leading '$' sign
-	if len(input) == 0 || input[0] != '$' {
+	lenInput := len(input)
+	multiply := 1.0
+	if lenInput == 0 {
+		return 0, fmt.Errorf("parse dollar failed: string length is 0")
+
+	}
+	amountStr := input
+	if input[0] == '-' {
+		amountStr = strings.TrimPrefix(input, "-")
+		multiply = -1.0
+	}
+
+	if len(amountStr) == 0 || amountStr[0] != '$' {
 		return 0, fmt.Errorf("invalid format: %s", input)
 	}
-	amountStr := strings.TrimPrefix(input, "$")
+
+	amountStr = strings.TrimPrefix(amountStr, "$")
+
 	amountStr = strings.ReplaceAll(amountStr, ",", "")
 	// Convert the remaining string to a float
 	amount, err := strconv.ParseFloat(amountStr, 64)
 	if err != nil {
 		return 0, fmt.Errorf("invalid amount: %v", err)
 	}
-
+	amount = amount * multiply
 	return amount, nil
 }
 

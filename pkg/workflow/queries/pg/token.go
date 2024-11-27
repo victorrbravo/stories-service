@@ -166,7 +166,6 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			strValue := types.AsString(value)
 			currentDuration, err := ParsePostgresInterval(strValue)
 			if err == nil && (n < (nTasks - 1)) && (n > 0) {
-				log.Println("time diff |", fmt.Sprintf("%s task:|%s|", currentDuration, name))
 				timeSum = timeSum + currentDuration
 			}
 			current.Data.UpdateAtDiff = value
@@ -203,8 +202,6 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 				n++
 				continue
 			}
-			log.Printf("RoleField name: |%v| newSQL: |%v|", name, newSQL)
-
 			_, err = (*newQuery).QueryOne(newSQL, &role)
 			if err != nil {
 				if !errors.Is(err, sql.ErrNoRows) {
@@ -216,8 +213,10 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			current.Data.InfoField = role.First
 			current.Data.TimeField = role.Second
 			amountField, err := ParseDollarAmount(role.Third.String())
-			if err == nil && n > 0 {
+			if err == nil {
 				amountSum = amountSum + amountField
+			} else {
+				fmt.Println("_error role.Third.String()", role.Third.String(), "amountField", amountField, "err", err)
 			}
 			current.Data.AmountField = role.Third
 			current.Data.Summary = role.Four

@@ -23,6 +23,7 @@ const (
 	ARROW_TASK        = " -> "
 	OR_OPERATOR       = " OR "
 	TablePrefix       = "ta_"
+	StartTask         = "Start"
 )
 
 const QueryStep = "{{.FieldName}}{{.Operator}}''{{.NameTask}}''"
@@ -305,7 +306,9 @@ func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool) ([]st
 	if quotes {
 		title = "'" + current + "'"
 	}
-	list = append(list, title)
+	if strings.Compare(title, StartTask) != 0 {
+		list = append(list, title)
+	}
 	lenMax := len(wf.Tasks)
 	i := 0
 	for {
@@ -329,6 +332,9 @@ func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool) ([]st
 			return list, fmt.Errorf("Error iterating through tasks")
 		}
 		i++
+	}
+	if len(list) == 0 {
+		list = append(list, StartTask)
 	}
 	wf.statuses = list
 	return list, nil
@@ -388,7 +394,7 @@ func (wf *Workflow[T]) Last(ctx context.Context) (*Task, error) {
 	}
 	nLast := len(statuses)
 	if nLast == 0 {
-		return task, fmt.Errorf("statuses length is equal to zero (0)")
+		return task, fmt.Errorf("Last function error nLast is equal to 0")
 	}
 	name := statuses[nLast-1]
 	task, ok := wf.Tasks[name]

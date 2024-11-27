@@ -146,11 +146,8 @@ func (obj *Social) AddTask(strId string, name string, tokenLink string, pattern 
 		return task, err
 	}
 	strQuery, _ := obj.useTemplate(SocialAddTask)
-	log.Println("task strId", strId)
-	log.Println("task strQuery |", strQuery, "|")
 
 	_, err = query.QueryOne(strQuery, &result, strId, data)
-	log.Println("task result", result)
 	return task, err
 }
 
@@ -164,11 +161,8 @@ func (obj *Social) RemoveTask(strId string, name string, tokenLink string, patte
 		return task, err
 	}
 	strQuery, _ := obj.useTemplate(SocialAddTask)
-	log.Println("task strId", strId)
-	log.Println("task strQuery |", strQuery, "|")
 
 	_, err = query.QueryOne(strQuery, &result, strId, data)
-	log.Println("task result", result)
 	return task, err
 }
 
@@ -264,7 +258,6 @@ func (obj Social) GetSocial(value types.UUID) (SocialData, error) {
 	var query database.IQuery
 	var err error
 	strquery, _ := obj.useTemplate(SocialGetSocial)
-	log.Println(constants.Version, "strquery ", strquery)
 	_, err = query.QueryOne(strquery, &scanner, value)
 	if err != nil {
 		return socialData, err

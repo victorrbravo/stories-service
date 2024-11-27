@@ -109,6 +109,14 @@
       "Getter": true,
       "Searchable": false,
       "Title": "MetaOrder"
+    },
+    {
+      "Name": "Tags",
+      "Type": "types.StringArray",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "Tags"
     }
   ]
 }

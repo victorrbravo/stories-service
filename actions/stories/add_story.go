@@ -160,7 +160,6 @@ func DoResetStepReport[T database.Scanner](order string, query *database.IQuery)
 	for name, _ := range wf.Tasks {
 		jsonPath := fmt.Sprintf("{tasks, %s,report}", name)
 		err = (*query).Exec(UpdateAttributeFlow, jsonPath, types.NewBool(true), intFkFlow)
-		log.Printf("task: |%s| inFkFlow:|%v| jsonPath: |%s|", name, intFkFlow, jsonPath)
 		if err != nil {
 			log.Printf("DB error task:%s sql: %s", name, UpdateAttributeFlow)
 		}
