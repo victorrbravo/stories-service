@@ -20,6 +20,7 @@ type TaTracking struct {
 	FkStorySub types.Int `yaml:"fk_story_sub"`
 	Position types.Coordinates `yaml:"position"`
 	MetaOrder types.String `yaml:"meta_order"`
+	Tags types.StringArray `yaml:"tags"`
 }
 
 func  InsertTaTracking(order string, query *database.IQuery) error {
@@ -40,6 +41,7 @@ func  InsertTaTracking(order string, query *database.IQuery) error {
             handler.FkStorySub,
             handler.Position,
             handler.MetaOrder,
+            handler.Tags,
     )
     if err != nil {
         return err
@@ -104,6 +106,7 @@ func  UpdateTaTracking(order string, query *database.IQuery) error {
             handler.FkStorySub,
             handler.Position,
             handler.MetaOrder,
+            handler.Tags,
     )
     if err != nil {
         return err

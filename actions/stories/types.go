@@ -93,6 +93,7 @@ type AddStoryStatus struct {
 	MediaDate types.String      `yaml:"media_date"`
 	Position  types.Coordinates `yaml:"position"`
 	metaOrder types.String      `yaml:"meta_order"`
+	Tags      types.StringArray `yaml:"tags"`
 }
 
 type StepTips struct {

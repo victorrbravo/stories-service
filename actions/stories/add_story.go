@@ -81,7 +81,7 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 	case "steps_schema":
 		value, err = DoGetStepsSchema(order, query)
 	case "new_story_flow":
-		err = NewStoryFlow(order, query)
+		_, err = NewStoryFlow(order, query)
 	case "new_step_sub": // add sub
 		err = NewStepSub(ctx, order, query)
 	case "new_step_tips": // add multiple tips
@@ -606,6 +606,7 @@ func NewStepSub(ctx context.Context, order string, query *database.IQuery) error
 			types.NilInt,
 			types.NilCoordinates,
 			types.NewString(order),
+			types.NewStringArray(stringArr),
 		)
 		if err != nil {
 			log.Println("error creating story", err)
@@ -916,11 +917,12 @@ func UnmarshallTicket(order []byte) (Ticket, error) {
 	return ticket, nil
 }
 
-func NewStoryFlow(order string, query *database.IQuery) error {
+func NewStoryFlow(order string, query *database.IQuery) (*models.TaStory, error) {
+	var taStory *models.TaStory
 	yamlOrder := utils.FormatYaml(order)
 	handler, err := UnmarshallTicket([]byte(yamlOrder))
 	if err != nil {
-		return err
+		return taStory, err
 	}
 	start := types.NewString(constants.Start)
 	images := types.NewStringArray([]string{})
@@ -930,16 +932,16 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 	log.Println("handler.UserID", handler.UserID)
 	if types.IsNil(handler.UserID) {
 		if types.IsNil(handler.Email) {
-			return fmt.Errorf("email is required")
+			return taStory, fmt.Errorf("email is required")
 		}
 		taUsers, err := models.GetTaUserByEmail(*query, handler.Email)
 		if err != nil {
-			return err
+			return taStory, err
 		}
 		log.Println("taUsers", taUsers)
 		if taUsers == nil || len(taUsers) == 0 {
 			log.Println("user not found")
-			return fmt.Errorf("user not found")
+			return taStory, fmt.Errorf("user not found")
 		}
 		log.Println("len(taUsers)", len(taUsers))
 		taUser := taUsers[0]
@@ -957,9 +959,9 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 		[]byte(DefaultStartWorkflow),
 	)
 	if err != nil {
-		return err
+		return taStory, err
 	}
-	taStory, err := models.CreateTaStory(*query,
+	taStory, err = models.CreateTaStory(*query,
 		handler.Name,
 		start,
 		handler.Summary,
@@ -971,7 +973,7 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 	)
 	log.Println("creating ta_story err", err)
 	if err != nil {
-		return err
+		return taStory, err
 	}
 	stringArr := []string{}
 	log.Println("creating ta_tracking")
@@ -989,8 +991,9 @@ func NewStoryFlow(order string, query *database.IQuery) error {
 		types.NilInt,
 		types.NilCoordinates,
 		types.NewString(order),
+		types.NewStringArray(stringArr),
 	)
-	return nil
+	return taStory, nil
 }
 
 func DoDeleteFlowStep[T database.Scanner](ctx context.Context, order string, query *database.IQuery) (string, error) {
@@ -1202,6 +1205,7 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 		types.NilInt,
 		types.NilCoordinates,
 		types.NewString(order),
+		types.NewStringArray([]string{}),
 	)
 
 	return nil
@@ -1250,6 +1254,7 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, er
 		types.NilInt,
 		status.Position,
 		status.metaOrder,
+		status.Tags,
 	)
 	if err != nil {
 		return value, err
