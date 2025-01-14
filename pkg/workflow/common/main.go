@@ -11,6 +11,7 @@ import (
 	"stories/pkg/utils"
 	"stories/types"
 	"strings"
+	"time"
 )
 
 const (
@@ -58,6 +59,14 @@ func (obj *Values) Assign(v types.Int) types.Int {
 		obj.Min = v
 	}
 	return v
+}
+
+type Wrapped struct {
+	Label    string        `json:"label"`
+	Amount   types.String  `json:"amount"`
+	Distance types.Float   `json:"distance"`
+	Time     time.Duration `json:"time"`
+	Comment  types.String  `json:"comment"`
 }
 
 type Data struct {
@@ -149,8 +158,9 @@ type Task struct {
 }
 
 type Transition struct {
-	Links   []Link `json:"links"`
-	Pattern string `json:"pattern"`
+	Links   []Link   `json:"links"`
+	Pattern string   `json:"pattern"`
+	Wrapped *Wrapped `json:"wrapped"`
 }
 
 type Link struct {

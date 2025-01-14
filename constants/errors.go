@@ -68,4 +68,5 @@ const (
 	InvalidMimeType                            = "invalid Mime Type"
 	YouAreNotAuthorizedToLogin                 = "you are not authorized to login"
 	YouAreNotAuthorizedToRegister              = "you are not authorized to register"
+	TimezoneBogota                             = "America/Bogota"
 )

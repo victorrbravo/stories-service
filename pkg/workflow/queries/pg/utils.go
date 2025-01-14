@@ -3,6 +3,7 @@ package pg
 import (
 	"fmt"
 	"regexp"
+	"stories/types"
 	"strconv"
 	"strings"
 	"time"
@@ -71,6 +72,34 @@ func FormatToMoney(amount float64) string {
 
 	// Prepend the dollar sign
 	return "$" + formatted
+}
+
+func CheckPeriodDates(date1 types.String, date2 types.String, timeZone string) bool {
+	loc, err := time.LoadLocation(timeZone)
+	if err != nil {
+		fmt.Errorf("invalid timezone: %v", err)
+		return false
+	}
+
+	firstTs, err := time.Parse(time.RFC3339, types.AsString(date1))
+	if err != nil {
+		return false
+	}
+	firstTs.In(loc)
+	secondTs, err := time.Parse(time.RFC3339, types.AsString(date2))
+	if err != nil {
+		return false
+	}
+	secondTs.In(loc)
+	midnight := time.Date(
+		firstTs.Year(),
+		firstTs.Month(),
+		firstTs.Day(),
+		23, 59, 59, int(time.Nanosecond-1), loc,
+	)
+
+	// Check if the secondDate is after midnight
+	return secondTs.After(midnight)
 }
 
 func ParseDollarAmount(input string) (float64, error) {

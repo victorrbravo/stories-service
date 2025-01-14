@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"stories/constants"
 	db "stories/database"
 	"stories/generated/models"
 	"stories/pkg/workflow/common"
@@ -189,13 +190,17 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 	ctx := context.Background()
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		amountSum := 0.0
+		amountSumParcial := 0.0
 		n := 0
 		statuses, err := wf.Statuses(ctx, false)
 		if err != nil {
 			return wf, err
 		}
+		var previousTask *common.Task
+		var current *common.Task
+
 		for _, name := range statuses {
-			current := wf.Tasks[name]
+			current = wf.Tasks[name]
 			newSQL, err := buildSQL(wf, name, SelectRoleToken)
 			if err != nil {
 				log.Println("RoleField Error Role err", err)
@@ -212,12 +217,7 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			}
 			current.Data.InfoField = role.First
 			current.Data.TimeField = role.Second
-			amountField, err := ParseDollarAmount(role.Third.String())
-			if err == nil {
-				amountSum = amountSum + amountField
-			} else {
-				fmt.Println("_error role.Third.String()", role.Third.String(), "amountField", amountField, "err", err)
-			}
+
 			current.Data.AmountField = role.Third
 			current.Data.Summary = role.Four
 			current.Data.ID = role.ID
@@ -227,7 +227,30 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			current.Data.SubIdField = role.Eight
 			current.Data.Position = role.Ninth
 			current.Data.Description = role.Tenth
+			if previousTask != nil && CheckPeriodDates(previousTask.Data.TimeField, current.Data.TimeField, constants.TimezoneBogota) {
+				firstDate, _ := time.Parse(time.RFC3339, types.AsString(previousTask.Data.TimeField))
+				wrapped := new(common.Wrapped)
+				wrapped.Label = firstDate.Format("Jan 02")
+				wrapped.Amount = types.NewString(FormatToMoney(amountSumParcial))
+				previousTask.Transition.Wrapped = wrapped
+				amountSumParcial = 0.0
+			}
+			amountField, err := ParseDollarAmount(role.Third.String())
+			if err == nil {
+				amountSum = amountSum + amountField
+				amountSumParcial = amountSumParcial + amountField
+			} else {
+				fmt.Println("_error role.Third.String()", role.Third.String(), "amountField", amountField, "err", err)
+			}
 			n++
+			previousTask = current
+		}
+		if previousTask != nil {
+			firstDate, _ := time.Parse(time.RFC3339, types.AsString(previousTask.Data.TimeField))
+			wrapped := new(common.Wrapped)
+			wrapped.Label = firstDate.Format("Jan 02")
+			wrapped.Amount = types.NewString(FormatToMoney(amountSumParcial))
+			previousTask.Transition.Wrapped = wrapped
 		}
 		wf.Data.AmountField = types.NewString(FormatToMoney(amountSum))
 		return wf, nil
