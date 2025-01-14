@@ -1,6 +1,7 @@
 init-scripts
-.idea
+.idea/
 .DS_Store
 images
 images/
 us.png
+go.sum
