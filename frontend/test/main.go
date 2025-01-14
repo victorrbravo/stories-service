@@ -5,7 +5,7 @@ import (
 )
 
 func DoubleRedText(content string, secondContent string) f.ComponentInterface {
-	return f.View(
+	return f.Div(
 		f.P(content, f.PProperties{
 			Color: f.Red,
 		}),
@@ -22,7 +22,7 @@ func BrownButton(content string) f.ComponentInterface {
 }
 
 func DoubleBlueButtonsWithEqualText(content string) f.ComponentInterface {
-	return f.View(
+	return f.Div(
 		f.Button(content, f.ButtonProperties{
 			Color: f.Blue,
 		}),
@@ -32,10 +32,23 @@ func DoubleBlueButtonsWithEqualText(content string) f.ComponentInterface {
 	)
 }
 
-func ReturnView() *f.ViewStruct {
-	return f.View(
+func ReturnView() *f.DivStruct {
+	return f.Div(
 		f.H1("Título de la página", f.H1Properties{
 			Color: f.Red,
+		}),
+		f.H2("Subtítulo de la página", f.H2Properties{
+			Color: f.Black,
+		}),
+		f.H3("Ejemplo de H3", f.H3Properties{
+			Color: f.Brown,
+		}),
+		f.H4("Ejemplo de H4", f.H4Properties{
+			Color: f.Blue,
+		}),
+		f.H5("H5 sin color predefinido", f.H5Properties{}),
+		f.H6("H6 Marrón", f.H6Properties{
+			Color: f.Brown,
 		}),
 		f.P("Hello World!", f.PProperties{
 			Color: f.Blue,

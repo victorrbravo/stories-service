@@ -11,30 +11,41 @@ import (
 type PageObject struct {
 	PageName     string
 	PageLanguage string
-	Components   ViewStruct
+	Components   DivStruct
 }
 
 var ZeusColorsToHTMLColors = map[uint8]string{
+	0:     "#000000",
 	Red:   "#ff0000",
 	Blue:  "#0000ff",
 	Brown: "#804000",
-	Dark:  "#000000",
+	Black: "#000000",
 }
 
 var HTMLCode string
 
-func GenerateHTMLComponent(components ViewStruct) string {
+func GenerateHTMLComponent(components DivStruct) string {
 	var texts []string
 	for i := range components.Components {
 		switch component := components.Components[i].(type) {
 		case *H1Struct:
 			texts = append(texts, fmt.Sprintf("<h1 style=\"color: %s\">%s</h1>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
+		case *H2Struct:
+			texts = append(texts, fmt.Sprintf("<h2 style=\"color: %s\">%s</h2>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
+		case *H3Struct:
+			texts = append(texts, fmt.Sprintf("<h3 style=\"color: %s\">%s</h3>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
+		case *H4Struct:
+			texts = append(texts, fmt.Sprintf("<h4 style=\"color: %s\">%s</h4>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
+		case *H5Struct:
+			texts = append(texts, fmt.Sprintf("<h5 style=\"color: %s\">%s</h5>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
+		case *H6Struct:
+			texts = append(texts, fmt.Sprintf("<h6 style=\"color: %s\">%s</h6>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
 		case *PStruct:
 			texts = append(texts, fmt.Sprintf("<p style=\"color: %s\">%s</p>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
 		case *ButtonStruct:
 			texts = append(texts, fmt.Sprintf("<button style=\"background-color:%s\">%s</button>", ZeusColorsToHTMLColors[component.Properties.Color], component.Text))
-		case *ViewStruct:
-			texts = append(texts, fmt.Sprintf("<article>\n%s\n</article>", GenerateHTMLComponent(*component)))
+		case *DivStruct:
+			texts = append(texts, fmt.Sprintf("<div>\n%s\n</div>", GenerateHTMLComponent(*component)))
 		default:
 		}
 	}
