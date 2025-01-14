@@ -27,7 +27,9 @@ func GenerateHTMLComponent(components ViewStruct) string {
 	var texts []string
 	for i := range components.Components {
 		switch component := components.Components[i].(type) {
-		case *TextStruct:
+		case *H1Struct:
+			texts = append(texts, fmt.Sprintf("<h1 style=\"color: %s\">%s</h1>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
+		case *PStruct:
 			texts = append(texts, fmt.Sprintf("<p style=\"color: %s\">%s</p>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
 		case *ButtonStruct:
 			texts = append(texts, fmt.Sprintf("<button style=\"background-color:%s\">%s</button>", ZeusColorsToHTMLColors[component.Properties.Color], component.Text))

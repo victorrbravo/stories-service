@@ -6,10 +6,10 @@ import (
 
 func DoubleRedText(content string, secondContent string) f.ComponentInterface {
 	return f.View(
-		f.Text(content, f.TextProperties{
+		f.P(content, f.PProperties{
 			Color: f.Red,
 		}),
-		f.Text(secondContent, f.TextProperties{
+		f.P(secondContent, f.PProperties{
 			Color: f.Red,
 		}),
 	)
@@ -34,7 +34,10 @@ func DoubleBlueButtonsWithEqualText(content string) f.ComponentInterface {
 
 func ReturnView() *f.ViewStruct {
 	return f.View(
-		f.Text("Hello World!", f.TextProperties{
+		f.H1("Título de la página", f.H1Properties{
+			Color: f.Red,
+		}),
+		f.P("Hello World!", f.PProperties{
 			Color: f.Blue,
 		}),
 		DoubleRedText("Hola Mundo!", "こんいちわ！"),
@@ -45,20 +48,6 @@ func ReturnView() *f.ViewStruct {
 		DoubleBlueButtonsWithEqualText("Somos dos botones azules"),
 	)
 }
-
-// func RecordComponents(components f.ViewStruct) {
-// 	for i := range components.Components {
-// 		switch component := components.Components[i].(type) {
-// 		case *f.TextStruct:
-// 			fmt.Println(component.Content, component.Properties.Color, component.Type())
-// 		case *f.ButtonStruct:
-// 			component.Properties.OnPress()
-// 			fmt.Println(component.Text, component.Properties.Color, component.Type())
-// 		case *f.ViewStruct:
-// 			RecordComponents(*component)
-// 		}
-// 	}
-// }
 
 func main() {
 	view := ReturnView()

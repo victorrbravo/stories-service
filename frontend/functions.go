@@ -12,32 +12,51 @@ const (
 )
 
 const (
-	TypeText uint8 = iota + 1
+	TypeP uint8 = iota + 1
 	TypeView
 	TypeButton
+	TypeH1
 )
 
-type TextProperties struct {
+type PProperties struct {
 	Color uint8
 }
 
-type TextStruct struct {
+type PStruct struct {
 	Content    string
-	Properties TextProperties
+	Properties PProperties
 }
 
-func Text(content string, properties TextProperties) *TextStruct {
-	return &TextStruct{
+func P(content string, properties PProperties) *PStruct {
+	return &PStruct{
 		Content:    content,
 		Properties: properties,
 	}
 }
 
-func (t *TextStruct) Type() uint8 {
-	return TypeText
+func (t *PStruct) Type() uint8 {
+	return TypeP
 }
 
-type ButtonProperties TextProperties
+type H1Properties PProperties
+
+type H1Struct struct {
+	Content    string
+	Properties H1Properties
+}
+
+func H1(content string, properties H1Properties) *H1Struct {
+	return &H1Struct{
+		Content:    content,
+		Properties: properties,
+	}
+}
+
+func (h *H1Struct) Type() uint8 {
+	return TypeH1
+}
+
+type ButtonProperties PProperties
 
 type ButtonStruct struct {
 	Text       string
