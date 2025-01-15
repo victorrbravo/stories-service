@@ -25,6 +25,7 @@ const (
 
 type PProperties struct {
 	Color uint8
+	Class string
 }
 
 type PStruct struct {

@@ -39,6 +39,7 @@ func ReturnView() *f.DivStruct {
 		}),
 		f.H2("Subtítulo de la página", f.H2Properties{
 			Color: f.Black,
+			Class: "mi h2cito",
 		}),
 		f.H3("Ejemplo de H3", f.H3Properties{
 			Color: f.Brown,
