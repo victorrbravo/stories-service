@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"text/template"
 )
@@ -24,26 +25,58 @@ var ZeusColorsToHTMLColors = map[uint8]string{
 
 var HTMLCode string
 
+func GenerateHTMLComponentProperties[T any](component T) (propertiesString string) {
+	propertiesString = ""
+	htmlComponentValueOfStruct := reflect.ValueOf(component)
+	if htmlComponentValueOfStruct.Kind() != reflect.Struct {
+		return
+	}
+
+	propertiesField := htmlComponentValueOfStruct.FieldByName("Properties")
+	if !propertiesField.IsValid() || propertiesField.Kind() != reflect.Struct {
+		return
+	}
+
+	colorField := propertiesField.FieldByName("Color")
+	if colorField.IsValid() && colorField.Kind() == reflect.Uint8 {
+		if color, ok := colorField.Interface().(uint8); ok {
+			if htmlColor, exists := ZeusColorsToHTMLColors[color]; exists {
+				propertiesString += fmt.Sprintf(`style="color:%s" `, htmlColor)
+			}
+		}
+	}
+
+	classField := propertiesField.FieldByName("Class")
+	if classField.IsValid() && classField.Kind() == reflect.String {
+		if className, ok := classField.Interface().(string); ok {
+			propertiesString += fmt.Sprintf(`class="%s" `, className)
+		}
+	}
+	propertiesString = strings.TrimSpace(propertiesString)
+
+	return
+}
+
 func GenerateHTMLComponent(components DivStruct) string {
 	var texts []string
 	for i := range components.Components {
 		switch component := components.Components[i].(type) {
 		case *H1Struct:
-			texts = append(texts, fmt.Sprintf("<h1 style=\"color: %s\">%s</h1>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
+			texts = append(texts, fmt.Sprintf("<h1 %s>%s</h1>", GenerateHTMLComponentProperties(*component), component.Content))
 		case *H2Struct:
-			texts = append(texts, fmt.Sprintf("<h2 style=\"color: %s\">%s</h2>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
+			texts = append(texts, fmt.Sprintf("<h2 %s>%s</h2>", GenerateHTMLComponentProperties(*component), component.Content))
 		case *H3Struct:
-			texts = append(texts, fmt.Sprintf("<h3 style=\"color: %s\">%s</h3>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
+			texts = append(texts, fmt.Sprintf("<h3 %s>%s</h3>", GenerateHTMLComponentProperties(*component), component.Content))
 		case *H4Struct:
-			texts = append(texts, fmt.Sprintf("<h4 style=\"color: %s\">%s</h4>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
+			texts = append(texts, fmt.Sprintf("<h4 %s>%s</h4>", GenerateHTMLComponentProperties(*component), component.Content))
 		case *H5Struct:
-			texts = append(texts, fmt.Sprintf("<h5 style=\"color: %s\">%s</h5>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
+			texts = append(texts, fmt.Sprintf("<h5 %s>%s</h5>", GenerateHTMLComponentProperties(*component), component.Content))
 		case *H6Struct:
-			texts = append(texts, fmt.Sprintf("<h6 style=\"color: %s\">%s</h6>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
+			texts = append(texts, fmt.Sprintf("<h6 %s>%s</h6>", GenerateHTMLComponentProperties(*component), component.Content))
 		case *PStruct:
-			texts = append(texts, fmt.Sprintf("<p style=\"color: %s\">%s</p>", ZeusColorsToHTMLColors[component.Properties.Color], component.Content))
+			texts = append(texts, fmt.Sprintf("<p %s>%s</p>", GenerateHTMLComponentProperties(*component), component.Content))
 		case *ButtonStruct:
-			texts = append(texts, fmt.Sprintf("<button style=\"background-color:%s\">%s</button>", ZeusColorsToHTMLColors[component.Properties.Color], component.Text))
+			texts = append(texts, fmt.Sprintf("<button %s>%s</button>", GenerateHTMLComponentProperties(*component), component.Text))
 		case *DivStruct:
 			texts = append(texts, fmt.Sprintf("<div>\n%s\n</div>", GenerateHTMLComponent(*component)))
 		default:
