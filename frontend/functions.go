@@ -26,6 +26,7 @@ const (
 type PProperties struct {
 	Color uint8
 	Class string
+	ID    string
 }
 
 type PStruct struct {
@@ -142,7 +143,12 @@ func H6(content string, properties H6Properties) *H6Struct {
 
 func (h *H6Struct) Type() uint8 { return TypeH6 }
 
-type ButtonProperties PProperties
+type ButtonProperties struct {
+	Color           uint8
+	Class           string
+	ID              string
+	BackgroundColor uint8
+}
 
 type ButtonStruct struct {
 	Text       string

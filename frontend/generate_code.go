@@ -16,7 +16,6 @@ type PageObject struct {
 }
 
 var ZeusColorsToHTMLColors = map[uint8]string{
-	0:     "#000000",
 	Red:   "#ff0000",
 	Blue:  "#0000ff",
 	Brown: "#804000",
@@ -24,6 +23,34 @@ var ZeusColorsToHTMLColors = map[uint8]string{
 }
 
 var HTMLCode string
+
+func GenerateHTMLStyle(properties reflect.Value) (styleCode string) {
+	styleCode = `style="`
+	colorField := properties.FieldByName("Color")
+	if colorField.IsValid() && colorField.Kind() == reflect.Uint8 {
+		if color, ok := colorField.Interface().(uint8); ok && color != 0 {
+			if htmlColor, exists := ZeusColorsToHTMLColors[color]; exists {
+				styleCode += fmt.Sprintf(`color:%s; `, htmlColor)
+			}
+		}
+	}
+
+	backgroundColorField := properties.FieldByName("BackgroundColor")
+	if backgroundColorField.IsValid() && backgroundColorField.Kind() == reflect.Uint8 {
+		if backgroundColor, ok := backgroundColorField.Interface().(uint8); ok && backgroundColor != 0 {
+			if htmlBackgroundColor, exists := ZeusColorsToHTMLColors[backgroundColor]; exists {
+				styleCode += fmt.Sprintf(`background-color:%s; `, htmlBackgroundColor)
+			}
+		}
+	}
+	styleCode = strings.TrimSpace(styleCode)
+	if styleCode == `style="` {
+		styleCode = ""
+		return
+	}
+	styleCode += `"`
+	return
+}
 
 func GenerateHTMLComponentProperties[T any](component T) (propertiesString string) {
 	propertiesString = ""
@@ -37,23 +64,22 @@ func GenerateHTMLComponentProperties[T any](component T) (propertiesString strin
 		return
 	}
 
-	colorField := propertiesField.FieldByName("Color")
-	if colorField.IsValid() && colorField.Kind() == reflect.Uint8 {
-		if color, ok := colorField.Interface().(uint8); ok {
-			if htmlColor, exists := ZeusColorsToHTMLColors[color]; exists {
-				propertiesString += fmt.Sprintf(`style="color:%s" `, htmlColor)
-			}
-		}
-	}
-
+	propertiesString += GenerateHTMLStyle(propertiesField)
 	classField := propertiesField.FieldByName("Class")
 	if classField.IsValid() && classField.Kind() == reflect.String {
-		if className, ok := classField.Interface().(string); ok {
+		if className, ok := classField.Interface().(string); ok && strings.TrimSpace(className) != "" {
 			propertiesString += fmt.Sprintf(`class="%s" `, className)
 		}
 	}
-	propertiesString = strings.TrimSpace(propertiesString)
 
+	idField := propertiesField.FieldByName("ID")
+	if idField.IsValid() && idField.Kind() == reflect.String {
+		if idName, ok := idField.Interface().(string); ok && strings.TrimSpace(idName) != "" {
+			propertiesString += fmt.Sprintf(`id="%s" `, idName)
+		}
+	}
+
+	propertiesString = strings.TrimSpace(propertiesString)
 	return
 }
 

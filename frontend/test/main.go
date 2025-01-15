@@ -53,10 +53,12 @@ func ReturnView() *f.DivStruct {
 		}),
 		f.P("Hello World!", f.PProperties{
 			Color: f.Blue,
+			ID:    "paragraph",
 		}),
 		DoubleRedText("Hola Mundo!", "こんいちわ！"),
 		f.Button("Presiona aquí", f.ButtonProperties{
-			Color: f.Red,
+			Color:           f.Black,
+			BackgroundColor: f.Red,
 		}),
 		BrownButton("Presiona aquí de nuevo"),
 		DoubleBlueButtonsWithEqualText("Somos dos botones azules"),
