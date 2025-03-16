@@ -55,6 +55,7 @@ type ChangeStepField struct {
 	Amount    types.String      `yaml:"amount_spent"`
 	UpdatedAt types.String      `yaml:"updated_at"`
 	Position  types.Coordinates `yaml:"position"`
+	Tags      types.StringArray `yaml:"tags"`
 }
 
 type MoveTaskInFlow struct {

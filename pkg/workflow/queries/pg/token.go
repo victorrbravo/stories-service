@@ -59,7 +59,7 @@ FROM cte {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{
 `
 
 	SelectRoleToken = `
-SELECT {{.InfoField}},{{.TrackingTable}}.{{.TimeField}},{{.AmountField}}, {{.TrackingTable}}.{{.SummaryField}}, {{.PkTracking}}, {{.VideosField}}, {{.ImagesField}}, {{.TipsIdField}}, {{.SubIdField}}, ST_AsBinary({{.Position}}), {{.Description}}  FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
+SELECT {{.InfoField}},{{.TrackingTable}}.{{.TimeField}},{{.AmountField}}, {{.TrackingTable}}.{{.SummaryField}}, {{.PkTracking}}, {{.VideosField}}, {{.ImagesField}}, {{.TipsIdField}}, {{.SubIdField}}, ST_AsBinary({{.Position}}), {{.Description}},{{.TrackingTable}}."tags"  FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
 {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}}
 `
 	SelectArrayToken = `
@@ -76,12 +76,17 @@ SELECT {{.TrackingTable}}.{{.TimeField}} FROM {{.TrackingTable}}  JOIN  {{.Table
 SELECT {{.Fields}} FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
 {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}}
 `
+	SelectFilterForReportToken = `
+SELECT ta_tracking.pk_tracking FROM ta_tracking  
+    JOIN  ta_story ON ta_tracking.fk_story=ta_story.pk_story 
+                               WHERE EXISTS ( SELECT 1 FROM UNNEST(tags) AS item 
+                            WHERE similarity(item, $2) > 0.3) AND ta_story.fk_flow=$1
+`
 )
 
 func getLinkFields[T db.Scanner](ctx context.Context, wf *common.Workflow[T]) (string, string) {
 	return wf.ExtractKeys()
 }
-
 func DistanceField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var distance scanners.Float
 	newQuery := wf.Query
@@ -184,8 +189,37 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 	return nil
 }
 
+func FilterField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
+	var number scanners.Int
+
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
+		log.Println("Executing FilterField...start")
+		wfId := wf.CurrentIDInt
+		newQuery := wf.Query
+		if wf.Filter.Sentence == "" {
+			log.Println("FilterField Sentence empty filter empty")
+			wf.Filter.IncludedWrapped = []int{}
+			return wf, nil
+		}
+		rows, err := (*newQuery).QueryMany(SelectFilterForReportToken, &number, wfId, wf.Filter.Sentence)
+		if err != nil {
+			if !errors.Is(err, sql.ErrNoRows) {
+				log.Println("FilterField Error Count SQL err", err)
+				return wf, err
+			}
+		}
+		log.Println("FilterField rows rows", rows)
+		for _, row := range rows {
+			valueInt := types.AsInt(row.(types.Int))
+			wf.Filter.IncludedWrapped = append(wf.Filter.IncludedWrapped, valueInt)
+		}
+		log.Println("FilterField rows IncludedWrapped", wf.Filter.IncludedWrapped)
+		return wf, nil
+	}
+}
+
 func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
-	var role scanners.TupleTen
+	var role scanners.TupleEleven
 	newQuery := wf.Query
 	ctx := context.Background()
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
@@ -198,7 +232,11 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		}
 		var previousTask *common.Task
 		var current *common.Task
-
+		loc, err := time.LoadLocation(constants.TimezoneBogota)
+		if err != nil {
+			fmt.Errorf("invalid timezone: %v", err)
+			return wf, nil
+		}
 		for _, name := range statuses {
 			current = wf.Tasks[name]
 			newSQL, err := buildSQL(wf, name, SelectRoleToken)
@@ -227,8 +265,10 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			current.Data.SubIdField = role.Eight
 			current.Data.Position = role.Ninth
 			current.Data.Description = role.Tenth
+			current.Data.Tags = role.Eleventh
 			if previousTask != nil && CheckPeriodDates(previousTask.Data.TimeField, current.Data.TimeField, constants.TimezoneBogota) {
 				firstDate, _ := time.Parse(time.RFC3339, types.AsString(previousTask.Data.TimeField))
+				firstDate = firstDate.In(loc)
 				wrapped := new(common.Wrapped)
 				wrapped.Label = firstDate.Format("Jan 02")
 				wrapped.Amount = types.NewString(FormatToMoney(amountSumParcial))
@@ -247,6 +287,7 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		}
 		if previousTask != nil {
 			firstDate, _ := time.Parse(time.RFC3339, types.AsString(previousTask.Data.TimeField))
+			firstDate = firstDate.In(loc)
 			wrapped := new(common.Wrapped)
 			wrapped.Label = firstDate.Format("Jan 02")
 			wrapped.Amount = types.NewString(FormatToMoney(amountSumParcial))

@@ -40,6 +40,57 @@ func TestNextStatus(t *testing.T) {
 
 }
 
+const DB_HOST = "104.251.218.55"
+const DB_NAME = "stories"
+const DB_PASS = "3MncMarinoned9140**1020__"
+const DB_USER = "stories"
+
+func TestIncludedWrapped(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
+	}
+	query, err := workflow.GetPgQuery(config)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	q := query.NewQuery()
+	wf, err := stories.GetWorkflow[models.TaTracking](175, &q)
+	monad := pg.New(wf, &q)
+	monad = pg.Bind(monad, pg.RoleField[models.TaTracking])
+	_, err = monad(nil)
+	statuses, _ := wf.Statuses(ctx, false)
+	fmt.Println("statuses ", statuses)
+}
+
+// Filter Function
+func TestFilterIncludedWrapped(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
+	}
+	query, err := workflow.GetPgQuery(config)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	q := query.NewQuery()
+	wf, err := stories.GetWorkflow[models.TaTracking](175, &q)
+	wf.Filter.Sentence = "restaurant"
+	monad := pg.New(wf, &q)
+	monad = pg.Bind(monad, pg.RoleField[models.TaTracking])
+	monad = pg.Bind(monad, pg.FilterField[models.TaTracking])
+
+	_, err = monad(nil)
+	statuses, _ := wf.Statuses(ctx, false)
+	fmt.Println("statuses ", statuses)
+}
+
 // Test Read method
 func TestGenerateStats(t *testing.T) {
 	var err error
@@ -53,7 +104,7 @@ func TestGenerateStats(t *testing.T) {
 		return
 	}
 	q := query.NewQuery()
-	wf, err := stories.GetWorkflow[models.TaTracking](1, &q)
+	wf, err := stories.GetWorkflow[models.TaTracking](174, &q)
 	if err != nil {
 		t.Error(err)
 		return

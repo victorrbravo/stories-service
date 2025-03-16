@@ -85,12 +85,12 @@ func CheckPeriodDates(date1 types.String, date2 types.String, timeZone string) b
 	if err != nil {
 		return false
 	}
-	firstTs.In(loc)
+	firstTs = firstTs.In(loc)
 	secondTs, err := time.Parse(time.RFC3339, types.AsString(date2))
 	if err != nil {
 		return false
 	}
-	secondTs.In(loc)
+	secondTs = secondTs.In(loc)
 	midnight := time.Date(
 		firstTs.Year(),
 		firstTs.Month(),

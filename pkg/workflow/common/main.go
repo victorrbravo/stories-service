@@ -95,6 +95,7 @@ type Data struct {
 	Position     types.Coordinates `json:"position"`
 	Description  types.String      `json:"description"`
 	DistanceDiff types.Float       `json:"distance_diff"`
+	Tags         types.StringArray `json:"tags"`
 }
 
 type JobWorkflow[T db.Scanner] struct {
@@ -133,7 +134,14 @@ type Workflow[T db.Scanner] struct {
 	ValueScanner      T                `json:"omitempty"`
 	statuses          []string         `json:"omitempty"`
 	JsonResponse      string           `json:"json_response"`
+	Filter            WfFilter         `json:"filter,omitempty"`
 	excludeReported   bool
+}
+
+type WfFilter struct {
+	ExcludedWrapped []string `json:"excluded_wrapped"`
+	IncludedWrapped []int    `json:"included_wrapped"`
+	Sentence        string   `json:"sentence"`
 }
 
 type Variable struct {
@@ -327,6 +335,7 @@ func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool) ([]st
 			return list, fmt.Errorf("Incorrect value for task name %s", current)
 		}
 		current, err = wf.findNextTask(task)
+		log.Println("filterField findNextTask current", current, " err", err)
 		if err != nil {
 			return list, err
 		}
@@ -351,6 +360,22 @@ func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool) ([]st
 
 }
 
+func containsIncluded[T db.Scanner](n int, wf *Workflow[T]) bool {
+	if len(wf.Filter.IncludedWrapped) == 0 || wf.Filter.Sentence == "" {
+		return true
+	}
+	log.Println("containsIncluded wf.Filter.IncludedWrapped:", wf.Filter.IncludedWrapped)
+	log.Println("containsIncluded: n", n)
+	for _, num := range wf.Filter.IncludedWrapped {
+		if num == n {
+			log.Println("containsIncluded...true n:", n, "wf.Filter.IncludedWrapped", wf.Filter.IncludedWrapped)
+			return true
+		}
+	}
+	log.Println("containsIncluded...false n:", n, "wf.Filter.IncludedWrapped", wf.Filter.IncludedWrapped)
+	return false
+}
+
 func (wf *Workflow[T]) findNextTask(task *Task) (string, error) {
 	nextName := ""
 	var next *Task
@@ -369,7 +394,9 @@ func (wf *Workflow[T]) findNextTask(task *Task) (string, error) {
 
 			return "", fmt.Errorf("findNextTask Incorrect value for task name %s", nextName)
 		}
-		if wf.excludeReported == false && types.AsBool(next.Report) == false {
+		idCurrent := types.AsInt(next.Data.ID)
+		log.Println("findNextTask name", nextName, "idCurrent", idCurrent)
+		if wf.excludeReported == false && (types.AsBool(next.Report) == false || !containsIncluded(idCurrent, wf)) {
 			continue
 		}
 		break

@@ -332,7 +332,8 @@ func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, e
 	}
 	getFlow.PkFlow = types.AsInt(taStory.FkFlow)
 	log.Println("DoShowWorkflowData getFlow pkFlow", getFlow.PkFlow)
-	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{}, pg.TimeField[T], pg.RoleField[T], pg.DistanceField[T],
+	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{}, pg.TimeField[T], pg.RoleField[T],
+		pg.DistanceField[T],
 		pg.CountToken[T], pg.ArrayField[T])
 	if err != nil {
 		return value, err
@@ -543,6 +544,7 @@ func GetWorkflow[T db.Scanner](pkFlow int, query *db.IQuery) (*common.Workflow[T
 	for _, task := range wf.Tasks {
 		utils.SetDefaults[common.Task](task)
 	}
+	wf.CurrentIDInt = types.NewInt(pkFlow)
 	return wf, nil
 }
 

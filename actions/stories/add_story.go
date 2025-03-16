@@ -123,6 +123,8 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 		value, err = DoMoveTaskInFlow[models.TaTracking](order, query)
 	case "change_step_report":
 		value, err = DoChangeReport[models.TaTracking](order, query)
+	case "filter_by_sentence":
+		value, err = DoFilterBySentence[models.TaTracking](order, query)
 	case "reset_step_report":
 		value, err = DoResetStepReport[models.TaTracking](order, query)
 	}
@@ -133,6 +135,12 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 	return value, nil
 }
 
+func DoFilterBySentence[T database.Scanner](order string, query *database.IQuery) (string, error) {
+	value := ""
+
+	return value, nil
+
+}
 func DoResetStepReport[T database.Scanner](order string, query *database.IQuery) (string, error) {
 	var value string
 	handler, err := Unmarshall[UpdateAttrInFlow]([]byte(order))
@@ -202,6 +210,33 @@ func DoChangeReport[T database.Scanner](order string, query *database.IQuery) (s
 	return value, nil
 }
 
+func DoAddExcludeWrapped[T database.Scanner](order string, query *database.IQuery) (string, error) {
+	var value string
+	handler, err := Unmarshall[UpdateAttrInFlow]([]byte(order))
+	if err != nil {
+		return value, err
+	}
+	var intFkFlow int
+	if !types.IsNil(handler.PkFlow) {
+		intFkFlow = types.AsInt(handler.PkFlow)
+	} else {
+		if types.IsNil(handler.PkStory) {
+			return value, errors.New("story id not found")
+		}
+		taStory, err := models.GetTaStoryByPkStory(*query, handler.PkStory)
+		if err != nil {
+			return value, err
+		}
+		intFkFlow = types.AsInt(taStory.FkFlow)
+	}
+	jsonPath := fmt.Sprintf("{filter,excluded_wrapped,%s}", handler.Name)
+	err = (*query).Exec(UpdateAttributeFlow, jsonPath, handler.Name, intFkFlow)
+	if err != nil {
+		return value, err
+	}
+	return value, nil
+}
+
 func DoChangeStepField(order string, query *database.IQuery) (string, error) {
 	var value string
 	handler, err := Unmarshall[ChangeStepField]([]byte(order))
@@ -218,7 +253,7 @@ func DoChangeStepField(order string, query *database.IQuery) (string, error) {
 			return "position", handler.Position
 		})
 		if err != nil {
-			log.Println("error updating position for this step", err)
+			log.Println("position error updating position for this step", err)
 			return value, err
 		}
 	}
@@ -227,7 +262,16 @@ func DoChangeStepField(order string, query *database.IQuery) (string, error) {
 			return "amountSpent", handler.Amount
 		})
 		if err != nil {
-			log.Println("error updating step", err)
+			log.Println("amount error updating step", err)
+			return value, err
+		}
+	}
+	if !types.IsNil(handler.Tags) {
+		err = taTracking.UpdateByOne(*query, func() (string, any) {
+			return "tags", handler.Tags
+		})
+		if err != nil {
+			log.Println("tags error updating step", err)
 			return value, err
 		}
 	}
@@ -240,7 +284,7 @@ func DoChangeStepField(order string, query *database.IQuery) (string, error) {
 			return "updatedAt", dt
 		})
 		if err != nil {
-			log.Println("error updating step", err)
+			log.Println("updated_at error updating step", err)
 			return value, err
 		}
 		value = fmt.Sprintf(`{"update_at": "%s"}`, dt.String())
