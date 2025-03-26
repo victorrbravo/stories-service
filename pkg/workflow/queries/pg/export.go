@@ -26,7 +26,7 @@ func GenerateGraphDefinition[T db.Scanner](wf *common.Workflow[T]) (string, erro
 	var str string
 	var styles string
 	ctx := context.Background()
-	statuses, err := wf.Statuses(ctx, false)
+	statuses, err := wf.Statuses(ctx, false, true)
 	dataForTasks := ""
 
 	if err != nil {

@@ -92,7 +92,9 @@ func TimeStats[T db.Scanner](wf *common.Workflow[T], names ...interface{}) Monad
 
 		newQuery := wf.Query
 		for name, current := range wf.Tasks {
-			if !types.IsNil(current.Report) && current.Report.ToBool() == false {
+			idCurrent := types.AsInt(current.Data.ID)
+			if !types.IsNil(current.Report) && current.Report.ToBool() == false ||
+				!common.ContainsIncluded(idCurrent, wf) {
 				continue
 			}
 			nextTask := wf.NextTask(name)
@@ -133,7 +135,9 @@ func RoleStats[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 	newQuery := wf.Query
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
-			if !types.IsNil(current.Report) && current.Report.ToBool() == false {
+			idCurrent := types.AsInt(current.Data.ID)
+			if !types.IsNil(current.Report) && current.Report.ToBool() == false ||
+				!common.ContainsIncluded[T](idCurrent, wf) {
 				continue
 			}
 			newSQL, err := buildSQL(wf, name, STATS_ROLEFIELD)
@@ -180,7 +184,8 @@ func Count[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Mona
 			}
 			countInt := countValue.(types.Int)
 			current.Data.Count = countInt
-			if types.IsNil(current.Report) || current.Report.ToBool() == true {
+			idCurrent := types.AsInt(current.Data.ID)
+			if types.IsNil(current.Report) || current.Report.ToBool() == true && common.ContainsIncluded(idCurrent, wf) {
 				wf.Data.Total = types.NewInt(types.AsInt(wf.Data.Total) + types.AsInt(count.Value))
 			}
 			wf.Data.Stats.Assign(count.Value)
@@ -270,12 +275,12 @@ func buildSQL[T db.Scanner](wf *common.Workflow[T], name string, sqlString strin
 	ctx := context.Background()
 	tmpl, err := template.New("timeSQL").Parse(sqlString)
 	linkStory, linkStatus := wf.ExtractKeys()
-	list, err := wf.Statuses(ctx, true)
+	list, err := wf.Statuses(ctx, true, true)
 	if err != nil {
 		return "", err
 	}
 	statuses := strings.Join(list, ",")
-	queryValue, err := ReducesFilter(*wf, name)
+	queryValue, err := ReducesFilter(wf, name)
 	if err != nil {
 		return queryValue, err
 	}

@@ -99,7 +99,7 @@ func (wft *WorkflowType[T]) UnmarshalYAML(unmarshal func(interface{}) error) err
 			return err
 		}
 	}
-	statuses, err := wft.wf.Statuses(ctx, false)
+	statuses, err := wft.wf.Statuses(ctx, false, true)
 	if err != nil {
 		return err
 	}

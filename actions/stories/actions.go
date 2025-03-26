@@ -217,7 +217,7 @@ type ShowFlowInput struct {
 	Ticket         types.Int                       `yaml:"ticket"`
 	ShowEmptyTasks bool                            `yaml:"show_empty_tasks" default:"false"`
 	Task           WorkflowType[models.TaTracking] `yaml:"task,omitempty"`
-	Filter         types.String                    `yaml:"filter,omitempty"`
+	Filter         string                          `yaml:"filter,omitempty"`
 }
 
 type AddTask struct {
@@ -332,9 +332,15 @@ func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, e
 	}
 	getFlow.PkFlow = types.AsInt(taStory.FkFlow)
 	log.Println("DoShowWorkflowData getFlow pkFlow", getFlow.PkFlow)
-	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{}, pg.TimeField[T], pg.RoleField[T],
+	log.Println("DoShowWorkflowData getFlow taStory", getFlow.Ticket)
+	log.Println("DoShowWorkflowData getFlow Filter |", getFlow.Filter, "|")
+	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{}, pg.RoleField[T],
+		pg.FilterField[T],
 		pg.DistanceField[T],
-		pg.CountToken[T], pg.ArrayField[T])
+		pg.TimeField[T],
+		pg.CountToken[T], pg.ArrayField[T],
+		pg.StatsField,
+	)
 	if err != nil {
 		return value, err
 	}
@@ -386,7 +392,7 @@ func UpdateWorkflowData[T db.Scanner](wf *common.Workflow[T]) (string, error) {
 
 func UpdateWorkflowDataInt[T db.Scanner](wf *common.Workflow[T]) (WorkflowData, error) {
 	ctx := context.Background()
-	statuses, err := wf.Statuses(ctx, false)
+	statuses, err := wf.Statuses(ctx, false, true)
 	if err != nil {
 		return WorkflowData{}, err
 	}
@@ -421,6 +427,7 @@ func UpdateWorkflow[T db.Scanner](getFlow ShowFlowInput, query *db.IQuery,
 	values []interface{},
 	funcs ...func(*common.Workflow[T], ...interface{}) pg.Monad[T]) (*common.Workflow[T], error) {
 	wf, err := GetWorkflow[T](getFlow.PkFlow, query)
+	wf.Filter.Sentence = getFlow.Filter
 	if err != nil {
 		return wf, err
 	}

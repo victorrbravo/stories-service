@@ -95,13 +95,14 @@ func DistanceField[T db.Scanner](wf *common.Workflow[T], parameters ...interface
 		distanceSum := 0.0
 		nTasks := len(wf.Tasks)
 		n := 0
-		statuses, err := wf.Statuses(ctx, false)
+		statuses, err := wf.Statuses(ctx, false, false)
 		if err != nil {
 			return wf, err
 		}
 		for _, name := range statuses {
 			current := wf.Tasks[name]
-			if types.AsBool(current.Report) == false {
+			idCurrent := types.AsInt(current.Data.ID)
+			if types.AsBool(current.Report) == false || !common.ContainsIncluded(idCurrent, wf) {
 				n++
 				continue
 			}
@@ -142,7 +143,7 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		timeSum := 0 * time.Second
 		nTasks := len(wf.Tasks)
 		n := 0
-		statuses, err := wf.Statuses(ctx, false)
+		statuses, err := wf.Statuses(ctx, false, false)
 		if err != nil {
 			return wf, err
 		}
@@ -189,6 +190,49 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 	return nil
 }
 
+// Calculate sum of AmountField and calculate IncludeWrapped
+
+func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
+
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
+		amountSum := 0.0
+		amountSumParcial := 0.0
+		ctx := context.Background()
+		var previousTask *common.Task
+		var current *common.Task
+
+		loc, err := time.LoadLocation(constants.TimezoneBogota)
+		if err != nil {
+			fmt.Errorf("invalid timezone: %v", err)
+			return wf, nil
+		}
+		statuses, err := wf.Statuses(ctx, false, false)
+		if err != nil {
+			return wf, err
+		}
+		for _, name := range statuses {
+			current = wf.Tasks[name]
+			amountField, err := ParseDollarAmount(current.Data.AmountField.String())
+			if err == nil {
+				amountSum = amountSum + amountField
+				amountSumParcial = amountSumParcial + amountField
+			}
+			if previousTask != nil && CheckPeriodDates(previousTask.Data.TimeField, current.Data.TimeField, constants.TimezoneBogota) {
+				firstDate, _ := time.Parse(time.RFC3339, types.AsString(previousTask.Data.TimeField))
+				firstDate = firstDate.In(loc)
+				wrapped := new(common.Wrapped)
+				wrapped.Label = firstDate.Format("Jan 02")
+				wrapped.Amount = types.NewString(FormatToMoney(amountSumParcial))
+				previousTask.Transition.Wrapped = wrapped
+				amountSumParcial = 0.0
+			}
+			previousTask = current
+		}
+		wf.Data.AmountField = types.NewString(FormatToMoney(amountSum))
+		return wf, nil
+	}
+}
+
 func FilterField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var number scanners.Int
 
@@ -226,7 +270,7 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		amountSum := 0.0
 		amountSumParcial := 0.0
 		n := 0
-		statuses, err := wf.Statuses(ctx, false)
+		statuses, err := wf.Statuses(ctx, false, false)
 		if err != nil {
 			return wf, err
 		}
@@ -237,6 +281,7 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			fmt.Errorf("invalid timezone: %v", err)
 			return wf, nil
 		}
+		timeStart := time.Now()
 		for _, name := range statuses {
 			current = wf.Tasks[name]
 			newSQL, err := buildSQL(wf, name, SelectRoleToken)
@@ -293,6 +338,8 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			wrapped.Amount = types.NewString(FormatToMoney(amountSumParcial))
 			previousTask.Transition.Wrapped = wrapped
 		}
+		elapsed := time.Since(timeStart)
+		log.Println("RoleField elapsed:", elapsed)
 		wf.Data.AmountField = types.NewString(FormatToMoney(amountSum))
 		return wf, nil
 	}

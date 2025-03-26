@@ -133,9 +133,24 @@ type Workflow[T db.Scanner] struct {
 	WhereClause       WhereClause[T]   `json:"where_clause"`
 	ValueScanner      T                `json:"omitempty"`
 	statuses          []string         `json:"omitempty"`
+	CacheStatuses     CacheStatuses    `json:"omitempty"`
 	JsonResponse      string           `json:"json_response"`
 	Filter            WfFilter         `json:"filter,omitempty"`
 	excludeReported   bool
+}
+
+type WhereTask struct {
+	Name  string
+	Where string
+}
+
+type CacheStatuses struct {
+	Started       bool              `json:"started"`
+	StartName     string            `json:"start_name"`
+	ReCalculated  bool              `json:"re_calculated"`
+	List          []string          `json:"list"`
+	WheresStarted bool              `json:"wheres_started"`
+	WheresList    map[int]WhereTask `json:"wheres_list"`
 }
 
 type WfFilter struct {
@@ -250,7 +265,7 @@ func (wf *Workflow[T]) Contains(current string) error {
 		return nil
 	}
 	ctx := context.Background()
-	statuses, err = wf.Statuses(ctx, false)
+	statuses, err = wf.Statuses(ctx, false, false)
 	if err != nil {
 		return err
 	}
@@ -269,7 +284,7 @@ func (wf *Workflow[T]) NextStatus(current string) (string, error) {
 	lenStatuses := len(wf.statuses)
 	if lenStatuses == 0 {
 		ctx := context.Background()
-		_, err := wf.calculateStatuses(ctx, false)
+		_, err := wf.calculateStatuses(ctx, false, false)
 		if err != nil {
 			return value, err
 		}
@@ -294,7 +309,7 @@ func (wf *Workflow[T]) PreviousStatus(current string) (string, error) {
 	lenStatuses := len(wf.statuses)
 	if lenStatuses == 0 {
 		ctx := context.Background()
-		_, err := wf.calculateStatuses(ctx, false)
+		_, err := wf.calculateStatuses(ctx, false, false)
 		if err != nil {
 			return value, err
 		}
@@ -311,20 +326,52 @@ func (wf *Workflow[T]) PreviousStatus(current string) (string, error) {
 	return value, nil
 }
 
-func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool) ([]string, error) {
+func ToggleQuotes(stringsList []string, quotes bool) []string {
+	result := make([]string, len(stringsList))
+
+	for i, s := range stringsList {
+		if quotes {
+			// Add quotes if not already quoted
+			if !strings.HasPrefix(s, "'") || !strings.HasSuffix(s, "'") {
+				result[i] = "'" + s + "'"
+			} else {
+				result[i] = s
+			}
+		} else {
+			// Remove quotes if they exist
+			if strings.HasPrefix(s, "'") && strings.HasSuffix(s, "'") {
+				result[i] = s[1 : len(s)-1]
+			} else {
+				result[i] = s
+			}
+		}
+	}
+
+	return result
+}
+func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool, recalculate bool) ([]string, error) {
 	var err error
 	var start string
 	list := []string{}
-	start, err = wf.CalculateInitialTask()
-	if err != nil {
-		return list, err
+	if len(wf.CacheStatuses.StartName) > 0 {
+		start = wf.CacheStatuses.StartName
+	} else {
+		start, err = wf.CalculateInitialTask()
+		if err != nil {
+			return list, err
+		}
+	}
+	if wf.CacheStatuses.Started == true && recalculate == false {
+		log.Println("calculateStatuses...return Statuses list:", wf.CacheStatuses.List)
+		wf.CacheStatuses.List = ToggleQuotes(wf.CacheStatuses.List, quotes)
+		return wf.CacheStatuses.List, nil
 	}
 	current := start
 	title := current
 	if quotes {
 		title = "'" + current + "'"
 	}
-	if strings.Compare(title, StartTask) != 0 {
+	if strings.Compare(current, StartTask) != 0 {
 		list = append(list, title)
 	}
 	lenMax := len(wf.Tasks)
@@ -335,7 +382,6 @@ func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool) ([]st
 			return list, fmt.Errorf("Incorrect value for task name %s", current)
 		}
 		current, err = wf.findNextTask(task)
-		log.Println("filterField findNextTask current", current, " err", err)
 		if err != nil {
 			return list, err
 		}
@@ -356,23 +402,22 @@ func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool) ([]st
 		list = append(list, StartTask)
 	}
 	wf.statuses = list
+	wf.CacheStatuses.Started = true
+	wf.CacheStatuses.List = list
+	wf.CacheStatuses.StartName = start
 	return list, nil
 
 }
 
-func containsIncluded[T db.Scanner](n int, wf *Workflow[T]) bool {
+func ContainsIncluded[T db.Scanner](n int, wf *Workflow[T]) bool {
 	if len(wf.Filter.IncludedWrapped) == 0 || wf.Filter.Sentence == "" {
 		return true
 	}
-	log.Println("containsIncluded wf.Filter.IncludedWrapped:", wf.Filter.IncludedWrapped)
-	log.Println("containsIncluded: n", n)
 	for _, num := range wf.Filter.IncludedWrapped {
 		if num == n {
-			log.Println("containsIncluded...true n:", n, "wf.Filter.IncludedWrapped", wf.Filter.IncludedWrapped)
 			return true
 		}
 	}
-	log.Println("containsIncluded...false n:", n, "wf.Filter.IncludedWrapped", wf.Filter.IncludedWrapped)
 	return false
 }
 
@@ -395,8 +440,7 @@ func (wf *Workflow[T]) findNextTask(task *Task) (string, error) {
 			return "", fmt.Errorf("findNextTask Incorrect value for task name %s", nextName)
 		}
 		idCurrent := types.AsInt(next.Data.ID)
-		log.Println("findNextTask name", nextName, "idCurrent", idCurrent)
-		if wf.excludeReported == false && (types.AsBool(next.Report) == false || !containsIncluded(idCurrent, wf)) {
+		if wf.excludeReported == false && (types.AsBool(next.Report) == false || !ContainsIncluded(idCurrent, wf)) {
 			continue
 		}
 		break
@@ -425,7 +469,7 @@ func (wf *Workflow[T]) Sentence(name string) string {
 
 func (wf *Workflow[T]) Last(ctx context.Context) (*Task, error) {
 	var task *Task
-	statuses, err := wf.Statuses(ctx, false)
+	statuses, err := wf.Statuses(ctx, false, true)
 	if err != nil {
 		return task, err
 	}
@@ -441,8 +485,8 @@ func (wf *Workflow[T]) Last(ctx context.Context) (*Task, error) {
 	return task, nil
 }
 
-func (wf *Workflow[T]) Statuses(ctx context.Context, quotes bool) ([]string, error) {
-	return wf.calculateStatuses(ctx, quotes)
+func (wf *Workflow[T]) Statuses(ctx context.Context, quotes bool, recalculate bool) ([]string, error) {
+	return wf.calculateStatuses(ctx, quotes, recalculate)
 }
 
 func (wf *Workflow[T]) CalculateInitialTask() (string, error) {

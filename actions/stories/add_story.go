@@ -1130,7 +1130,7 @@ func DoAddStepFlowAtIntl[T database.Scanner](ctx context.Context, addStep AddSto
 		if err != nil {
 			return err
 		}
-		statuses, err := wfData.Statuses(ctx, false)
+		statuses, err := wfData.Statuses(ctx, false, true)
 		if err != nil {
 			return err
 		}

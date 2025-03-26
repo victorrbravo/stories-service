@@ -738,11 +738,16 @@ name: 762ED0C1-959C-400F-AABC-4E31C4BF5CD6.jpg
 	fmt.Println("response", response)
 }
 
+const DB_HOST = "doitall.work"
+const DB_NAME = "stories"
+const DB_PASS = "3MncMarinoned9140**1020__"
+const DB_USER = "stories"
+
 func TestProcessShowFlowData(t *testing.T) {
 	var err error
-	config := db.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
-		Password: "stories",
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
 	}
 	var pgQuery db.PostgresQuery
 	pgQuery.Initialize(&config)
@@ -753,8 +758,8 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: show_flow_data
-ticket: 4
-filter: updated_at>='2024-03-24T18:05:26Z' and updated_at<='2024-03-24T18:05:26Z'
+ticket: 175
+filter: restaurant
 `
 	order := []byte(input)
 	response, err := ProcessInput(order, &query)

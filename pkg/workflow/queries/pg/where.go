@@ -20,11 +20,6 @@ const (
 
 type Boolean bool
 
-type WhereTask struct {
-	Name  string
-	Where string
-}
-
 func (b *Boolean) Capture(values []string) error {
 	*b = values[0] == "TRUE"
 	return nil
@@ -198,24 +193,24 @@ var (
 	)
 )
 
-func ReduceWheres(ctx context.Context, ts map[int]WhereTask, t string) (string, error) {
+func ReduceWheres(ctx context.Context, ts *map[int]common.WhereTask, t string) (string, error) {
 	var value string
 	var err error
-	if len(ts) == 0 {
-		return "", errors.New("error Reduces wheres map is empty")
+	if len(*ts) == 0 {
+		return "", errors.New("error happens: Reduces wheres map is empty")
 	}
-	if strings.Compare(ts[0].Name, t) == 0 {
-		return ts[0].Where, nil
+	if strings.Compare((*ts)[0].Name, t) == 0 {
+		return (*ts)[0].Where, nil
 	}
 	index := 1
-	whereLength := len(ts)
-	lastWhere := ts[0].Where
+	whereLength := len(*ts)
+	lastWhere := (*ts)[0].Where
 	for index < whereLength {
-		lastWhere, err = ReduceTwoWheres(lastWhere, ts[index].Where)
+		lastWhere, err = ReduceTwoWheres(lastWhere, (*ts)[index].Where)
 		if err != nil {
 			return value, err
 		}
-		if strings.Compare(ts[index].Name, t) == 0 {
+		if strings.Compare((*ts)[index].Name, t) == 0 {
 			break
 		}
 		index++
@@ -352,22 +347,26 @@ func DeepEqualCompare(c0 *ConditionRHS, c1 *ConditionRHS) bool {
 	return false
 }
 
-func ReducesFilter[T db.Scanner](wf common.Workflow[T], name string) (string, error) {
+func ReducesFilter[T db.Scanner](wf *common.Workflow[T], name string) (string, error) {
 	wheres := ClausesWheres(wf)
 	value := ""
 	ctx := context.Background()
-	value, err := ReduceWheres(ctx, wheres, name)
+	value, err := ReduceWheres(ctx, &wheres, name)
 	if err != nil {
 		return value, err
 	}
 	return value, nil
 }
 
-func ClausesWheres[T db.Scanner](wf common.Workflow[T]) map[int]WhereTask {
+// This Function to reduce where claususes
+func ClausesWheres[T db.Scanner](wf *common.Workflow[T]) map[int]common.WhereTask {
 	ctx := context.Background()
-	values := make(map[int]WhereTask)
+	if wf.CacheStatuses.WheresStarted == true {
+		return wf.CacheStatuses.WheresList
+	}
+	values := make(map[int]common.WhereTask)
 	wf.ExcludeReport(true)
-	statuses, err := wf.Statuses(ctx, false)
+	statuses, err := wf.Statuses(ctx, false, false)
 	wf.ExcludeReport(false)
 	if err != nil {
 		log.Println("Error WhereClauses Statuses")
@@ -381,16 +380,22 @@ func ClausesWheres[T db.Scanner](wf common.Workflow[T]) map[int]WhereTask {
 		return values
 	}
 	for _, name := range statuses {
-		current, _ := wf.Tasks[name]
+		current, ok := wf.Tasks[name]
+		if ok == false {
+			log.Println("current IS nil name", name, "NOT FOUND")
+			continue
+		}
 		if index == 0 {
-			values[index] = WhereTask{name, firstTask.Transition.Links[0].Query}
+			values[index] = common.WhereTask{name, firstTask.Transition.Links[0].Query}
 		} else {
-			values[index] = WhereTask{name, str}
+			values[index] = common.WhereTask{name, str}
 		}
 		str = current.Transition.Links[0].Query
 		if strings.Compare(str, EndTask) != 0 {
 			index++
 		}
 	}
+	wf.CacheStatuses.WheresStarted = true
+	wf.CacheStatuses.WheresList = values
 	return values
 }

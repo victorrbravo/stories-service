@@ -26,7 +26,7 @@ func TestNextStatus(t *testing.T) {
 	}
 	q := query.NewQuery()
 	wf, err := stories.GetWorkflow[models.TaTracking](1, &q)
-	statuses, _ := wf.Statuses(ctx, false)
+	statuses, _ := wf.Statuses(ctx, false, true)
 	fmt.Println("statuses ", statuses)
 
 	status, err := wf.NextStatus("ToDo")
@@ -40,7 +40,7 @@ func TestNextStatus(t *testing.T) {
 
 }
 
-const DB_HOST = "104.251.218.55"
+const DB_HOST = "doitall.work"
 const DB_NAME = "stories"
 const DB_PASS = "3MncMarinoned9140**1020__"
 const DB_USER = "stories"
@@ -62,7 +62,7 @@ func TestIncludedWrapped(t *testing.T) {
 	monad := pg.New(wf, &q)
 	monad = pg.Bind(monad, pg.RoleField[models.TaTracking])
 	_, err = monad(nil)
-	statuses, _ := wf.Statuses(ctx, false)
+	statuses, _ := wf.Statuses(ctx, false, true)
 	fmt.Println("statuses ", statuses)
 }
 
@@ -87,7 +87,7 @@ func TestFilterIncludedWrapped(t *testing.T) {
 	monad = pg.Bind(monad, pg.FilterField[models.TaTracking])
 
 	_, err = monad(nil)
-	statuses, _ := wf.Statuses(ctx, false)
+	statuses, _ := wf.Statuses(ctx, false, true)
 	fmt.Println("statuses ", statuses)
 }
 
@@ -179,8 +179,8 @@ func TestWhereExpressions(t *testing.T) {
 func TestWhereClauses(t *testing.T) {
 	var err error
 	config := database.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "postgres",
-		Password: "stories",
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
 	}
 	query, err := workflow.GetPgQuery(config)
 	if err != nil {
@@ -188,8 +188,8 @@ func TestWhereClauses(t *testing.T) {
 		return
 	}
 	q := query.NewQuery()
-	wf, err := stories.GetWorkflow[models.TaTracking](1, &q)
-	wheres := pg.ClausesWheres[models.TaTracking](*wf)
+	wf, err := stories.GetWorkflow[models.TaTracking](175, &q)
+	wheres := pg.ClausesWheres[models.TaTracking](wf)
 	if len(wheres) == 0 {
 		t.Logf("len wheres is zero")
 	}
