@@ -1,0 +1,29 @@
+{
+  "Model": "TaCategory",
+  "Attrs": [
+    {
+      "Name": "PkCategory",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Key": true,
+      "Getter": true,
+      "Title": "ID"
+    },
+    {
+      "Name": "Name",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "Name"
+    },
+    {
+      "Name": "FkMainCategory",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Nullable": true,
+      "Title": "FkMainCategory"
+    }
+  ]
+}
+

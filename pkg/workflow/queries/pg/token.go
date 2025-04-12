@@ -210,21 +210,25 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 		if err != nil {
 			return wf, err
 		}
+		log.Println("StatsField statuses", statuses)
 		for _, name := range statuses {
 			current = wf.Tasks[name]
 			amountField, err := ParseDollarAmount(current.Data.AmountField.String())
+			log.Println("StatsField* name", name, "amount", amountField)
 			if err == nil {
 				amountSum = amountSum + amountField
-				amountSumParcial = amountSumParcial + amountField
 			}
 			if previousTask != nil && CheckPeriodDates(previousTask.Data.TimeField, current.Data.TimeField, constants.TimezoneBogota) {
 				firstDate, _ := time.Parse(time.RFC3339, types.AsString(previousTask.Data.TimeField))
 				firstDate = firstDate.In(loc)
 				wrapped := new(common.Wrapped)
 				wrapped.Label = firstDate.Format("Jan 02")
+				log.Println("StatsField* name", name, "*wrapped.amount", amountSumParcial)
 				wrapped.Amount = types.NewString(FormatToMoney(amountSumParcial))
 				previousTask.Transition.Wrapped = wrapped
-				amountSumParcial = 0.0
+				amountSumParcial = amountField
+			} else {
+				amountSumParcial = amountSumParcial + amountField
 			}
 			previousTask = current
 		}

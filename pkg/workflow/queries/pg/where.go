@@ -366,7 +366,7 @@ func ClausesWheres[T db.Scanner](wf *common.Workflow[T]) map[int]common.WhereTas
 	}
 	values := make(map[int]common.WhereTask)
 	wf.ExcludeReport(true)
-	statuses, err := wf.Statuses(ctx, false, false)
+	statuses, err := wf.Statuses(ctx, false, true)
 	wf.ExcludeReport(false)
 	if err != nil {
 		log.Println("Error WhereClauses Statuses")

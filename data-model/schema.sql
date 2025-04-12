@@ -58,6 +58,14 @@
         constraint "story_status_unique" unique (pk_story, status)
     );
 
+    create table "ta_category"
+    (
+        "pk_category" serial primary key,
+        "name"     varchar not null,
+        "user_id" int REFERENCES "ta_user" ("pk_user"),
+        "fk_main_category"    int
+    );
+
     create table "ta_tracking"
     (
         "pk_tracking" serial primary key,
