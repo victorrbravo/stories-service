@@ -13,7 +13,7 @@ var Values{{.Name}}  []models.{{.Name}}
 {{end}}
 
 
-func MainProcessor(action string, order string, query *database.IQuery) (string, error) {
+func MainProcessor(ctx context.Context, action string, order string, query *database.IQuery) (string, error) {
     var err error
     var value string
     var data []byte
@@ -32,6 +32,11 @@ func MainProcessor(action string, order string, query *database.IQuery) (string,
                     err = Update{{.Name}}(order, query)
                 case "all_{{.Name.Simplified}}":
                     Values{{.Name}}, _ = GetAll{{.Name}}(query)
+                    data, err = json.Marshal(Values{{.Name}})
+                    if err != nil {
+                        return "", err
+                    }
+                    value = string(data)
                 case "get_{{.Name.Simplified}}_by_{{.KeyField }}":
                     Value{{.Name}}, _ := Get{{.Name}}By{{.KeyField }}(order, query)
                     Values{{.Name}} = append(Values{{.Name}}, *Value{{.Name}})

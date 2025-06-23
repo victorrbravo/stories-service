@@ -1,7 +1,9 @@
 package input
 
 import (
+	"context"
 	"fmt"
+	"os"
 	"stories/database"
 	db "stories/database"
 	pg "stories/generated/inputs"
@@ -31,7 +33,8 @@ email: solazver3@gmail.com
 action: add_user
 `
 	order := []byte(input)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -58,7 +61,8 @@ action: delete_user
 pk_user: 39
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -84,7 +88,8 @@ pk_user: 42
 firstname: Hecmair
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -108,7 +113,8 @@ func TestProcessInputGetAll(t *testing.T) {
 action: all_user
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -135,7 +141,8 @@ func TestProcessInputGetAllFLow(t *testing.T) {
 action: all_flow
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -163,7 +170,8 @@ action: get_flow_by_PkFlow
 pk_flow: 1
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -196,7 +204,8 @@ summary: Check if the key field values were created autommatically
 status: ToDo
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -222,7 +231,8 @@ fk_status: Progress
 images: [image3]
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -246,7 +256,8 @@ action: delete_tracking
 pk_tracking: 14
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -271,7 +282,8 @@ name: victor_bravo
 summary: an afternoon in Merida
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -296,7 +308,8 @@ tips: tips1 for Oporto, tips2 for Burgos, tips3 from Barcelona, tips4 from Madri
 `
 	inputFormated := utils.FormatYaml(input)
 	order := []byte(inputFormated)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -324,7 +337,8 @@ amount: 25000
 type: new_thing
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -332,9 +346,13 @@ type: new_thing
 
 func TestProcessAddFlowStep(t *testing.T) {
 	var err error
-	config := db.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
-		Password: "stories",
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
+	}
+	err = os.Setenv("OPEN_API_KEY", OPEN_API_KEY)
+	if err != nil {
+		t.Fatalf("Failed to set env var: %v", err)
 	}
 	var pgQuery db.PostgresQuery
 	pgQuery.Initialize(&config)
@@ -343,22 +361,11 @@ func TestProcessAddFlowStep(t *testing.T) {
 		t.Error(err)
 	}
 	query := pgQuery.NewQuery()
-	input := `
-action: add_flow_step
-ticket: 44
-status: StepNewWithMeta3
-images: 
- - ABC897B7-71DA-4C08-B7E8-B7F2F071D445
-amount: 3500.00
-summary: Last Step
-media_date: 2024-03-24T18:05:26Z
-type: step
-position: (10.2232,-72.2344)
-`
-	fmt.Println("input", input)
-	input1 := `action: add_flow_step ticket: 36 status: Preparing videos: 5FC7B644-1F56-4984-9154-63E78846BD4E.mov, amount: 0 summary: Preparing media_date: 2024-06-10T20:52:42Z type: step position:  (-72.4900176935573, 7.893132814213494)`
+	input1 := `action: add_flow_step ticket: 132 status: Party Bread images: 9B8D5838-C94D-4F0B-8D3C-FCC6F8565552.jpg, amount: 25 summary: Café in felicites pie Shake media_date: 2025-04-19T18:21:04Z type: step  position: (-72.48988389969156,7.893224051670705) tags: Saturday,cafe,Café,felicites,pie,Shake user_id:2`
+	fmt.Println("input1", input1)
 	order := []byte(input1)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -387,7 +394,8 @@ images:
 `
 	fmt.Println("input", input)
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -415,7 +423,8 @@ updated_at: 2024-03-26T10:10:00Z
 `
 	fmt.Println("input", input)
 	order := []byte(formmated)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -439,7 +448,8 @@ func TestProcessAddFlowStepSub(t *testing.T) {
 	formatInput := utils.FormatYaml(input)
 	fmt.Println("formatInput", formatInput)
 	order := []byte(formatInput)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -471,7 +481,8 @@ media_date: 2024-03-20T02:02:26Z
 type: step
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -494,7 +505,8 @@ func TestProcessDeleteFlowStep(t *testing.T) {
 action: delete_flow_step id: 174
 `
 	order := []byte(input)
-	value, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	value, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 
 		t.Error(err)
@@ -520,7 +532,8 @@ action: show_flow_graph
 ticket: 39
 `
 	order := []byte(input)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -546,7 +559,8 @@ action: presign_image
 name: coffe.jpg
 `
 	order := []byte(input)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -573,7 +587,8 @@ id_story: 43
 current: Biscuits
 `
 	order := []byte(input)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -601,7 +616,8 @@ name: Cream
 report: true
 `
 	order := []byte(input)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -626,7 +642,8 @@ func TestProcessGetStepsSchema(t *testing.T) {
 action: steps_schema
 `
 	order := []byte(input)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -652,7 +669,8 @@ action: get_story_by_user_id
 user_id: 2
 `
 	order := []byte(input)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -662,9 +680,9 @@ user_id: 2
 
 func TestProcessGetStoriesByEmail(t *testing.T) {
 	var err error
-	config := db.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
-		Password: "stories",
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
 	}
 	var pgQuery db.PostgresQuery
 	pgQuery.Initialize(&config)
@@ -674,11 +692,13 @@ func TestProcessGetStoriesByEmail(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: get_stories_by_email email: victorrbravo@gmail.com
+action: get_stories_by_email
 `
 	input1 := utils.FormatYaml(input)
 	order := []byte(input1)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "email", "victorrbravo@gmail.com")
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -688,9 +708,9 @@ action: get_stories_by_email email: victorrbravo@gmail.com
 
 func TestProcessGetStoriesByEmailGrouped(t *testing.T) {
 	var err error
-	config := db.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
-		Password: "stories",
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
 	}
 	var pgQuery db.PostgresQuery
 	pgQuery.Initialize(&config)
@@ -700,11 +720,13 @@ func TestProcessGetStoriesByEmailGrouped(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: get_stories_by_email_grouped email: victorrbravo@gmail.com
+action: get_stories_by_email_grouped
 `
 	input1 := utils.FormatYaml(input)
 	order := []byte(input1)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "email", "victorrbravo@gmail.com")
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -730,7 +752,8 @@ action: get_presigned_image
 name: 762ED0C1-959C-400F-AABC-4E31C4BF5CD6.jpg
 `
 	order := []byte(input)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -742,6 +765,7 @@ const DB_HOST = "doitall.work"
 const DB_NAME = "stories"
 const DB_PASS = "3MncMarinoned9140**1020__"
 const DB_USER = "stories"
+const OPEN_API_KEY = "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"
 
 func TestProcessShowFlowData(t *testing.T) {
 	var err error
@@ -758,11 +782,40 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: show_flow_data
-ticket: 175
-filter: restaurant
+ticket: 179
+filter: <Jun25 AND >Jun1
+page_number: 1
+page_size: 10
 `
 	order := []byte(input)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response", response)
+}
+
+func TestProcessShowAllCategories(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: all_category
+`
+	order := []byte(input)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -792,7 +845,8 @@ action: show_step_tips
 tips_id: 20
 `
 	order := []byte(input)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -819,7 +873,8 @@ step_id: 6
 position: (70.27255,-82.3224)
 `
 	order := []byte(input)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -829,9 +884,13 @@ position: (70.27255,-82.3224)
 
 func TestProcessSuggestShortName(t *testing.T) {
 	var err error
-	config := db.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
-		Password: "stories",
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
+	}
+	err = os.Setenv("OPEN_API_KEY", OPEN_API_KEY)
+	if err != nil {
+		t.Fatalf("Failed to set env var: %v", err)
 	}
 	var pgQuery db.PostgresQuery
 	pgQuery.Initialize(&config)
@@ -845,7 +904,38 @@ action: suggest_short_name_for_image
 image_id: 5895050E-3FE2-48AF-B191-80BF2AEF8E63.jpg
 `
 	order := []byte(input)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("value data response", response)
+}
+
+func TestProcessAskAboutCategory(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
+	}
+	err = os.Setenv("OPEN_API_KEY", OPEN_API_KEY)
+	if err != nil {
+		t.Fatalf("Failed to set env var: %v", err)
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: select_the_category 
+question: Given these words '%s' which category does it most likely belong to '%s'?. The response must be only the name of category
+`
+	order := []byte(input)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -854,9 +944,9 @@ image_id: 5895050E-3FE2-48AF-B191-80BF2AEF8E63.jpg
 
 func TestProcessShowFlowTaskData(t *testing.T) {
 	var err error
-	config := db.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
-		Password: "stories",
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
 	}
 	var pgQuery db.PostgresQuery
 	pgQuery.Initialize(&config)
@@ -871,7 +961,8 @@ ticket: 11
 task: Step4
 `
 	order := []byte(input)
-	response, err := ProcessInput(order, &query)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -899,7 +990,8 @@ sentence: fk_status=''Step2''
 source: Step1
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Errorf("error reported %v", err)
 	}
@@ -926,7 +1018,8 @@ sentence: roles[1]::int>26000
 target: Start
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Errorf("Error reported to add task %v", err.Error())
 	}
@@ -953,7 +1046,8 @@ sentence: fk_status=''Payment2''
 source: Payment1
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 
 }
 
@@ -976,7 +1070,8 @@ name: Step10
 pk_flow: 1
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Errorf("error reported '%v'", err.Error())
 	}
@@ -1001,7 +1096,8 @@ name: Step2
 pk_flow: 1
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 
 }
 
@@ -1025,7 +1121,8 @@ target: Payment1
 pk_flow: 1
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 
 }
 
@@ -1049,7 +1146,8 @@ summary: tiramisu recipe for homemade cooking
 email: solazver@gmail.com
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1073,7 +1171,8 @@ action: delete_ticket
 ticket: 43
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1097,7 +1196,8 @@ action: delete_step_tips
 step_id: 123
 `
 	order := []byte(input)
-	_, err = ProcessInput(order, &query)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1112,7 +1212,8 @@ pk_flow: 1
 `
 	order := []byte(input)
 	q := query.NewQuery()
-	_, err = ProcessInput(order, &q)
+	ctx := context.Background()
+	_, err = ProcessInput(ctx, order, &q)
 	if err != nil {
 		return value, err
 	}

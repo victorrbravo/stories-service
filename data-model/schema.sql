@@ -137,6 +137,23 @@ alter table ta_tracking add column tags varchar[] DEFAULT '{}';
         "shared_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
     );
 
+    create table "ta_permission"
+    (
+        "pk_permission" serial primary key,
+        "fk_from_user"   int REFERENCES "ta_user" ("pk_user"),
+        "category"   varchar not null,
+        "permission" jsonb DEFAULT '{}'::jsonb,
+        "updated_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    );
+
+    create table ta_user_relationships (
+                                        pk_user_relationships SERIAL PRIMARY KEY,
+                                        fk_follower_id INTEGER NOT NULL REFERENCES ta_user(pk_user) ON DELETE CASCADE,
+                                        fk_followed_id INTEGER NOT NULL REFERENCES ta_user(pk_user) ON DELETE CASCADE,
+                                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                        CONSTRAINT unique_relationship UNIQUE (fk_follower_id, fk_followed_id),
+                                        CONSTRAINT no_self_follow CHECK (fk_follower_id <> fk_followed_id)
+    );
 
 alter table ta_user add column name varchar;
 
@@ -249,3 +266,4 @@ insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at)
 insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at) values ('{"image1", "image2"}', '{"video1"}', '{"role1"}', 'Done', 2, '2023-10-31 18:25:12.119 -0500');
 insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at) values ('{"image3", "image6"}', '{"video3"}', '{"role3"}', 'Progress', 2, '2023-10-31 17:18:12.119 -0500');
 insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at) values ('{"image3", "image6"}', '{"video3"}', '{"role3"}', 'ToDo', 2, '2023-10-31 16:08:12.119 -0500');
+

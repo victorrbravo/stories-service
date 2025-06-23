@@ -1,5 +1,14 @@
 {
   "Model": "TaCategory",
+  "Searcher": [
+    {
+      "Name": "UserID",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Nullable": true,
+      "Title": "UserID"
+    }
+  ],
   "Attrs": [
     {
       "Name": "PkCategory",

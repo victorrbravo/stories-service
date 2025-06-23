@@ -74,7 +74,7 @@ func FormatToMoney(amount float64) string {
 	return "$" + formatted
 }
 
-func CheckPeriodDates(date1 types.String, date2 types.String, timeZone string) bool {
+func CheckPeriodDates(date1 types.String, date2 types.String, timeZone string, byDay bool) bool {
 	loc, err := time.LoadLocation(timeZone)
 	if err != nil {
 		fmt.Errorf("invalid timezone: %v", err)
@@ -99,7 +99,19 @@ func CheckPeriodDates(date1 types.String, date2 types.String, timeZone string) b
 	)
 
 	// Check if the secondDate is after midnight
-	return secondTs.After(midnight)
+	value := secondTs.After(midnight)
+	if !byDay {
+		firstWeek := firstTs.Weekday()
+		secondWeek := secondTs.Weekday()
+		if firstWeek == time.Sunday {
+			firstWeek = 7
+		}
+		if secondWeek == time.Sunday {
+			secondWeek = 7
+		}
+		value = secondTs.After(midnight) && (secondWeek < firstWeek)
+	}
+	return value
 }
 
 func ParseDollarAmount(input string) (float64, error) {

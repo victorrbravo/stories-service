@@ -21,7 +21,8 @@ type PresignAction struct {
 }
 
 type SuggestAction struct {
-	ImageID types.String `yaml:"image_id"`
+	ImageID  types.String `yaml:"image_id"`
+	Question types.String `yaml:"question"`
 }
 
 type DeleteFlowStepAction struct {

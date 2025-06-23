@@ -1,6 +1,7 @@
 package handlers_utils
 
 import (
+	"context"
 	"net/http"
 
 	"stories/constants"
@@ -21,15 +22,16 @@ type NoAuthorizedHTTPHandler interface {
 type RequestNoAuthorizer struct {
 	next  NoAuthorizedHTTPHandler
 	query database.IQuery
+	Ctx   context.Context
 }
 
 // NewRequestAuthorizer creates new authorizer with the given the next handler that should handle
 // the request
-func NewRequestNoAuthorizer(next NoAuthorizedHTTPHandler, query database.IQuery) RequestNoAuthorizer {
-	return RequestNoAuthorizer{next: next, query: query}
+func NewRequestNoAuthorizer(next NoAuthorizedHTTPHandler, query database.IQuery) *RequestNoAuthorizer {
+	return &RequestNoAuthorizer{next: next, query: query}
 }
 
-func (handler RequestNoAuthorizer) GetQuery() database.IQuery {
+func (handler *RequestNoAuthorizer) GetQuery() database.IQuery {
 	return handler.query
 }
 
@@ -37,11 +39,11 @@ func (handler *RequestNoAuthorizer) SetQuery(query database.IQuery) {
 	handler.query = query
 }
 
-func (handler RequestNoAuthorizer) IsEnabled() bool {
+func (handler *RequestNoAuthorizer) IsEnabled() bool {
 	return true
 }
 
-func (handler RequestNoAuthorizer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (handler *RequestNoAuthorizer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	var next NoAuthorizedHTTPHandler
 	next = handler.next
 	// We finally determined that this token was valid and also have

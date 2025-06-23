@@ -1,6 +1,7 @@
 package handlers_utils
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -32,12 +33,13 @@ type AuthorizedHTTPHandler interface {
 type RequestAuthorizer struct {
 	next  AuthorizedHTTPHandler
 	Query database.IQuery
+	Ctx   context.Context
 }
 
 // NewRequestAuthorizer creates new authorizer with the given the next handler that should handle
 // the request
-func NewRequestAuthorizer(next AuthorizedHTTPHandler, query database.IQuery) RequestAuthorizer {
-	return RequestAuthorizer{next: next, Query: query}
+func NewRequestAuthorizer(next AuthorizedHTTPHandler, query database.IQuery) *RequestAuthorizer {
+	return &RequestAuthorizer{next: next, Query: query}
 }
 
 func getToken(header http.Header) (crypto.Token, error) {
@@ -52,7 +54,7 @@ func getToken(header http.Header) (crypto.Token, error) {
 	return crypto.NewTokenFromString(strings.Trim(matches[1], " "))
 }
 
-func (handler RequestAuthorizer) GetQuery() database.IQuery {
+func (handler *RequestAuthorizer) GetQuery() database.IQuery {
 	return handler.Query
 }
 
@@ -61,7 +63,7 @@ func (handler *RequestAuthorizer) SetQuery(query database.IQuery) {
 }
 
 // Check if endpoint is enabled
-func (handler RequestAuthorizer) IsEnabled() bool {
+func (handler *RequestAuthorizer) IsEnabled() bool {
 	return constants.WorkingModeValueNormal == 0
 }
 
@@ -95,15 +97,20 @@ func getJWTToken(request *http.Request) (string, error) {
 	}
 	email = jwtToken["email"].(string)
 	log.Println("getJWTToken email", email)
+
 	return email, nil
 }
 
-func (handler RequestAuthorizer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (handler *RequestAuthorizer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	var email string
 	var err error
 	query := handler.GetQuery()
 	email, err = getJWTToken(request)
-	log.Println("ServeHTTP getJWTToken email", email, " err", err)
+	log.Println("after email", email)
+	ctx := context.Background()
+	handler.Ctx = context.WithValue(ctx, "email", email)
+	log.Println("handler.Ctx", handler.Ctx, " email", email, " err", err)
+	log.Println("\"handler.Ctx ServeHTTP getJWTToken email", email, " err", err)
 	if err != nil {
 		RespondWithError(writer, helpers.NewHttpError(http.StatusForbidden, constants.YouHaveNoAccessToResource))
 		return

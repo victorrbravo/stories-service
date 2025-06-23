@@ -218,6 +218,9 @@ type ShowFlowInput struct {
 	ShowEmptyTasks bool                            `yaml:"show_empty_tasks" default:"false"`
 	Task           WorkflowType[models.TaTracking] `yaml:"task,omitempty"`
 	Filter         string                          `yaml:"filter,omitempty"`
+	ByDay          bool                            `yaml:"by_day,omitempty"`
+	PageNumber     types.Int                       `yaml:"page_number,omitempty"`
+	PageSize       types.Int                       `yaml:"page_size,omitempty"`
 }
 
 type AddTask struct {
@@ -269,7 +272,7 @@ func DoGetWorkflowSchema(order string, query *db.IQuery) (string, error) {
 	return value, nil
 }
 
-func WorkflowProcessor(action string, order string, query *db.IQuery) (string, error) {
+func WorkflowProcessor(ctx context.Context, action string, order string, query *db.IQuery) (string, error) {
 	var err error
 	var value string
 	switch action {
@@ -331,9 +334,6 @@ func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, e
 		return value, err
 	}
 	getFlow.PkFlow = types.AsInt(taStory.FkFlow)
-	log.Println("DoShowWorkflowData getFlow pkFlow", getFlow.PkFlow)
-	log.Println("DoShowWorkflowData getFlow taStory", getFlow.Ticket)
-	log.Println("DoShowWorkflowData getFlow Filter |", getFlow.Filter, "|")
 	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{}, pg.RoleField[T],
 		pg.FilterField[T],
 		pg.DistanceField[T],
@@ -428,6 +428,9 @@ func UpdateWorkflow[T db.Scanner](getFlow ShowFlowInput, query *db.IQuery,
 	funcs ...func(*common.Workflow[T], ...interface{}) pg.Monad[T]) (*common.Workflow[T], error) {
 	wf, err := GetWorkflow[T](getFlow.PkFlow, query)
 	wf.Filter.Sentence = getFlow.Filter
+	wf.ByDay = getFlow.ByDay
+	wf.Page.PageNumber = types.AsInt(getFlow.PageNumber)
+	wf.Page.PageSize = types.AsInt(getFlow.PageSize)
 	if err != nil {
 		return wf, err
 	}

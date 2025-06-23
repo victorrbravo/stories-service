@@ -14,6 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"log"
 	"os"
+	"regexp"
 	"stories/actions/constants"
 	"stories/database"
 	st_errors "stories/errors"
@@ -73,10 +74,9 @@ const (
 `
 )
 
-func FlowProcessor(action string, order string, query *database.IQuery) (string, error) {
+func FlowProcessor(ctx context.Context, action string, order string, query *database.IQuery) (string, error) {
 	var err error
 	var value string
-	ctx := context.Background()
 	switch action {
 	case "steps_schema":
 		value, err = DoGetStepsSchema(order, query)
@@ -111,14 +111,17 @@ func FlowProcessor(action string, order string, query *database.IQuery) (string,
 	case "get_presigned_image":
 		value, err = DoGetPresignedImage(order, query)
 
+	case "select_the_category":
+		value, err = DoAIQuestion(order, query, "")
+
 	case "suggest_short_name_for_image":
-		value, err = DoImageQuestionToAI(order, query, "Summarize the image in two words or less")
+		value, err = DoAIQuestion(order, query, "Summarize the image in two words or less")
 	case "suggest_words_for_image":
-		value, err = DoImageQuestionToAI(order, query, "Can you say almost 10 words associated with the image separated by commas")
+		value, err = DoAIQuestion(order, query, "Can you say almost 10 words associated with the image separated by commas")
 	case "get_stories_by_email_grouped":
-		value, err = DoGetStoriesByEmailGrouped(order, query)
+		value, err = DoGetStoriesByEmailGrouped(ctx, order, query)
 	case "get_stories_by_email":
-		value, err = DoGetStoriesByEmail(order, query)
+		value, err = DoGetStoriesByEmail(ctx, order, query)
 	case "move_task":
 		value, err = DoMoveTaskInFlow[models.TaTracking](order, query)
 	case "change_step_report":
@@ -671,16 +674,11 @@ func NewStepSub(ctx context.Context, order string, query *database.IQuery) error
 	return nil
 }
 
-func DoGetStoriesByEmailGrouped(order string, query *database.IQuery) (string, error) {
+func DoGetStoriesByEmailGrouped(ctx context.Context, order string, query *database.IQuery) (string, error) {
 	var value string
 	var err error
 	byDateTime := make(map[string][]models.TaStory)
-	handler, err := Unmarshall[GetStoriesAction]([]byte(order))
-	if err != nil {
-		log.Println("DoGetStoriesByEmail error unmarshalling")
-		return value, err
-	}
-	taStories, err := DoGetStoriesByEmailIntl(handler, query)
+	taStories, err := DoGetStoriesByEmailIntl(ctx, query)
 	if err != nil {
 		log.Println("DoGetStoriesByEmail error unmarshalling")
 		return value, err
@@ -700,9 +698,10 @@ func DoGetStoriesByEmailGrouped(order string, query *database.IQuery) (string, e
 	return value, err
 }
 
-func DoGetStoriesByEmailIntl(handler GetStoriesAction, query *database.IQuery) ([]models.TaStory, error) {
+func DoGetStoriesByEmailIntl(ctx context.Context, query *database.IQuery) ([]models.TaStory, error) {
 	var taStories []models.TaStory
-	taUsers, err := models.GetTaUserByEmail(*query, handler.Email)
+	email := types.NewString(ctx.Value("email").(string))
+	taUsers, err := models.GetTaUserByEmail(*query, email)
 	if err != nil {
 		log.Println("DoGetStoriesByEmail error getting user")
 		return taStories, err
@@ -722,14 +721,10 @@ func DoGetStoriesByEmailIntl(handler GetStoriesAction, query *database.IQuery) (
 	}
 	return taStories, nil
 }
-func DoGetStoriesByEmail(order string, query *database.IQuery) (string, error) {
+func DoGetStoriesByEmail(ctx context.Context, order string, query *database.IQuery) (string, error) {
 	value := "[]"
-	handler, err := Unmarshall[GetStoriesAction]([]byte(order))
-	if err != nil {
-		log.Println("DoGetStoriesByEmail error unmarshalling")
-		return value, err
-	}
-	taStories, err := DoGetStoriesByEmailIntl(handler, query)
+
+	taStories, err := DoGetStoriesByEmailIntl(ctx, query)
 	if err != nil {
 		log.Println("DoGetStoriesByEmail error getting stories")
 		return value, err
@@ -743,57 +738,84 @@ func DoGetStoriesByEmail(order string, query *database.IQuery) (string, error) {
 	return value, nil
 }
 
-func DoImageQuestionToAI(order string, query *database.IQuery, question string) (string, error) {
+func DoAskAboutCategories(tags string, userID types.Int, query *database.IQuery) (string, error) {
+	var value, categories string
+	log.Println("DoAskAboutCategories *userID", userID)
+	taCategory, err := models.GetTaCategoryByUserID(*query, userID)
+	if err != nil {
+		log.Println("DoAskAboutCategories error getting taCategory error", err)
+		return value, err
+	}
+	categories = ""
+	for category := range taCategory {
+		name := taCategory[category].Name.String()
+		if len(categories) > 0 {
+			categories = categories + ","
+		}
+		categories = categories + name
+	}
+	tags = strings.ReplaceAll(tags, "\"", "")
+	order_category := `
+action: select_the_category 
+question: Can you summarize these words -- %s --  in one two or more words of these categories -- %s -- . Can you write the response in a category list separated by commas`
+	value = fmt.Sprintf(order_category, tags, categories)
+	log.Println("DoAskAboutCategories value", value)
+	return DoAIQuestion(value, query, "")
+}
+
+func DoAIQuestion(order string, query *database.IQuery, question string) (string, error) {
 	value := fmt.Sprintf(JsonResponseTemplate, "")
 	var err error
-	log.Println("DoImageQuestionToAI order ", order)
+	log.Println("DoAIQuestion order ", order)
 	handler, err := Unmarshall[SuggestAction]([]byte(order))
 	if err != nil {
 		log.Println("error unmarshalling")
 		return value, err
 	}
-	log.Println("DoImageQuestionToAI DownloadFromS3 ", handler.ImageID)
-	imagePath, err := utils.DownloadFromS3(bucketName, handler.ImageID.String())
+	if !types.IsNil(handler.Question) {
+		question = handler.Question.String()
+	}
 
-	if err != nil {
-		return value, err
-	}
-	log.Println("imagePath", imagePath)
-	image64, err := utils.EncodeImageBase64(imagePath)
-	if err != nil {
-		return value, err
-	}
 	apiKey := os.Getenv("OPEN_API_KEY")
 	if apiKey == "" {
 		return value, errors.New("OPEN_API_KEY is not set")
 	}
 	client := openai.NewClient(apiKey)
-	if err != nil {
-		fmt.Println("Error processing image ", imagePath, " error", err)
-		return value, err
+
+	multiContent := []openai.ChatMessagePart{
+		{
+			Type: "text",
+			Text: question,
+		},
+	}
+	if !handler.ImageID.IsEmpty() {
+		imagePath, err := utils.DownloadFromS3(bucketName, handler.ImageID.String())
+		if err != nil {
+			return value, err
+		}
+		log.Println("imagePath", imagePath)
+		image64, err := utils.EncodeImageBase64(imagePath)
+		if err != nil {
+			return value, err
+		}
+		url := fmt.Sprintf("data:image/jpeg;base64,%s", image64)
+		imageURL := openai.ChatMessageImageURL{
+			URL: url,
+		}
+		multiContent = append(multiContent, openai.ChatMessagePart{
+			Type:     "image_url",
+			ImageURL: &imageURL,
+		})
 	}
 
-	url := fmt.Sprintf("data:image/jpeg;base64,%s", image64)
-	imageURL := openai.ChatMessageImageURL{
-		URL: url,
-	}
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
 			Model: "gpt-4o",
 			Messages: []openai.ChatCompletionMessage{
 				{
-					Role: openai.ChatMessageRoleUser,
-					MultiContent: []openai.ChatMessagePart{
-						{
-							Type: "text",
-							Text: question,
-						},
-						{
-							Type:     "image_url",
-							ImageURL: &imageURL,
-						},
-					},
+					Role:         openai.ChatMessageRoleUser,
+					MultiContent: multiContent,
 				},
 			},
 		},
@@ -1175,6 +1197,20 @@ func DoAddStepFlowAtIntl[T database.Scanner](ctx context.Context, addStep AddSto
 	return nil
 }
 
+func extractResponse(jsonData string) (string, error) {
+	// Define an anonymous struct inline
+	var res struct {
+		Response string `json:"response"`
+	}
+
+	err := json.Unmarshal([]byte(jsonData), &res)
+	if err != nil {
+		return "", err
+	}
+	re := regexp.MustCompile(`,\s+`)
+	value := re.ReplaceAllString(res.Response, `,`)
+	return value, nil
+}
 func DoAddStepFlowAt[T database.Scanner](ctx context.Context, order string, insert OrderInsert, query *database.IQuery) error {
 	yamlOrder := utils.FormatYaml(order)
 	addStep, err := Unmarshall[AddStoryStatus]([]byte(yamlOrder))
@@ -1182,6 +1218,27 @@ func DoAddStepFlowAt[T database.Scanner](ctx context.Context, order string, inse
 		return err
 	}
 	strOrder := adaptStringBeforeYaml(order)
+	tags := addStep.Tags.String()
+	addStep.UserID = types.NewInt(2)
+	categories, err := DoAskAboutCategories(tags, addStep.UserID, query)
+	if err != nil {
+		log.Println("get DoAskAboutCategories error", err)
+		return err
+	}
+	newTags := addStep.Tags.String()
+	if !types.IsNil(addStep.Tags) {
+		newTags = newTags + ","
+	}
+
+	categoryStr, err := extractResponse(categories)
+	if err != nil {
+		log.Println("Error extractResponse error extracting category", err)
+	} else {
+		newTags = newTags + categoryStr
+	}
+	newTags = strings.ReplaceAll(newTags, "\"", "")
+	log.Println("**DoAddStepFlowAt newTags |", newTags, "|")
+	addStep.Tags = types.NewStringArray(strings.Split(newTags, ","))
 	addStep.metaOrder = types.NewString(strOrder)
 	err = DoAddStepFlowAtIntl[T](ctx, addStep, insert, query)
 	if err != nil {

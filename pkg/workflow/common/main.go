@@ -136,6 +136,8 @@ type Workflow[T db.Scanner] struct {
 	CacheStatuses     CacheStatuses    `json:"omitempty"`
 	JsonResponse      string           `json:"json_response"`
 	Filter            WfFilter         `json:"filter,omitempty"`
+	ByDay             bool             `json:"by_day,omitempty"`
+	Page              types.Page
 	excludeReported   bool
 }
 
@@ -362,7 +364,6 @@ func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool, recal
 		}
 	}
 	if wf.CacheStatuses.Started == true && recalculate == false {
-		log.Println("calculateStatuses...return Statuses list:", wf.CacheStatuses.List)
 		wf.CacheStatuses.List = ToggleQuotes(wf.CacheStatuses.List, quotes)
 		return wf.CacheStatuses.List, nil
 	}
