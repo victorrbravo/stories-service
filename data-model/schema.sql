@@ -21,6 +21,19 @@
         "status"                VARCHAR DEFAULT ''::varchar
     );
 
+    create table "ta_student"
+    (
+        "pk_student"                     serial         PRIMARY KEY,
+        "firstname"             VARCHAR        NOT NULL,
+        "lastname"              VARCHAR        NOT NULL,
+        "email"                  VARCHAR        NOT NULL UNIQUE,
+        "created_at"             TIMESTAMP               DEFAULT CURRENT_TIMESTAMP,
+        "account_type"           VARCHAR NOT NULL,
+        "password"               VARCHAR        NOT NULL,
+        "activated"              BOOLEAN        DEFAULT FALSE,
+        "student_type"           VARCHAR        NOT NULL,
+        "status"                VARCHAR DEFAULT ''::varchar
+    );
     create table "ta_signed_in"
     (
         "token"   character(64)                                      NOT NULL,

@@ -157,7 +157,7 @@ type CacheStatuses struct {
 
 type WfFilter struct {
 	ExcludedWrapped []string `json:"excluded_wrapped"`
-	IncludedWrapped []int    `json:"included_wrapped"`
+	IncludedWrapped []string `json:"included_wrapped"`
 	Sentence        string   `json:"sentence"`
 }
 
@@ -410,7 +410,7 @@ func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool, recal
 
 }
 
-func ContainsIncluded[T db.Scanner](n int, wf *Workflow[T]) bool {
+func ContainsIncluded[T db.Scanner](n string, wf *Workflow[T]) bool {
 	if len(wf.Filter.IncludedWrapped) == 0 || wf.Filter.Sentence == "" {
 		return true
 	}
@@ -440,8 +440,7 @@ func (wf *Workflow[T]) findNextTask(task *Task) (string, error) {
 
 			return "", fmt.Errorf("findNextTask Incorrect value for task name %s", nextName)
 		}
-		idCurrent := types.AsInt(next.Data.ID)
-		if wf.excludeReported == false && (types.AsBool(next.Report) == false || !ContainsIncluded(idCurrent, wf)) {
+		if wf.excludeReported == false && (types.AsBool(next.Report) == false) {
 			continue
 		}
 		break

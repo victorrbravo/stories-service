@@ -12,6 +12,7 @@ import (
 	"stories/pkg/workflow/common"
 	"stories/pkg/workflow/queries/pg"
 	"stories/types"
+	"time"
 )
 
 const (
@@ -328,19 +329,25 @@ func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, e
 	if err != nil {
 		return value, err
 	}
+	start1 := time.Now()
 	taStory, err := models.GetTaStoryByPkStory(*query,
 		getFlow.Ticket)
 	if err != nil {
 		return value, err
 	}
 	getFlow.PkFlow = types.AsInt(taStory.FkFlow)
-	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{}, pg.RoleField[T],
+	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{},
 		pg.FilterField[T],
+		pg.RoleField[T],
 		pg.DistanceField[T],
 		pg.TimeField[T],
-		pg.CountToken[T], pg.ArrayField[T],
+		pg.CountToken[T],
+		pg.ArrayField[T],
 		pg.StatsField,
 	)
+	elapsed1 := time.Since(start1) // calculate duration
+	fmt.Printf("Time spent1: %s\n", elapsed1)
+	start2 := time.Now()
 	if err != nil {
 		return value, err
 	}
@@ -348,6 +355,8 @@ func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, e
 	if err != nil {
 		return value, err
 	}
+	elapsed2 := time.Since(start2) // calculate duration
+	fmt.Printf("Time spent2: %s\n", elapsed2)
 	return value, nil
 }
 
@@ -393,13 +402,16 @@ func UpdateWorkflowData[T db.Scanner](wf *common.Workflow[T]) (string, error) {
 func UpdateWorkflowDataInt[T db.Scanner](wf *common.Workflow[T]) (WorkflowData, error) {
 	ctx := context.Background()
 	statuses, err := wf.Statuses(ctx, false, true)
+	if len(wf.Filter.IncludedWrapped) > 0 {
+		statuses = wf.Filter.IncludedWrapped
+	}
 	if err != nil {
 		return WorkflowData{}, err
 	}
 	wfData := WorkflowData{Name: wf.Name}
 	wfData.Data = wf.Data
 	wfData.Tasks = make([]TaskData, 0)
-	for _, status := range statuses {
+	for _, status := range Paginate(statuses, wf.Page) {
 		current := wf.Tasks[status]
 		taskData := TaskData{
 			Name:       current.Name,
@@ -409,6 +421,24 @@ func UpdateWorkflowDataInt[T db.Scanner](wf *common.Workflow[T]) (WorkflowData, 
 		wfData.Tasks = append(wfData.Tasks, taskData)
 	}
 	return wfData, nil
+}
+
+func Paginate[T any](items []T, page types.Page) []T {
+	start := 0
+	end := len(items)
+
+	if page.PageNumber > 0 && page.PageSize > 0 {
+		start = (page.PageNumber - 1) * page.PageSize
+		end = start + page.PageSize
+
+		if start > len(items) {
+			start = len(items)
+		}
+		if end > len(items) {
+			end = len(items)
+		}
+	}
+	return items[start:end]
 }
 
 func UnmarshallGetFlow(order []byte, query *db.IQuery) (ShowFlowInput, error) {

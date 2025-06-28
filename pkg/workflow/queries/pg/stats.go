@@ -92,9 +92,7 @@ func TimeStats[T db.Scanner](wf *common.Workflow[T], names ...interface{}) Monad
 
 		newQuery := wf.Query
 		for name, current := range wf.Tasks {
-			idCurrent := types.AsInt(current.Data.ID)
-			if !types.IsNil(current.Report) && current.Report.ToBool() == false ||
-				!common.ContainsIncluded(idCurrent, wf) {
+			if !types.IsNil(current.Report) && current.Report.ToBool() == false {
 				continue
 			}
 			nextTask := wf.NextTask(name)
@@ -135,9 +133,7 @@ func RoleStats[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 	newQuery := wf.Query
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		for name, current := range wf.Tasks {
-			idCurrent := types.AsInt(current.Data.ID)
-			if !types.IsNil(current.Report) && current.Report.ToBool() == false ||
-				!common.ContainsIncluded[T](idCurrent, wf) {
+			if !types.IsNil(current.Report) && current.Report.ToBool() == false {
 				continue
 			}
 			newSQL, err := buildSQL(wf, name, STATS_ROLEFIELD)
@@ -184,8 +180,7 @@ func Count[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Mona
 			}
 			countInt := countValue.(types.Int)
 			current.Data.Count = countInt
-			idCurrent := types.AsInt(current.Data.ID)
-			if types.IsNil(current.Report) || current.Report.ToBool() == true && common.ContainsIncluded(idCurrent, wf) {
+			if types.IsNil(current.Report) || current.Report.ToBool() == true {
 				wf.Data.Total = types.NewInt(types.AsInt(wf.Data.Total) + types.AsInt(count.Value))
 			}
 			wf.Data.Stats.Assign(count.Value)

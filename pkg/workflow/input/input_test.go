@@ -783,8 +783,8 @@ func TestProcessShowFlowData(t *testing.T) {
 	input := `
 action: show_flow_data
 ticket: 179
-filter: <Jun25 AND >Jun1
-page_number: 1
+filter: <Jun10 And >Jun1 
+page_number: 2
 page_size: 10
 `
 	order := []byte(input)

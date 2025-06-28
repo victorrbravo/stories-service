@@ -86,7 +86,7 @@ SELECT ta_tracking.pk_tracking FROM ta_tracking
 `
 
 	SelectFilterUsingOptions = `
-SELECT ta_tracking.pk_tracking FROM ta_tracking JOIN  ta_story ON ta_tracking.fk_story=ta_story.pk_story
+SELECT ta_tracking.fk_status FROM ta_tracking JOIN  ta_story ON ta_tracking.fk_story=ta_story.pk_story
 WHERE ( ($2::text[] IS NULL) OR EXISTS ( SELECT 1 FROM unnest(tags) AS tag
     JOIN unnest($2::text[]) AS input_word ON similarity(tag, input_word) > 0.3
     )) AND ($3::text[] IS NULL OR  (NOT (lower_text_array(tags::text[]) && lower_text_array($3::text[]))))  AND ta_story.fk_flow=$1 
@@ -101,15 +101,18 @@ func DistanceField[T db.Scanner](wf *common.Workflow[T], parameters ...interface
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		distanceSum := 0.0
 		nTasks := len(wf.Tasks)
+		start1 := time.Now()
 		n := 0
 		statuses, err := wf.Statuses(ctx, false, false)
+		if len(wf.Filter.IncludedWrapped) > 0 {
+			statuses = wf.Filter.IncludedWrapped
+		}
 		if err != nil {
 			return wf, err
 		}
 		for _, name := range Paginate(statuses, wf.Page) {
 			current := wf.Tasks[name]
-			idCurrent := types.AsInt(current.Data.ID)
-			if types.AsBool(current.Report) == false || !common.ContainsIncluded(idCurrent, wf) {
+			if types.AsBool(current.Report) == false {
 				n++
 				continue
 			}
@@ -135,6 +138,8 @@ func DistanceField[T db.Scanner](wf *common.Workflow[T], parameters ...interface
 			}
 			n++
 		}
+		elapsed1 := time.Since(start1)
+		log.Printf("distance spent %s", elapsed1)
 		wf.Data.DistanceDiff = types.NewFloat(distanceSum)
 		return wf, nil
 	}
@@ -151,6 +156,9 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		nTasks := len(wf.Tasks)
 		n := 0
 		statuses, err := wf.Statuses(ctx, false, false)
+		if len(wf.Filter.IncludedWrapped) > 0 {
+			statuses = wf.Filter.IncludedWrapped
+		}
 		if err != nil {
 			return wf, err
 		}
@@ -213,7 +221,11 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 			fmt.Errorf("invalid timezone: %v", err)
 			return wf, nil
 		}
+		start1 := time.Now()
 		statuses, err := wf.Statuses(ctx, false, false)
+		if len(wf.Filter.IncludedWrapped) > 0 {
+			statuses = wf.Filter.IncludedWrapped
+		}
 		if err != nil {
 			return wf, err
 		}
@@ -238,20 +250,23 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 			}
 			previousTask = current
 		}
+		elapsed1 := time.Since(start1)
+		log.Printf("StatsField elapsed %s", elapsed1)
 		wf.Data.AmountField = types.NewString(FormatToMoney(amountSum))
 		return wf, nil
 	}
 }
 
 func FilterField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
-	var number scanners.Int
+	var statusScanned scanners.String
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		log.Println("Executing FilterField...start")
 		wfId := wf.CurrentIDInt
 		newQuery := wf.Query
+		start1 := time.Now()
 		if wf.Filter.Sentence == "" {
 			log.Println("FilterField Sentence empty filter empty")
-			wf.Filter.IncludedWrapped = []int{}
+			wf.Filter.IncludedWrapped = []string{}
 			return wf, nil
 		}
 		p, err := date_parser.ExtractTerms(wf.Filter.Sentence)
@@ -292,9 +307,7 @@ func FilterField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}
 			}
 			greaterThan = types.NewString(g)
 		}
-		log.Println("FilterField p.lessThan", lessThan)
-		log.Println("FilterField p.greaterThan", greaterThan)
-		rows, err := (*newQuery).QueryMany(SelectFilterUsingOptions, &number, wfId, andsWords, notWords, lessThan, greaterThan)
+		rows, err := (*newQuery).QueryMany(SelectFilterUsingOptions, &statusScanned, wfId, andsWords, notWords, lessThan, greaterThan)
 		if err != nil {
 			if !errors.Is(err, sql.ErrNoRows) {
 				log.Println("FilterField Error Count SQL err", err)
@@ -303,9 +316,11 @@ func FilterField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}
 		}
 		log.Println("FilterField rows rows", rows)
 		for _, row := range rows {
-			valueInt := types.AsInt(row.(types.Int))
-			wf.Filter.IncludedWrapped = append(wf.Filter.IncludedWrapped, valueInt)
+			valueStr := row.(types.String)
+			wf.Filter.IncludedWrapped = append(wf.Filter.IncludedWrapped, valueStr.String())
 		}
+		elapsed := time.Since(start1)
+		log.Printf("FilterField elapsed %s", elapsed)
 		log.Println("FilterField rows IncludedWrapped", wf.Filter.IncludedWrapped)
 		return wf, nil
 	}
@@ -323,6 +338,9 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		if err != nil {
 			return wf, err
 		}
+		if len(wf.Filter.IncludedWrapped) > 0 {
+			statuses = wf.Filter.IncludedWrapped
+		}
 		var previousTask *common.Task
 		var current *common.Task
 		loc, err := time.LoadLocation(constants.TimezoneBogota)
@@ -332,7 +350,9 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		}
 		timeStart := time.Now()
 
-		for _, name := range Paginate(statuses, wf.Page) {
+		pageStatuses := Paginate(statuses, wf.Page)
+		log.Printf("Paginated %d statuses", len(pageStatuses))
+		for _, name := range pageStatuses {
 			current = wf.Tasks[name]
 			newSQL, err := buildSQL(wf, name, SelectRoleToken)
 			if err != nil {
@@ -389,7 +409,7 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			previousTask.Transition.Wrapped = wrapped
 		}
 		elapsed := time.Since(timeStart)
-		log.Println("RoleField elapsed:", elapsed)
+		log.Printf("RoleField elapsed: %v", elapsed)
 		wf.Data.AmountField = types.NewString(FormatToMoney(amountSum))
 		return wf, nil
 	}
@@ -413,11 +433,22 @@ func Paginate[T any](items []T, page types.Page) []T {
 
 	return items[start:end]
 }
+
 func ArrayField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var role scanners.TupleArrays
 	newQuery := wf.Query
+	ctx := context.Background()
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
-		for name, current := range wf.Tasks {
+		start1 := time.Now()
+		statuses, err := wf.Statuses(ctx, false, false)
+		if len(wf.Filter.IncludedWrapped) > 0 {
+			statuses = wf.Filter.IncludedWrapped
+		}
+		if err != nil {
+			return wf, err
+		}
+		for _, name := range Paginate(statuses, wf.Page) {
+			current := wf.Tasks[name]
 			if types.AsBool(current.Report) == false {
 				continue
 			}
@@ -437,6 +468,8 @@ func ArrayField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 			current.Data.Videos = role.Second
 			current.Data.Roles = role.Third
 		}
+		elapsed := time.Since(start1)
+		log.Printf("ArrayField elapsed: %v", elapsed)
 		return wf, nil
 	}
 }
@@ -478,8 +511,19 @@ func VariableField[T db.Scanner](wf *common.Workflow[T], parameters ...interface
 func CountToken[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var count scanners.Int
 	newQuery := wf.Query
+	ctx := context.Background()
+
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
-		for name, current := range wf.Tasks {
+		start1 := time.Now()
+		statuses, err := wf.Statuses(ctx, false, false)
+		if len(wf.Filter.IncludedWrapped) > 0 {
+			statuses = wf.Filter.IncludedWrapped
+		}
+		if err != nil {
+			return wf, err
+		}
+		for _, name := range Paginate(statuses, wf.Page) {
+			current := wf.Tasks[name]
 			newSQL, err := buildSQL(wf, name, SelectCountToken)
 			if err != nil {
 				if !errors.Is(err, sql.ErrNoRows) {
@@ -501,6 +545,8 @@ func CountToken[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 			}
 			wf.Data.Stats.Assign(count.Value)
 		}
+		elapsed := time.Since(start1)
+		log.Println("Count Item elapsed:", elapsed)
 		return wf, nil
 	}
 }
