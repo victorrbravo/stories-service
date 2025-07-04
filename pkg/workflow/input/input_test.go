@@ -784,7 +784,7 @@ func TestProcessShowFlowData(t *testing.T) {
 action: show_flow_data
 ticket: 179
 filter: <Jun10 And >Jun1 
-page_number: 2
+page_number: 6
 page_size: 10
 `
 	order := []byte(input)
