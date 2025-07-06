@@ -92,6 +92,12 @@ WHERE ( ($2::text[] IS NULL) OR EXISTS ( SELECT 1 FROM unnest(tags) AS tag
     )) AND ($3::text[] IS NULL OR  (NOT (lower_text_array(tags::text[]) && lower_text_array($3::text[]))))  AND ta_story.fk_flow=$1 
 AND  ($4::text IS NULL OR ta_tracking.updated_at < $4::timestamptz) AND ($5::text IS NULL OR ta_tracking.updated_at > $5::timestamptz);
 `
+	SumAmountFieldTaTracking = `SELECT SUM(ta_tracking.amount_spent)::money::numeric FROM ta_tracking WHERE ta_tracking.fk_status=ANY($1::text[])
+AND ta_tracking.fk_story=$2
+`
+	CountFieldTaTracking = `SELECT COUNT(*) FROM ta_tracking WHERE ta_tracking.fk_status=ANY($1::text[])
+AND ta_tracking.fk_story=$2
+`
 )
 
 func DistanceField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
@@ -210,7 +216,6 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
-		amountSum := 0.0
 		amountSumParcial := 0.0
 		ctx := context.Background()
 		var previousTask *common.Task
@@ -233,8 +238,9 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 		for _, name := range Paginate(statuses, wf.Page) {
 			current = wf.Tasks[name]
 			amountField, err := ParseDollarAmount(current.Data.AmountField.String())
-			if err == nil {
-				amountSum = amountSum + amountField
+			if err != nil {
+				log.Println("task name:", name, "Error AmountField err", err)
+				continue
 			}
 			if previousTask != nil && CheckPeriodDates(previousTask.Data.TimeField, current.Data.TimeField, constants.TimezoneBogota, wf.ByDay) {
 				firstDate, _ := time.Parse(time.RFC3339, types.AsString(previousTask.Data.TimeField))
@@ -252,7 +258,16 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 		}
 		elapsed1 := time.Since(start1)
 		log.Printf("StatsField elapsed %s", elapsed1)
-		wf.Data.AmountField = types.NewString(FormatToMoney(amountSum))
+		newQuery := wf.Query
+		var value scanners.Float
+		_, err = (*newQuery).QueryOne(SumAmountFieldTaTracking, &value, types.NewStringArray(statuses), wf.CurrentIDInt)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			log.Println("Error StatsField err", err)
+			return wf, err
+		}
+		var valueFloat float64
+		valueFloat = types.AsFloat(value.Value)
+		wf.Data.AmountField = types.NewString(FormatToMoney(valueFloat))
 		return wf, nil
 	}
 }
@@ -406,7 +421,7 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			wrapped := new(common.Wrapped)
 			wrapped.Label = firstDate.Format("Mon, Jan 02")
 			wrapped.Amount = types.NewString(FormatToMoney(amountSumParcial))
-			previousTask.Transition.Wrapped = wrapped
+			//previousTask.Transition.Wrapped = wrapped
 		}
 		elapsed := time.Since(timeStart)
 		log.Printf("RoleField elapsed: %v", elapsed)
@@ -540,11 +555,17 @@ func CountToken[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 			}
 			countInt := countValue.(types.Int)
 			current.Data.Count = countInt
-			if types.IsNil(current.Report) || current.Report.ToBool() == true {
-				wf.Data.Total = types.NewInt(types.AsInt(wf.Data.Total) + types.AsInt(count.Value))
-			}
 			wf.Data.Stats.Assign(count.Value)
 		}
+		newQuery := wf.Query
+		var value scanners.Int
+		_, err = (*newQuery).QueryOne(CountFieldTaTracking, &value, types.NewStringArray(statuses), wf.CurrentIDInt)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			log.Println("Count Error StatsField err", err)
+			return wf, err
+		}
+		wf.Data.Total = value.Value
+		wf.Data.Stats.Assign(value.Value)
 		elapsed := time.Since(start1)
 		log.Println("Count Item elapsed:", elapsed)
 		return wf, nil
