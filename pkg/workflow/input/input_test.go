@@ -785,7 +785,8 @@ action: show_flow_data
 ticket: 181
 filter:  
 page_number: 2
-page_size: 20
+page_size: 12
+by_day: false
 `
 	order := []byte(input)
 	ctx := context.Background()

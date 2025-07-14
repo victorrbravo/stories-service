@@ -50,10 +50,10 @@ FROM cte {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{
 WITH cte AS (
 SELECT {{.Key2Link}} ,{{.Key1Link}},{{.TrackingTable}}.{{.TimeField}},{{.PkField}},roles,images,
 CASE
-	WHEN EXTRACT (epoch from (LEAD({{.TrackingTable}}.{{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})) - {{.TrackingTable}}.{{.TimeField}})) < 0 then INTERVAL '0 hour'
-	ELSE LEAD({{.TrackingTable}}.{{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})) - {{.TrackingTable}}.{{.TimeField}}
+	WHEN EXTRACT (epoch from (LEAD({{.TrackingTable}}.{{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION($1::text[], {{.Key2Link}})) - {{.TrackingTable}}.{{.TimeField}})) < 0 then INTERVAL '0 hour'
+	ELSE LEAD({{.TrackingTable}}.{{.TimeField}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION($1::text[], {{.Key2Link}})) - {{.TrackingTable}}.{{.TimeField}}
 END AS diff
-FROM {{.TrackingTable}} JOIN {{.TableName}} ON {{.Key1Link}}={{.PkField}} ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})  
+FROM {{.TrackingTable}} JOIN {{.TableName}} ON {{.Key1Link}}={{.PkField}} WHERE {{.TrackingTable}}.{{.Key2Link}}=ANY($1::text[]) ORDER BY {{.Key1Link}}, ARRAY_POSITION($1::text[], {{.Key2Link}})  
 )
 SELECT 
 CASE WHEN diff IS NULL THEN '0s' ELSE diff END AS maxtime
@@ -90,11 +90,20 @@ SELECT ta_tracking.fk_status FROM ta_tracking JOIN  ta_story ON ta_tracking.fk_s
 WHERE ( ($2::text[] IS NULL) OR EXISTS ( SELECT 1 FROM unnest(tags) AS tag
     JOIN unnest($2::text[]) AS input_word ON similarity(tag, input_word) > 0.3
     )) AND ($3::text[] IS NULL OR  (NOT (lower_text_array(tags::text[]) && lower_text_array($3::text[]))))  AND ta_story.fk_flow=$1 
-AND  ($4::text IS NULL OR ta_tracking.updated_at < $4::timestamptz) AND ($5::text IS NULL OR ta_tracking.updated_at > $5::timestamptz);
+AND  ($4::text IS NULL OR ta_tracking.updated_at < $4::timestamptz) AND ($5::text IS NULL OR ta_tracking.updated_at > $5::timestamptz) ORDER BY ta_tracking.updated_at;
 `
 	SumAmountFieldTaTracking = `SELECT SUM(ta_tracking.amount_spent)::money::numeric FROM ta_tracking WHERE ta_tracking.fk_status=ANY($1::text[])
 AND ta_tracking.fk_story=$2
 `
+	SumAmountFieldForWeekTaTracking = `SELECT SUM(ta_tracking.amount_spent)::money::numeric FROM ta_tracking WHERE 
+ta_tracking.fk_story=$2  AND updated_at >= date_trunc('week', $1::date) 
+  AND updated_at < date_trunc('week', $1::date) + INTERVAL '7 days';
+`
+	SumAmountFieldForDayTaTracking = `SELECT SUM(ta_tracking.amount_spent)::money::numeric FROM ta_tracking WHERE 
+ta_tracking.fk_story=$2 AND updated_at >= $1::date
+  AND updated_at < $1::date + INTERVAL '1 day';
+`
+
 	CountFieldTaTracking = `SELECT COUNT(*) FROM ta_tracking WHERE ta_tracking.fk_status=ANY($1::text[])
 AND ta_tracking.fk_story=$2
 `
@@ -174,13 +183,14 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 				n++
 				continue
 			}
+			paginatedStatuses := Paginate(statuses, wf.Page)
 			newSQL, err := buildSQL(wf, name, SelectTimeFieldToken)
 			if err != nil {
 				log.Println("Error TimeField err", err)
 				n++
 				continue
 			}
-			durationValue, err := (*newQuery).QueryOne(newSQL, &duration)
+			durationValue, err := (*newQuery).QueryOne(newSQL, &duration, types.NewStringArray(paginatedStatuses))
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				log.Println("error query err", err, "newSQL", newSQL)
 				n++
@@ -248,7 +258,7 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 				wrapped := new(common.Wrapped)
 				wrapped.Label = firstDate.Format("Mon, Jan 02")
 				log.Println("StatsField* name", name, "*wrapped.amount", amountSumParcial)
-				wrapped.Amount = types.NewString(FormatToMoney(amountSumParcial))
+				calculateWrappedAmount(wf, firstDate, wrapped)
 				previousTask.Transition.Wrapped = wrapped
 				amountSumParcial = amountField
 			} else {
@@ -401,7 +411,7 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 				firstDate = firstDate.In(loc)
 				wrapped := new(common.Wrapped)
 				wrapped.Label = firstDate.Format("Mon, Jan 02")
-				wrapped.Amount = types.NewString(FormatToMoney(amountSumParcial))
+				calculateWrappedAmount(wf, firstDate, wrapped)
 				previousTask.Transition.Wrapped = wrapped
 				amountSumParcial = 0.0
 			}
@@ -420,14 +430,30 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			firstDate = firstDate.In(loc)
 			wrapped := new(common.Wrapped)
 			wrapped.Label = firstDate.Format("Mon, Jan 02")
-			wrapped.Amount = types.NewString(FormatToMoney(amountSumParcial))
-			//previousTask.Transition.Wrapped = wrapped
+			calculateWrappedAmount(wf, firstDate, wrapped)
 		}
 		elapsed := time.Since(timeStart)
 		log.Printf("RoleField elapsed: %v", elapsed)
 		wf.Data.AmountField = types.NewString(FormatToMoney(amountSum))
 		return wf, nil
 	}
+}
+
+func calculateWrappedAmount[T db.Scanner](wf *common.Workflow[T], firstDate time.Time, wrapped *common.Wrapped) {
+	var valueAmount scanners.Float
+	newQuery := wf.Query
+	var currentSQL = SumAmountFieldForWeekTaTracking
+	if wf.ByDay {
+		currentSQL = SumAmountFieldForDayTaTracking
+	}
+	toCalculateDate := firstDate.Format("2006-01-02")
+	log.Println("CalculateDate", toCalculateDate)
+	_, err := (*newQuery).QueryOne(currentSQL, &valueAmount, toCalculateDate,
+		wf.CurrentIDInt)
+	if err != nil {
+		log.Println("SumAmountField Error SumAmountFieldForWeekTaTracking", err)
+	}
+	wrapped.Amount = types.NewString(FormatToMoney(types.AsFloat(valueAmount.Value)))
 }
 
 func Paginate[T any](items []T, page types.Page) []T {

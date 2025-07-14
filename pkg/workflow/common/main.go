@@ -351,6 +351,11 @@ func ToggleQuotes(stringsList []string, quotes bool) []string {
 
 	return result
 }
+func (wf *Workflow[T]) SetStatuses(statuses []string) error {
+	wf.statuses = statuses
+	return nil
+}
+
 func (wf *Workflow[T]) calculateStatuses(ctx context.Context, quotes bool, recalculate bool) ([]string, error) {
 	var err error
 	var start string
