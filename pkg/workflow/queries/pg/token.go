@@ -60,6 +60,32 @@ CASE WHEN diff IS NULL THEN '0s' ELSE diff END AS maxtime
 FROM cte {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}};
 `
 
+	SelectSumTimeFieldToken = `
+WITH cte AS (
+SELECT fk_status ,fk_story,ta_tracking.updated_at,pk_story,roles,images,
+CASE
+	WHEN EXTRACT (epoch from (LEAD(ta_tracking.updated_at) over (ORDER BY fk_story, ARRAY_POSITION($1::text[], fk_status)) - ta_tracking.updated_at)) < 0 then INTERVAL '0 hour'
+	ELSE LEAD(ta_tracking.updated_at) over (ORDER BY fk_story, ARRAY_POSITION($1::text[], fk_status)) - 
+ta_tracking.updated_at
+END AS diff
+FROM ta_tracking JOIN ta_story ON fk_story=pk_story WHERE ta_tracking.fk_status=ANY($1::text[]) ORDER BY ARRAY_POSITION($1::text[], fk_status)  
+)
+SELECT 
+SUM(CASE WHEN diff IS NULL THEN '0s' ELSE diff END) AS sumtime
+FROM cte  WHERE pk_story = $2
+`
+
+	SelectSumPosFieldToken = `
+WITH cte AS (
+SELECT {{.Key2Link}} ,{{.Key1Link}}, {{.TrackingTable}}.{{.TimeField}},{{.PkField}},roles,images,
+	ST_Distance(ST_Transform({{.Position}},3857), ST_Transform(LEAD({{.Position}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})), 3857)) AS diff
+FROM {{.TrackingTable}} JOIN {{.TableName}} ON {{.Key1Link}}={{.PkField}} ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})  
+)
+SELECT 
+SUM(CASE WHEN diff IS NULL THEN -1 ELSE diff END) AS sumdistance
+FROM cte {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}};
+`
+
 	SelectRoleToken = `
 SELECT {{.InfoField}},{{.TrackingTable}}.{{.TimeField}},{{.AmountField}}, {{.TrackingTable}}.{{.SummaryField}}, {{.PkTracking}}, {{.VideosField}}, {{.ImagesField}}, {{.TipsIdField}}, {{.SubIdField}}, ST_AsBinary({{.Position}}), {{.Description}},{{.TrackingTable}}."tags"  FROM {{.TrackingTable}}  JOIN  {{.TableName}} ON {{.Key1Link}}={{.Token}}                
 {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}}
@@ -211,6 +237,7 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			n++
 		}
 		daysDuration, err := ConvertToDaysHours(timeSum.String())
+
 		if err == nil {
 			wf.Data.UpdateAtDiff = types.NewString(daysDuration)
 		} else {
@@ -270,6 +297,7 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 		log.Printf("StatsField elapsed %s", elapsed1)
 		newQuery := wf.Query
 		var value scanners.Float
+
 		_, err = (*newQuery).QueryOne(SumAmountFieldTaTracking, &value, types.NewStringArray(statuses), wf.CurrentIDInt)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			log.Println("Error StatsField err", err)
@@ -278,6 +306,29 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 		var valueFloat float64
 		valueFloat = types.AsFloat(value.Value)
 		wf.Data.AmountField = types.NewString(FormatToMoney(valueFloat))
+
+		var duration scanners.String
+		durationValue, err := (*newQuery).QueryOne(SelectSumTimeFieldToken, &duration, types.NewStringArray(statuses), wf.CurrentIDInt)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			log.Println("Error StatsField err", err)
+			return wf, err
+		}
+		durationTime, ok := durationValue.(types.String)
+		if !ok {
+			log.Println("Error StatsField err", err)
+		}
+		valueTime := types.NewString(durationTime.String())
+
+		strValue := types.AsString(valueTime)
+		currentDuration, err := ParsePostgresInterval(strValue)
+		daysDuration, err := ConvertToDaysHours(currentDuration.String())
+		if err != nil {
+			log.Println("Error StatsField converting hours err", err)
+		}
+		log.Println("StatsField duration", daysDuration)
+		wf.Data.UpdateAtDiff = types.NewString(daysDuration)
+		wf.Data.Count = types.NewInt(len(statuses))
+		wf.Data.Total = types.NewInt(len(statuses))
 		return wf, nil
 	}
 }
@@ -367,7 +418,6 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			statuses = wf.Filter.IncludedWrapped
 		}
 		var previousTask *common.Task
-		var current *common.Task
 		loc, err := time.LoadLocation(constants.TimezoneBogota)
 		if err != nil {
 			fmt.Errorf("invalid timezone: %v", err)
@@ -378,7 +428,11 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		pageStatuses := Paginate(statuses, wf.Page)
 		log.Printf("Paginated %d statuses", len(pageStatuses))
 		for _, name := range pageStatuses {
-			current = wf.Tasks[name]
+			current, ok := wf.Tasks[name]
+			if !ok {
+				log.Println("Statuses in paginated value not found name:", name)
+				continue
+			}
 			newSQL, err := buildSQL(wf, name, SelectRoleToken)
 			if err != nil {
 				log.Println("RoleField Error Role err", err)
@@ -435,6 +489,7 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		elapsed := time.Since(timeStart)
 		log.Printf("RoleField elapsed: %v", elapsed)
 		wf.Data.AmountField = types.NewString(FormatToMoney(amountSum))
+
 		return wf, nil
 	}
 }
