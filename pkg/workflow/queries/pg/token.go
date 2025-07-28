@@ -122,12 +122,12 @@ AND  ($4::text IS NULL OR ta_tracking.updated_at < $4::timestamptz) AND ($5::tex
 AND ta_tracking.fk_story=$2
 `
 	SumAmountFieldForWeekTaTracking = `SELECT SUM(ta_tracking.amount_spent)::money::numeric FROM ta_tracking WHERE 
-ta_tracking.fk_story=$2  AND updated_at >= date_trunc('week', $1::date) 
+ta_tracking.fk_story=$2 AND ta_tracking.fk_status=ANY($3::text[])   AND updated_at >= date_trunc('week', $1::date) 
   AND updated_at < date_trunc('week', $1::date) + INTERVAL '7 days';
 `
 	SumAmountFieldForDayTaTracking = `SELECT SUM(ta_tracking.amount_spent)::money::numeric FROM ta_tracking WHERE 
-ta_tracking.fk_story=$2 AND updated_at >= $1::date
-  AND updated_at < $1::date + INTERVAL '1 day';
+ta_tracking.fk_story=$2 AND ta_tracking.fk_status=ANY($3::text[]) AND updated_at >= $1::timestamp
+  AND updated_at < $1::timestamp + INTERVAL '1 day';
 `
 
 	CountFieldTaTracking = `SELECT COUNT(*) FROM ta_tracking WHERE ta_tracking.fk_status=ANY($1::text[])
@@ -151,7 +151,10 @@ func DistanceField[T db.Scanner](wf *common.Workflow[T], parameters ...interface
 		if err != nil {
 			return wf, err
 		}
-		for _, name := range Paginate(statuses, wf.Page) {
+		pagStatuses, before, after := Paginate(statuses, wf.Page)
+		log.Println("before", before)
+		log.Println("after", after)
+		for _, name := range pagStatuses {
 			current := wf.Tasks[name]
 			if types.AsBool(current.Report) == false {
 				n++
@@ -203,13 +206,16 @@ func TimeField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		if err != nil {
 			return wf, err
 		}
-		for _, name := range Paginate(statuses, wf.Page) {
+		pagStatuses, before, after := Paginate(statuses, wf.Page)
+		log.Println("before", before)
+		log.Println("after", after)
+		for _, name := range pagStatuses {
 			current := wf.Tasks[name]
 			if types.AsBool(current.Report) == false {
 				n++
 				continue
 			}
-			paginatedStatuses := Paginate(statuses, wf.Page)
+			paginatedStatuses, _, _ := Paginate(statuses, wf.Page)
 			newSQL, err := buildSQL(wf, name, SelectTimeFieldToken)
 			if err != nil {
 				log.Println("Error TimeField err", err)
@@ -271,8 +277,10 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 		if err != nil {
 			return wf, err
 		}
-		log.Println("StatsField statuses", statuses)
-		for _, name := range Paginate(statuses, wf.Page) {
+		pagStatuses, before, after := Paginate(statuses, wf.Page)
+		log.Println("before", before)
+		log.Println("after", after)
+		for _, name := range pagStatuses {
 			current = wf.Tasks[name]
 			amountField, err := ParseDollarAmount(current.Data.AmountField.String())
 			if err != nil {
@@ -285,7 +293,7 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 				wrapped := new(common.Wrapped)
 				wrapped.Label = firstDate.Format("Mon, Jan 02")
 				log.Println("StatsField* name", name, "*wrapped.amount", amountSumParcial)
-				calculateWrappedAmount(wf, firstDate, wrapped)
+				calculateWrappedAmount(wf, firstDate, wrapped, statuses)
 				previousTask.Transition.Wrapped = wrapped
 				amountSumParcial = amountField
 			} else {
@@ -425,9 +433,10 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		}
 		timeStart := time.Now()
 
-		pageStatuses := Paginate(statuses, wf.Page)
-		log.Printf("Paginated %d statuses", len(pageStatuses))
-		for _, name := range pageStatuses {
+		pagStatuses, before, after := Paginate(statuses, wf.Page)
+		log.Println("before", before)
+		log.Println("after", after)
+		for _, name := range pagStatuses {
 			current, ok := wf.Tasks[name]
 			if !ok {
 				log.Println("Statuses in paginated value not found name:", name)
@@ -465,7 +474,7 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 				firstDate = firstDate.In(loc)
 				wrapped := new(common.Wrapped)
 				wrapped.Label = firstDate.Format("Mon, Jan 02")
-				calculateWrappedAmount(wf, firstDate, wrapped)
+				calculateWrappedAmount(wf, firstDate, wrapped, statuses)
 				previousTask.Transition.Wrapped = wrapped
 				amountSumParcial = 0.0
 			}
@@ -479,12 +488,18 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			n++
 			previousTask = current
 		}
-		if previousTask != nil {
+		var current *common.Task
+		if after != "" {
+			current = wf.Tasks[after]
+		}
+		if after == "" || (previousTask != nil && current != nil && CheckPeriodDates(previousTask.Data.TimeField, current.Data.TimeField, constants.TimezoneBogota, wf.ByDay)) {
 			firstDate, _ := time.Parse(time.RFC3339, types.AsString(previousTask.Data.TimeField))
 			firstDate = firstDate.In(loc)
 			wrapped := new(common.Wrapped)
 			wrapped.Label = firstDate.Format("Mon, Jan 02")
-			calculateWrappedAmount(wf, firstDate, wrapped)
+			calculateWrappedAmount(wf, firstDate, wrapped, statuses)
+			previousTask.Transition.Wrapped = wrapped
+			amountSumParcial = 0.0
 		}
 		elapsed := time.Since(timeStart)
 		log.Printf("RoleField elapsed: %v", elapsed)
@@ -494,26 +509,47 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 	}
 }
 
-func calculateWrappedAmount[T db.Scanner](wf *common.Workflow[T], firstDate time.Time, wrapped *common.Wrapped) {
+func calculateWrappedAmount[T db.Scanner](wf *common.Workflow[T], firstDate time.Time, wrapped *common.Wrapped, statuses []string) {
 	var valueAmount scanners.Float
 	newQuery := wf.Query
 	var currentSQL = SumAmountFieldForWeekTaTracking
 	if wf.ByDay {
 		currentSQL = SumAmountFieldForDayTaTracking
 	}
-	toCalculateDate := firstDate.Format("2006-01-02")
-	log.Println("CalculateDate", toCalculateDate)
-	_, err := (*newQuery).QueryOne(currentSQL, &valueAmount, toCalculateDate,
-		wf.CurrentIDInt)
+
+	toCalculateDateString := truncateBogotaMidnightAsUTC(firstDate)
+	log.Println("CalculateDate", toCalculateDateString)
+	_, err := (*newQuery).QueryOne(currentSQL, &valueAmount, toCalculateDateString,
+		wf.CurrentIDInt, types.NewStringArray(statuses))
 	if err != nil {
 		log.Println("SumAmountField Error SumAmountFieldForWeekTaTracking", err)
 	}
 	wrapped.Amount = types.NewString(FormatToMoney(types.AsFloat(valueAmount.Value)))
 }
 
-func Paginate[T any](items []T, page types.Page) []T {
+func truncateBogotaMidnightAsUTC(t time.Time) string {
+	// Load Bogotá location
+	loc, err := time.LoadLocation("America/Bogota")
+	if err != nil {
+		panic(err)
+	}
+
+	// Convert to Bogotá time and truncate to midnight
+	tInBogota := t.In(loc)
+	tMidnightBogota := time.Date(tInBogota.Year(), tInBogota.Month(), tInBogota.Day(), 0, 0, 0, 0, loc)
+
+	// Convert Bogotá midnight to UTC
+	tMidnightUTC := tMidnightBogota.UTC()
+
+	// Format in desired layout
+	return tMidnightUTC.Format("2006-01-02 15:04:05")
+}
+
+func Paginate[T any](items []T, page types.Page) ([]T, T, T) {
 	start := 0
 	end := len(items)
+	var before T
+	var after T
 
 	if page.PageNumber > 0 && page.PageSize > 0 {
 		start = (page.PageNumber - 1) * page.PageSize
@@ -526,8 +562,13 @@ func Paginate[T any](items []T, page types.Page) []T {
 			end = len(items)
 		}
 	}
-
-	return items[start:end]
+	if start > 0 {
+		before = items[start-1]
+	}
+	if end < len(items)-1 {
+		after = items[end+1]
+	}
+	return items[start:end], before, after
 }
 
 func ArrayField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
@@ -543,7 +584,10 @@ func ArrayField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 		if err != nil {
 			return wf, err
 		}
-		for _, name := range Paginate(statuses, wf.Page) {
+		pagStatuses, before, after := Paginate(statuses, wf.Page)
+		log.Println("before", before)
+		log.Println("after", after)
+		for _, name := range pagStatuses {
 			current := wf.Tasks[name]
 			if types.AsBool(current.Report) == false {
 				continue
@@ -618,7 +662,11 @@ func CountToken[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 		if err != nil {
 			return wf, err
 		}
-		for _, name := range Paginate(statuses, wf.Page) {
+		pagStatuses, before, after := Paginate(statuses, wf.Page)
+		log.Println("before", before)
+		log.Println("after", after)
+
+		for _, name := range pagStatuses {
 			current := wf.Tasks[name]
 			newSQL, err := buildSQL(wf, name, SelectCountToken)
 			if err != nil {

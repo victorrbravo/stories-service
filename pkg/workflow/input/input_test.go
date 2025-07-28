@@ -783,10 +783,10 @@ func TestProcessShowFlowData(t *testing.T) {
 	input := `
 action: show_flow_data
 ticket: 181
-filter: <jul19 and >jul19  
+filter: <jul21 AND >jul20   
 page_number: 1
 page_size: 12
-by_day: false
+by_day: true
 `
 	order := []byte(input)
 	ctx := context.Background()
