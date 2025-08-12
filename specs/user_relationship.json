@@ -1,0 +1,46 @@
+{
+  "Model": "TaUserRelationship",
+  "Attrs": [
+    {
+      "Name": "PkUserRelationship",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Key": true,
+      "Getter": true,
+      "Title": "ID"
+    },
+    {
+      "Name": "FkFollowerId",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Key": false,
+      "Getter": true,
+      "Title": "follower_id"
+    },
+    {
+      "Name": "FkFollowedId",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Key": false,
+      "Getter": true,
+      "Title": "followed_id"
+    },
+    {
+      "Name": "Status",
+      "Type": "types.String",
+      "Scannable": true,
+      "Key": false,
+      "Getter": true,
+      "Title": "status"
+    },
+    {
+      "Name": "UpdatedAt",
+      "Type": "types.DateTime",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Title": "UpdatedAt"
+    }
+  ]
+}
+

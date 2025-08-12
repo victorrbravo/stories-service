@@ -32,7 +32,9 @@ func ProcessInput(ctx context.Context, action []byte, query *database.IQuery) (s
 	}
 	order := string(action)
 	log.Println("pass action order:", order)
-	value, err = Processor(ctx, getAction.Action, order, query, pg.MainProcessor, stories.FlowProcessor,
+	value, err = Processor(ctx, getAction.Action, order,
+		query, pg.MainProcessor,
+		stories.FlowProcessor,
 		stories.WorkflowProcessor)
 	if err != nil {
 		return jsonResponse, err

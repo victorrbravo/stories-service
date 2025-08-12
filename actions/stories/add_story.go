@@ -118,6 +118,15 @@ func FlowProcessor(ctx context.Context, action string, order string, query *data
 		value, err = DoAIQuestion(order, query, "Summarize the image in two words or less")
 	case "suggest_words_for_image":
 		value, err = DoAIQuestion(order, query, "Can you say almost 10 words associated with the image separated by commas")
+	case "follow_user":
+		log.Println("follow_user")
+		value, err = DoFollowUser(order, query)
+	case "unfollow_user":
+		log.Println("unfollow_user")
+	case "get_users":
+		log.Println("get_users")
+	case "get_following_stories":
+		log.Println("get_following_stories")
 	case "get_stories_by_email_grouped":
 		value, err = DoGetStoriesByEmailGrouped(ctx, order, query)
 	case "get_stories_by_email":
@@ -135,6 +144,38 @@ func FlowProcessor(ctx context.Context, action string, order string, query *data
 		return value, err
 	}
 
+	return value, nil
+}
+
+func DoFollowUser(order string, query *database.IQuery) (string, error) {
+	value := ""
+	handler, err := Unmarshall[FollowUser]([]byte(order))
+	if err != nil {
+		return value, err
+	}
+	log.Println("handler", handler)
+	userOwners, err := models.GetTaUserByEmail(*query, handler.FromUserEmail)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Println("no rows for userOwner")
+		}
+		return value, err
+	}
+	userOwner := userOwners[0]
+	userFollows, err := models.GetTaUserByEmail(*query, handler.ToUserEmail)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Println("no rows for userFollows")
+		}
+		return value, err
+
+	}
+	userFollow := userFollows[0]
+	_, err = models.CreateTaUserRelationship(*query, userOwner.PkUser, userFollow.PkUser, types.NilString(), types.Now())
+	if err != nil {
+		return value, err
+	}
+	log.Println("user", userOwner.Email, "follow", "userFollow", userFollow.PkUser, userFollow.PkUser)
 	return value, nil
 }
 

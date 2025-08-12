@@ -20,6 +20,8 @@ var ValuesTaTracking []models.TaTracking
 
 var ValuesTaUser []models.TaUser
 
+var ValuesTaUserRelationship []models.TaUserRelationship
+
 func MainProcessor(ctx context.Context, action string, order string, query *database.IQuery) (string, error) {
 	var err error
 	var value string
@@ -47,6 +49,10 @@ func MainProcessor(ctx context.Context, action string, order string, query *data
 
 	if ValuesTaUser == nil {
 		ValuesTaUser = make([]models.TaUser, 0)
+	}
+
+	if ValuesTaUserRelationship == nil {
+		ValuesTaUserRelationship = make([]models.TaUserRelationship, 0)
 	}
 
 	switch action {
@@ -181,6 +187,23 @@ func MainProcessor(ctx context.Context, action string, order string, query *data
 		}
 		data, err = json.Marshal(ValueTaUsers)
 		value = string(data)
+	case "add_user_relationship":
+		err = InsertTaUserRelationship(order, query)
+	case "delete_user_relationship":
+		err = DeleteTaUserRelationship(order, query)
+	case "update_user_relationship":
+		err = UpdateTaUserRelationship(order, query)
+	case "all_user_relationship":
+		ValuesTaUserRelationship, _ = GetAllTaUserRelationship(query)
+		data, err = json.Marshal(ValuesTaUserRelationship)
+		if err != nil {
+			return "", err
+		}
+		value = string(data)
+	case "get_user_relationship_by_PkUserRelationship":
+		ValueTaUserRelationship, _ := GetTaUserRelationshipByPkUserRelationship(order, query)
+		ValuesTaUserRelationship = append(ValuesTaUserRelationship, *ValueTaUserRelationship)
+
 	}
 	if err != nil {
 		return value, err
@@ -246,4 +269,14 @@ func UnmarshallTaUser(order []byte) (TaUser, error) {
 		return taUser, err
 	}
 	return taUser, nil
+}
+
+func UnmarshallTaUserRelationship(order []byte) (TaUserRelationship, error) {
+	var taUserRelationship TaUserRelationship
+	var err error
+	err = yaml.Unmarshal(order, &taUserRelationship)
+	if err != nil {
+		return taUserRelationship, err
+	}
+	return taUserRelationship, nil
 }

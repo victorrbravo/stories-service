@@ -47,6 +47,11 @@ type ShowStepTips struct {
 	TipsID types.Int `yaml:"tips_id"`
 }
 
+type FollowUser struct {
+	FromUserEmail types.String `yaml:"from_user_email"`
+	ToUserEmail   types.String `yaml:"to_user_email"`
+	Option        types.String `yaml:"option"`
+}
 type ChangeNameOfTask struct {
 	StepID types.Int    `yaml:"step_id" json:"step_id"`
 	Name   types.String `yaml:"name" json:"name"`

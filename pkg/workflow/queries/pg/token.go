@@ -410,6 +410,25 @@ func FilterField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}
 	}
 }
 
+func OrderingTaskField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
+	return func(error, ...interface{}) (*common.Workflow[T], error) {
+		ctx := context.Background()
+		timeStart := time.Now()
+		statuses, err := wf.Statuses(ctx, false, false)
+		if err != nil {
+			return wf, err
+		}
+		var newTasks map[string]*common.Task = make(map[string]*common.Task)
+		for _, status := range statuses {
+			newTasks[status] = wf.Tasks[status]
+		}
+		wf.Tasks = newTasks
+		elapsed := time.Since(timeStart)
+		log.Printf("OrderingField elapsed: %v", elapsed)
+		return wf, nil
+	}
+}
+
 func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) Monad[T] {
 	var role scanners.TupleEleven
 	newQuery := wf.Query

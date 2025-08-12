@@ -22,7 +22,7 @@ const (
 
 type Server struct{}
 
-func CreateRouter(newQuery database.IQuery) handlers_utils.Router {
+func CreateRouter(newQuery database.IQueryº) handlers_utils.Router {
 	router := handlers_utils.NewRouter()
 	newUser := models.TaUser{}
 	router.AddNoAuthenticated(Authentication, "/login", auth.UserLoginHandler{Query: newQuery, User: newUser},

@@ -159,11 +159,12 @@ alter table ta_tracking add column tags varchar[] DEFAULT '{}';
         "updated_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
     );
 
-    create table ta_user_relationships (
-                                        pk_user_relationships SERIAL PRIMARY KEY,
-                                        fk_follower_id INTEGER NOT NULL REFERENCES ta_user(pk_user) ON DELETE CASCADE,
-                                        fk_followed_id INTEGER NOT NULL REFERENCES ta_user(pk_user) ON DELETE CASCADE,
-                                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    create table ta_user_relationship (
+                                        pk_user_relationship SERIAL PRIMARY KEY,
+                                        fk_follower_id INTEGER NOT NULL REFERENCES ta_user(pk_user),
+                                        fk_followed_id INTEGER NOT NULL REFERENCES ta_user(pk_user),
+                                        status varchar(30) default 'Requested',
+                                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                         CONSTRAINT unique_relationship UNIQUE (fk_follower_id, fk_followed_id),
                                         CONSTRAINT no_self_follow CHECK (fk_follower_id <> fk_followed_id)
     );
