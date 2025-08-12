@@ -123,6 +123,7 @@ func FlowProcessor(ctx context.Context, action string, order string, query *data
 		value, err = DoFollowUser(order, query)
 	case "unfollow_user":
 		log.Println("unfollow_user")
+		value, err = DoUnfollowUser(order, query)
 	case "get_users":
 		log.Println("get_users")
 	case "get_following_stories":
@@ -144,6 +145,48 @@ func FlowProcessor(ctx context.Context, action string, order string, query *data
 		return value, err
 	}
 
+	return value, nil
+}
+
+func DoUnfollowUser(order string, query *database.IQuery) (string, error) {
+	value := ""
+	handler, err := Unmarshall[FollowUser]([]byte(order))
+	if err != nil {
+		return value, err
+	}
+	log.Println("handler", handler)
+	userOwners, err := models.GetTaUserByEmail(*query, handler.FromUserEmail)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Println("no rows for userOwner")
+		}
+		return value, err
+	}
+	userOwner := userOwners[0]
+	userFollows, err := models.GetTaUserByEmail(*query, handler.ToUserEmail)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Println("no rows for userFollows")
+		}
+		return value, err
+
+	}
+	userFollow := userFollows[0]
+	relationToDeletes, err := models.GetTaUserRelationshipByFkFollowerIdAndFkFollowedId(*query, userOwner.PkUser,
+		userFollow.PkUser)
+	if err != nil {
+		return value, err
+	}
+	if len(relationToDeletes) == 0 {
+		return value, errors.New("no relation to delete")
+	}
+	relatinToDelete := relationToDeletes[0]
+	err = relatinToDelete.Delete(*query)
+	if err != nil {
+		log.Println("error deleting", err)
+		return value, err
+	}
+	log.Println("unfollowing user", userOwner.Email, "follow", "userFollow", userFollow.PkUser, userFollow.PkUser)
 	return value, nil
 }
 

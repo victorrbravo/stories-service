@@ -826,6 +826,34 @@ to_user_email: solazver@gmail.com
 	fmt.Println("value data response", response)
 }
 
+func TestProcessUnFollowUser(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: unfollow_user
+from_user_email: victorrbravo@gmail.com
+to_user_email: solazver@gmail.com
+`
+	order := []byte(input)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response", response)
+}
+
 func TestProcessShowAllCategories(t *testing.T) {
 	var err error
 	config := database.DatabaseConfig{

@@ -17,6 +17,7 @@ const (
     TaUserRelationshipByPkUserRelationshipQuery = "SELECT \"pk_user_relationship\", \"fk_follower_id\", \"fk_followed_id\", \"status\", \"updated_at\" FROM \"ta_user_relationship\" WHERE \"pk_user_relationship\" = $1"
     TaUserRelationshipUpdateQuery = "UPDATE \"ta_user_relationship\" SET \"fk_follower_id\" = COALESCE($1, \"fk_follower_id\"), \"fk_followed_id\" = COALESCE($2, \"fk_followed_id\"), \"status\" = COALESCE($3, \"status\"), \"updated_at\" = COALESCE($4, \"updated_at\") WHERE \"pk_user_relationship\" = $5"
     TaUserRelationshipDeleteQuery = "DELETE FROM \"ta_user_relationship\" WHERE \"pk_user_relationship\" = $1"
+    TaUserRelationshipByFkFollowerIdAndFkFollowedIdQuery = "SELECT \"pk_user_relationship\", \"fk_follower_id\", \"fk_followed_id\", \"status\", \"updated_at\" FROM \"ta_user_relationship\" WHERE \"fk_follower_id\" = $1 AND \"fk_followed_id\" = $2 "
     TaUserRelationshipListOfFields = " ta_user_relationship.\"pk_user_relationship\", ta_user_relationship.\"fk_follower_id\", ta_user_relationship.\"fk_followed_id\", ta_user_relationship.\"status\", ta_user_relationship.\"updated_at\""
 )
 
@@ -159,6 +160,47 @@ func GetTaUserRelationshipByPkUserRelationship(query database.IQuery, value type
 }
 
 
+
+func GetTaUserRelationshipByFkFollowerIdAndFkFollowedId(query database.IQuery,
+fkFollowerId types.Int,
+fkFollowedId types.Int,
+) ([]TaUserRelationship, error) {
+	    var err error
+        var rows []interface{}
+        var list []TaUserRelationship
+	rows, err = query.QueryMany(TaUserRelationshipByFkFollowerIdAndFkFollowedIdQuery, &TaUserRelationship{},
+    fkFollowerId,
+    fkFollowedId,
+)
+	if err != nil {
+        if err == sql.ErrNoRows {
+        	return make([]TaUserRelationship, 0), nil
+        }
+        return nil, err
+       }
+       for _, row := range rows {
+        	list = append(list, row.(TaUserRelationship))
+        }
+       return list, nil
+}
+
+func GetTaUserRelationshipsByFkFollowerIdAndFkFollowedIdPaged(query database.IQuery,
+fkFollowerId types.Int,
+fkFollowedId types.Int,
+pageBase types.PageBase) (types.Page, error) {
+	var err error
+	var page types.Page
+	page, err = query.QueryManyPaged(TaUserRelationshipByFkFollowerIdAndFkFollowedIdQuery,  &TaUserRelationship{},
+	pageBase.PageNumber,
+	pageBase.PageSize,
+        fkFollowerId,
+        fkFollowedId,
+	)
+	if err != nil {
+    		return  page, err
+    }
+	return page, nil
+}
 
 
 

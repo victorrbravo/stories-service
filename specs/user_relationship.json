@@ -1,5 +1,21 @@
 {
   "Model": "TaUserRelationship",
+  "Searcher": [
+    {
+      "Name": "FkFollowerId",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Nullable": true,
+      "Title": "FollowerId"
+    },
+    {
+      "Name": "FkFollowedId",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Nullable": true,
+      "Title": "FollowedId"
+    }
+  ],
   "Attrs": [
     {
       "Name": "PkUserRelationship",
