@@ -813,8 +813,8 @@ func TestProcessFollowUser(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: follow_user
-from_user_email: victorrbravo@gmail.com
-to_user_email: solazver@gmail.com
+from_username: v2 
+to_username: v1
 `
 	order := []byte(input)
 	ctx := context.Background()
@@ -841,8 +841,8 @@ func TestProcessUnFollowUser(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: unfollow_user
-from_user_email: victorrbravo@gmail.com
-to_user_email: solazver@gmail.com
+from_username: v2 
+to_username: v1
 `
 	order := []byte(input)
 	ctx := context.Background()

@@ -155,7 +155,7 @@ func DoUnfollowUser(order string, query *database.IQuery) (string, error) {
 		return value, err
 	}
 	log.Println("handler", handler)
-	userOwners, err := models.GetTaUserByEmail(*query, handler.FromUserEmail)
+	userOwners, err := models.GetTaUserByUsername(*query, handler.FromUsername)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			log.Println("no rows for userOwner")
@@ -163,7 +163,7 @@ func DoUnfollowUser(order string, query *database.IQuery) (string, error) {
 		return value, err
 	}
 	userOwner := userOwners[0]
-	userFollows, err := models.GetTaUserByEmail(*query, handler.ToUserEmail)
+	userFollows, err := models.GetTaUserByUsername(*query, handler.ToUsername)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			log.Println("no rows for userFollows")
@@ -197,7 +197,7 @@ func DoFollowUser(order string, query *database.IQuery) (string, error) {
 		return value, err
 	}
 	log.Println("handler", handler)
-	userOwners, err := models.GetTaUserByEmail(*query, handler.FromUserEmail)
+	userOwners, err := models.GetTaUserByUsername(*query, handler.FromUsername)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			log.Println("no rows for userOwner")
@@ -205,7 +205,7 @@ func DoFollowUser(order string, query *database.IQuery) (string, error) {
 		return value, err
 	}
 	userOwner := userOwners[0]
-	userFollows, err := models.GetTaUserByEmail(*query, handler.ToUserEmail)
+	userFollows, err := models.GetTaUserByUsername(*query, handler.ToUsername)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			log.Println("no rows for userFollows")
@@ -214,7 +214,8 @@ func DoFollowUser(order string, query *database.IQuery) (string, error) {
 
 	}
 	userFollow := userFollows[0]
-	_, err = models.CreateTaUserRelationship(*query, userOwner.PkUser, userFollow.PkUser, types.NilString(), types.Now())
+	Requested := "Requested"
+	_, err = models.CreateTaUserRelationship(*query, userOwner.PkUser, userFollow.PkUser, types.NewString(Requested), types.Now())
 	if err != nil {
 		return value, err
 	}
