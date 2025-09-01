@@ -782,14 +782,41 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: show_flow_data
-ticket: 182
-filter:    
+ticket: 188
+filter: <aug31 and >aug30 
 page_number: 1
 page_size: 12
 by_day: true
 `
 	order := []byte(input)
 	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response", response)
+}
+
+func TestProcessGetStoriesFollowing(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: get_following_stories
+`
+	order := []byte(input)
+	ctx := context.WithValue(context.Background(), "email", "victorrbravo@gmail.com")
+
 	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
@@ -813,6 +840,34 @@ func TestProcessFollowUser(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: follow_user
+from_username: v2 
+to_username: v1
+`
+	order := []byte(input)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response", response)
+}
+
+func TestProcessAcceptedUser(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: accept_follower
 from_username: v2 
 to_username: v1
 `

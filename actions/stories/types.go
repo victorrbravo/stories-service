@@ -52,6 +52,12 @@ type FollowUser struct {
 	ToUsername   types.String `yaml:"to_username"`
 	Option       types.String `yaml:"option"`
 }
+
+type AcceptFollower struct {
+	FromUsername types.String `yaml:"from_username"`
+	ToUsername   types.String `yaml:"to_username"`
+	Option       types.String `yaml:"option"`
+}
 type ChangeNameOfTask struct {
 	StepID types.Int    `yaml:"step_id" json:"step_id"`
 	Name   types.String `yaml:"name" json:"name"`

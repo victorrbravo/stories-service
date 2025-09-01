@@ -19,6 +19,7 @@ import (
 	"stories/database"
 	st_errors "stories/errors"
 	"stories/generated/models"
+	"stories/generated/queries"
 	"stories/pkg/utils"
 	"stories/pkg/workflow/common"
 	"stories/pkg/workflow/queries/pg"
@@ -126,8 +127,11 @@ func FlowProcessor(ctx context.Context, action string, order string, query *data
 		value, err = DoUnfollowUser(order, query)
 	case "get_users":
 		log.Println("get_users")
+	case "accept_follower":
+		value, err = DoAcceptFollower(ctx, order, query)
 	case "get_following_stories":
 		log.Println("get_following_stories")
+		value, err = DoGetStoriesFollowing(ctx, order, query)
 	case "get_stories_by_email_grouped":
 		value, err = DoGetStoriesByEmailGrouped(ctx, order, query)
 	case "get_stories_by_email":
@@ -148,30 +152,73 @@ func FlowProcessor(ctx context.Context, action string, order string, query *data
 	return value, nil
 }
 
+func DoAcceptFollower(ctx context.Context, order string, query *database.IQuery) (string, error) {
+	value := ""
+	handler, err := Unmarshall[AcceptFollower]([]byte(order))
+	if err != nil {
+		return value, err
+	}
+	userOwner, userFollow, err := GetUsersFromEmails(query, handler.FromUsername, handler.ToUsername)
+	if err != nil {
+		log.Println("DofolloUser err", err)
+		return value, err
+	}
+	relationsToUpdate, err := models.GetTaUserRelationshipByFkFollowerIdAndFkFollowedId(*query, userOwner.PkUser,
+		userFollow.PkUser)
+	if err != nil {
+		return value, err
+	}
+	if len(relationsToUpdate) == 0 {
+		return value, errors.New("no relation to delete")
+	}
+	toUpdate := relationsToUpdate[0]
+	err = toUpdate.UpdateByOne(*query, func() (string, any) {
+		return "status", types.NewString(string(types.FollowTypeAccepted))
+	})
+	if err != nil {
+		log.Println("DofolloUser status err", err)
+		return value, err
+	}
+	log.Println("DoAcceptFollower", handler)
+
+	return value, err
+}
+
+func GetUsersFromEmails(query *database.IQuery, fromEmail types.String, toEmail types.String) (models.TaUser, models.TaUser, error) {
+	var fromUser, toUser models.TaUser
+	userOwners, err := models.GetTaUserByUsername(*query, fromEmail)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Println("no rows for userOwner")
+		}
+		return fromUser, toUser, err
+	}
+	fromUser = userOwners[0]
+	userFollows, err := models.GetTaUserByUsername(*query, toEmail)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Println("no rows for userFollows")
+		}
+		return fromUser, toUser, err
+
+	}
+	toUser = userFollows[0]
+	return fromUser, toUser, nil
+
+}
+
 func DoUnfollowUser(order string, query *database.IQuery) (string, error) {
 	value := ""
 	handler, err := Unmarshall[FollowUser]([]byte(order))
 	if err != nil {
 		return value, err
 	}
-	log.Println("handler", handler)
-	userOwners, err := models.GetTaUserByUsername(*query, handler.FromUsername)
+	log.Println("DoUnfollowUser", handler)
+	userOwner, userFollow, err := GetUsersFromEmails(query, handler.FromUsername, handler.ToUsername)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			log.Println("no rows for userOwner")
-		}
+		log.Println("DofolloUser err", err)
 		return value, err
 	}
-	userOwner := userOwners[0]
-	userFollows, err := models.GetTaUserByUsername(*query, handler.ToUsername)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			log.Println("no rows for userFollows")
-		}
-		return value, err
-
-	}
-	userFollow := userFollows[0]
 	relationToDeletes, err := models.GetTaUserRelationshipByFkFollowerIdAndFkFollowedId(*query, userOwner.PkUser,
 		userFollow.PkUser)
 	if err != nil {
@@ -759,6 +806,48 @@ func NewStepSub(ctx context.Context, order string, query *database.IQuery) error
 	return nil
 }
 
+func DoGetStoriesFollowing(ctx context.Context, order string, query *database.IQuery) (string, error) {
+	var value string
+	var err error
+	byDateTime := make(map[string][]models.TaStory)
+
+	email := types.NewString(ctx.Value("email").(string))
+	taUsers, err := models.GetTaUserByEmail(*query, email)
+	if err != nil {
+		log.Println("DoGetStoriesByEmail error getting user")
+		return value, err
+	}
+	if taUsers == nil || len(taUsers) == 0 {
+
+		return "", errors.New("user not found")
+	}
+	taUser := taUsers[0]
+
+	rows, err := (*query).QueryMany(queries.GetStoriesFollowing, &models.TaStory{}, taUser.PkUser)
+	if err != nil {
+		log.Println("DoGetStoriesByPkStory err getting story")
+		return value, err
+	}
+	for _, row := range rows {
+		story, ok := row.(models.TaStory)
+		if !ok {
+			log.Println("DoGetStoriesByPkStory err getting story row", row)
+		}
+		onlyDate := story.UpdatedAt.ToOnlyDate()
+		byDateTime[onlyDate] = append(byDateTime[onlyDate], story)
+
+	}
+	var mapResponse MapResponse
+	mapResponse.Values = byDateTime
+	data, err := json.Marshal(mapResponse)
+	if err != nil {
+		log.Println("DoGetStoriesFollowing error marshalling err", err)
+		return value, err
+	}
+	value = string(data)
+	return value, err
+}
+
 func DoGetStoriesByEmailGrouped(ctx context.Context, order string, query *database.IQuery) (string, error) {
 	var value string
 	var err error
@@ -806,6 +895,7 @@ func DoGetStoriesByEmailIntl(ctx context.Context, query *database.IQuery) ([]mod
 	}
 	return taStories, nil
 }
+
 func DoGetStoriesByEmail(ctx context.Context, order string, query *database.IQuery) (string, error) {
 	value := "[]"
 
