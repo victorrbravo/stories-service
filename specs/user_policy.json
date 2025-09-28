@@ -1,0 +1,30 @@
+{
+  "Model": "TaUserPolicy",
+  "Attrs": [
+    {
+      "Name": "PkUserPolicy",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Key": true,
+      "Getter": true,
+      "Title": "ID"
+    },
+    {
+      "Name": "FkUser",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Key": false,
+      "Getter": true,
+      "Title": "fk_user"
+    },
+    {
+      "Name": "FkPolicy",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Key": false,
+      "Getter": true,
+      "Title": "fk_policy"
+    }
+  ]
+}
+

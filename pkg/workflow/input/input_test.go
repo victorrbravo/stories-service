@@ -782,12 +782,22 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: show_flow_data
+ticket: 63
+filter: 
+by_day: false
+page_number: 1
+page_size: 12
+`
+
+	input = `
+action: show_flow_data
 ticket: 188
 filter: <aug31 and >aug30 
 page_number: 1
 page_size: 12
 by_day: true
 `
+
 	order := []byte(input)
 	ctx := context.Background()
 	response, err := ProcessInput(ctx, order, &query)

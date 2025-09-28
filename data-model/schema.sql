@@ -21,6 +21,7 @@
         "status"                VARCHAR DEFAULT ''::varchar
     );
 
+
     create table "ta_student"
     (
         "pk_student"                     serial         PRIMARY KEY,
@@ -281,3 +282,79 @@ insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at)
 insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at) values ('{"image3", "image6"}', '{"video3"}', '{"role3"}', 'Progress', 2, '2023-10-31 17:18:12.119 -0500');
 insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at) values ('{"image3", "image6"}', '{"video3"}', '{"role3"}', 'ToDo', 2, '2023-10-31 16:08:12.119 -0500');
 
+-- AUTHORIZATION SCHEMA (Tables)
+-- Role table
+    CREATE TABLE ta_role (
+                             "pk_role" SERIAL PRIMARY KEY,
+                             "name" TEXT UNIQUE NOT NULL
+    );
+
+-- Policy table
+    CREATE TABLE ta_policy (
+                               "pk_policy" SERIAL PRIMARY KEY,
+                               "resource" TEXT NOT NULL,      -- e.g. "document"
+                               "action" TEXT NOT NULL,        -- e.g. "edit"
+                               "condition" JSONB NOT NULL     -- e.g. {"field": "department", "equals": "Finance"}
+    );
+
+-- User ↔ Role (many-to-many)
+    CREATE TABLE ta_user_role (
+                                  "fk_user" INT REFERENCES ta_user("pk_user") ON DELETE CASCADE,
+                                  "fk_role" INT REFERENCES ta_role("pk_role") ON DELETE CASCADE,
+                                  PRIMARY KEY ("fk_user", "fk_role")
+    );
+
+-- Role ↔ Policy (many-to-many)
+    CREATE TABLE ta_role_policy (
+                                    "fk_role" INT REFERENCES ta_role("pk_role") ON DELETE CASCADE,
+                                    "fk_policy" INT REFERENCES ta_policy("pk_policy") ON DELETE CASCADE,
+                                    PRIMARY KEY ("fk_role", "fk_policy")
+    );
+
+-- (Optional) User ↔ Policy (direct assignment)
+    CREATE TABLE ta_user_policy (
+                                    "pk_user_policy" serial   PRIMARY KEY,
+                                    "fk_user" INT REFERENCES ta_user("pk_user"),
+                                    "fk_policy" INT REFERENCES ta_policy("pk_policy")
+    );
+
+
+    -- Insert roles
+    INSERT INTO ta_role ("name") VALUES
+                                     ('admin'),
+                                     ('user');
+
+
+-- Insert policies
+    INSERT INTO ta_policy ("resource", "action", "condition") VALUES
+-- Admin policies
+('user', 'create', '{"field": "role", "operator": "=", "value": "admin"}'),
+('user', 'delete', '{"field": "role", "operator": "=", "value": "admin"}'),
+('report', 'view', '{"field": "role", "operator": "=", "value": "admin"}'),
+
+-- User policy
+('report', 'view', '{"field": "role", "operator": "=", "value": "user"}');
+
+    -- Link roles to policies
+-- (assumes pk_role and pk_policy are auto-generated sequentially)
+-- Let's fetch them explicitly for clarity:
+
+-- Admin role → 3 policies
+    INSERT INTO ta_role_policy ("fk_role", "fk_policy")
+    SELECT r."pk_role", p."pk_policy"
+    FROM ta_role r, ta_policy p
+    WHERE r."name" = 'admin' AND p."action" IN ('create', 'delete', 'view') AND p."resource" IN ('user','report');
+
+-- User role → 1 policy
+    INSERT INTO ta_role_policy ("fk_role", "fk_policy")
+    SELECT r."pk_role", p."pk_policy"
+    FROM ta_role r, ta_policy p
+    WHERE r."name" = 'user' AND p."action" = 'view' AND p."resource" = 'report';
+
+    INSERT INTO ta_policy
+    (resource, "action", condition)
+    VALUES (
+            'flows', 'basic', ''{
+ "action": "add_flow_step","permises": { "execute": "is _owner"
+}}''::jsonb
+           )
