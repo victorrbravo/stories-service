@@ -1,0 +1,47 @@
+{
+  "Model": "TaPolicy",
+  "Searcher": [
+    {
+      "Name": "Name",
+      "Type": "types.String",
+      "Scannable": true,
+      "Key": false,
+      "Getter": true,
+      "Title": "action"
+    }
+  ],
+  "Attrs": [
+    {
+      "Name": "PkPolicy",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Key": true,
+      "Getter": true,
+      "Title": "ID"
+    },
+    {
+      "Name": "Resource",
+      "Type": "types.String",
+      "Scannable": true,
+      "Key": false,
+      "Getter": true,
+      "Title": "resource"
+    },
+    {
+      "Name": "Name",
+      "Type": "types.String",
+      "Scannable": true,
+      "Key": false,
+      "Getter": true,
+      "Title": "action"
+    },
+    {
+      "Name": "Condition",
+      "Type": "types.Bytes",
+      "Scannable": true,
+      "Nullable": true,
+      "Title": "condition"
+    }
+  ]
+}
+

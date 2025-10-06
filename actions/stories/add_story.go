@@ -7,11 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/sashabaranov/go-openai"
-	"gopkg.in/yaml.v3"
 	"log"
 	"os"
 	"regexp"
@@ -28,6 +23,12 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/sashabaranov/go-openai"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -78,6 +79,11 @@ const (
 func FlowProcessor(ctx context.Context, action string, order string, query *database.IQuery) (string, error) {
 	var err error
 	var value string
+	err = validateRole[models.TaTracking](ctx, types.NewString(action), query)
+	if err != nil {
+		log.Println("validateRole error", err)
+		return "", err
+	}
 	switch action {
 	case "steps_schema":
 		value, err = DoGetStepsSchema(order, query)

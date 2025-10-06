@@ -293,9 +293,11 @@ insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at)
     CREATE TABLE ta_policy (
                                "pk_policy" SERIAL PRIMARY KEY,
                                "resource" TEXT NOT NULL,      -- e.g. "document"
-                               "action" TEXT NOT NULL,        -- e.g. "edit"
+                               "name" TEXT NOT NULL,        -- e.g. "edit"
                                "condition" JSONB NOT NULL     -- e.g. {"field": "department", "equals": "Finance"}
     );
+    ALTER TABLE ta_policy
+        ADD CONSTRAINT unique_name_condition UNIQUE (name, condition);
 
 -- User ↔ Role (many-to-many)
     CREATE TABLE ta_user_role (
@@ -315,7 +317,8 @@ insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at)
     CREATE TABLE ta_user_policy (
                                     "pk_user_policy" serial   PRIMARY KEY,
                                     "fk_user" INT REFERENCES ta_user("pk_user"),
-                                    "fk_policy" INT REFERENCES ta_policy("pk_policy")
+                                    "fk_policy" INT REFERENCES ta_policy("pk_policy"),
+                                    CONSTRAINT uq_user_policy UNIQUE ("fk_user", "fk_policy")
     );
 
 

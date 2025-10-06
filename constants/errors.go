@@ -5,6 +5,7 @@ const (
 	InvalidValueForBoolean                     = "invalid value `%v' for boolean"
 	InvalidTypeForInputParameter               = "invalid type for input parameter"
 	InvalidGenderValue                         = "invalid gender %v"
+	InvalidJsonObject                          = "invalid object %v"
 	InvalidValueForFloat                       = "invalid value for float `%v'"
 	NotValidValueForTimeZone                   = "not valid value for timestamp timezone"
 	InvalidValueForGender                      = "invalid value for gender `%v'"

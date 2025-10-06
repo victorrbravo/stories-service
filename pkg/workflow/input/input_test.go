@@ -791,8 +791,8 @@ page_size: 12
 
 	input = `
 action: show_flow_data
-ticket: 188
-filter: <aug31 and >aug30 
+ticket: 193
+filter:  
 page_number: 1
 page_size: 12
 by_day: true
@@ -808,6 +808,66 @@ by_day: true
 	fmt.Println("value data response", response)
 }
 
+func TestProcessAddUserPolicy(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: add_user_policy
+fk_user: 2
+fk_policy: 5 
+`
+
+	order := []byte(input)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response", response)
+
+}
+
+func TestProcessAddPolicy(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: add_policy
+resource: flow
+name: add_flow_step
+condition: '{"193": { "permises": ["read", "write"], "type": "flow" } }'
+`
+
+	order := []byte(input)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response", response)
+
+}
 func TestProcessGetStoriesFollowing(t *testing.T) {
 	var err error
 	config := database.DatabaseConfig{

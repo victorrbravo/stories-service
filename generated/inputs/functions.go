@@ -3,14 +3,17 @@ package pg
 import (
 	"context"
 	"encoding/json"
-	"gopkg.in/yaml.v3"
 	"stories/database"
 	"stories/generated/models"
+
+	"gopkg.in/yaml.v3"
 )
 
 var ValuesTaCategory []models.TaCategory
 
 var ValuesTaFlow []models.TaFlow
+
+var ValuesTaPolicy []models.TaPolicy
 
 var ValuesTaSession []models.TaSession
 
@@ -19,6 +22,8 @@ var ValuesTaStory []models.TaStory
 var ValuesTaTracking []models.TaTracking
 
 var ValuesTaUser []models.TaUser
+
+var ValuesTaUserPolicy []models.TaUserPolicy
 
 var ValuesTaUserRelationship []models.TaUserRelationship
 
@@ -35,6 +40,10 @@ func MainProcessor(ctx context.Context, action string, order string, query *data
 		ValuesTaFlow = make([]models.TaFlow, 0)
 	}
 
+	if ValuesTaPolicy == nil {
+		ValuesTaPolicy = make([]models.TaPolicy, 0)
+	}
+
 	if ValuesTaSession == nil {
 		ValuesTaSession = make([]models.TaSession, 0)
 	}
@@ -49,6 +58,10 @@ func MainProcessor(ctx context.Context, action string, order string, query *data
 
 	if ValuesTaUser == nil {
 		ValuesTaUser = make([]models.TaUser, 0)
+	}
+
+	if ValuesTaUserPolicy == nil {
+		ValuesTaUserPolicy = make([]models.TaUserPolicy, 0)
 	}
 
 	if ValuesTaUserRelationship == nil {
@@ -90,6 +103,23 @@ func MainProcessor(ctx context.Context, action string, order string, query *data
 	case "get_flow_by_PkFlow":
 		ValueTaFlow, _ := GetTaFlowByPkFlow(order, query)
 		ValuesTaFlow = append(ValuesTaFlow, *ValueTaFlow)
+
+	case "add_policy":
+		err = InsertTaPolicy(order, query)
+	case "delete_policy":
+		err = DeleteTaPolicy(order, query)
+	case "update_policy":
+		err = UpdateTaPolicy(order, query)
+	case "all_policy":
+		ValuesTaPolicy, _ = GetAllTaPolicy(query)
+		data, err = json.Marshal(ValuesTaPolicy)
+		if err != nil {
+			return "", err
+		}
+		value = string(data)
+	case "get_policy_by_PkPolicy":
+		ValueTaPolicy, _ := GetTaPolicyByPkPolicy(order, query)
+		ValuesTaPolicy = append(ValuesTaPolicy, *ValueTaPolicy)
 
 	case "add_session":
 		err = InsertTaSession(order, query)
@@ -187,6 +217,23 @@ func MainProcessor(ctx context.Context, action string, order string, query *data
 		}
 		data, err = json.Marshal(ValueTaUsers)
 		value = string(data)
+	case "add_user_policy":
+		err = InsertTaUserPolicy(order, query)
+	case "delete_user_policy":
+		err = DeleteTaUserPolicy(order, query)
+	case "update_user_policy":
+		err = UpdateTaUserPolicy(order, query)
+	case "all_user_policy":
+		ValuesTaUserPolicy, _ = GetAllTaUserPolicy(query)
+		data, err = json.Marshal(ValuesTaUserPolicy)
+		if err != nil {
+			return "", err
+		}
+		value = string(data)
+	case "get_user_policy_by_PkUserPolicy":
+		ValueTaUserPolicy, _ := GetTaUserPolicyByPkUserPolicy(order, query)
+		ValuesTaUserPolicy = append(ValuesTaUserPolicy, *ValueTaUserPolicy)
+
 	case "add_user_relationship":
 		err = InsertTaUserRelationship(order, query)
 	case "delete_user_relationship":
@@ -231,6 +278,16 @@ func UnmarshallTaFlow(order []byte) (TaFlow, error) {
 	return taFlow, nil
 }
 
+func UnmarshallTaPolicy(order []byte) (TaPolicy, error) {
+	var taPolicy TaPolicy
+	var err error
+	err = yaml.Unmarshal(order, &taPolicy)
+	if err != nil {
+		return taPolicy, err
+	}
+	return taPolicy, nil
+}
+
 func UnmarshallTaSession(order []byte) (TaSession, error) {
 	var taSession TaSession
 	var err error
@@ -269,6 +326,16 @@ func UnmarshallTaUser(order []byte) (TaUser, error) {
 		return taUser, err
 	}
 	return taUser, nil
+}
+
+func UnmarshallTaUserPolicy(order []byte) (TaUserPolicy, error) {
+	var taUserPolicy TaUserPolicy
+	var err error
+	err = yaml.Unmarshal(order, &taUserPolicy)
+	if err != nil {
+		return taUserPolicy, err
+	}
+	return taUserPolicy, nil
 }
 
 func UnmarshallTaUserRelationship(order []byte) (TaUserRelationship, error) {

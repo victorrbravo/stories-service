@@ -1,13 +1,18 @@
 package stories
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"log"
 	"regexp"
 	db "stories/database"
+	"stories/generated/models"
 	"stories/scanners"
+	"stories/types"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 func GetPgQuery(config db.DatabaseConfig) (db.PostgresQuery, error) {
@@ -39,6 +44,28 @@ func adaptStringBeforeYaml(input string) string {
 	result = "task:     " + result
 
 	return result
+}
+
+func validateRole[T any](ctx context.Context, action types.String, query *db.IQuery) error {
+
+	type Permission struct {
+		Permises []string `json:"permises"`
+		Type     string   `json:"type"`
+	}
+
+	policies, err := models.GetTaPolicyByName(*query, action)
+	if err != nil {
+		return err
+	}
+	if policies == nil {
+		log.Println("No policies found")
+		return nil
+	}
+	condition := policies[0].Condition
+	var storedPolicy map[string]Permission
+	err = json.Unmarshal(condition, &storedPolicy)
+	fmt.Println("policies", storedPolicy)
+	return nil
 }
 
 func Unmarshall[T any](order []byte) (T, error) {
