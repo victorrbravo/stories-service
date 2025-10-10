@@ -8,12 +8,17 @@ import (
 	"regexp"
 	db "stories/database"
 	"stories/generated/models"
+	"stories/pkg/utils"
 	"stories/scanners"
 	"stories/types"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 )
+
+type WithKey interface {
+	Key() int
+}
 
 func GetPgQuery(config db.DatabaseConfig) (db.PostgresQuery, error) {
 	var query db.PostgresQuery
@@ -46,7 +51,7 @@ func adaptStringBeforeYaml(input string) string {
 	return result
 }
 
-func validateRole[T any](ctx context.Context, action types.String, query *db.IQuery) error {
+func validateRole[T WithKey, U WithKey](ctx context.Context, action types.String, order string, query *db.IQuery) error {
 
 	type Permission struct {
 		Permises []string `json:"permises"`
@@ -61,11 +66,28 @@ func validateRole[T any](ctx context.Context, action types.String, query *db.IQu
 		log.Println("No policies found")
 		return nil
 	}
+	var value T
 	condition := policies[0].Condition
-	var storedPolicy map[string]Permission
+	var storedPolicy []U
 	err = json.Unmarshal(condition, &storedPolicy)
+	if err != nil {
+		log.Println("storedPolicy err", err)
+		return err
+	}
+	yamlOrder := utils.FormatYaml(order)
+	err = yaml.Unmarshal([]byte(yamlOrder), &value)
+	if err != nil {
+		log.Println("validateError", err)
+		return err
+	}
 	fmt.Println("policies", storedPolicy)
-	return nil
+	fmt.Println("value", value)
+	for _, policy := range storedPolicy {
+		if policy.Key() == value.Key() {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid role")
 }
 
 func Unmarshall[T any](order []byte) (T, error) {

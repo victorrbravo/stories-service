@@ -94,6 +94,14 @@ type Tip struct {
 	Tip types.String `yaml:"tip" json:"tip"`
 }
 
+type AddStoryStatusPolicy struct {
+	Ticket types.Int `yaml:"ticket"`
+}
+
+func (s AddStoryStatusPolicy) Key() int {
+	return types.AsInt(s.Ticket)
+}
+
 type AddStoryStatus struct {
 	Ticket    types.Int         `yaml:"ticket,omitempty"`
 	Status    types.String      `yaml:"status"`
@@ -107,6 +115,10 @@ type AddStoryStatus struct {
 	Position  types.Coordinates `yaml:"position"`
 	metaOrder types.String      `yaml:"meta_order"`
 	Tags      types.StringArray `yaml:"tags"`
+}
+
+func (s AddStoryStatus) Key() int {
+	return types.AsInt(s.Ticket)
 }
 
 type StepTips struct {

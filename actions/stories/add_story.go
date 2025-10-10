@@ -79,7 +79,7 @@ const (
 func FlowProcessor(ctx context.Context, action string, order string, query *database.IQuery) (string, error) {
 	var err error
 	var value string
-	err = validateRole[models.TaTracking](ctx, types.NewString(action), query)
+	err = validateRole[AddStoryStatus, AddStoryStatusPolicy](ctx, types.NewString(action), order, query)
 	if err != nil {
 		log.Println("validateRole error", err)
 		return "", err
