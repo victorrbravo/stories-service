@@ -76,12 +76,36 @@ const (
 `
 )
 
+func GenerateRolesOnDb(options string, query *database.IQuery) error {
+	var err error
+	taFlows, err := models.GetAllTaFlows(*query)
+	if err != nil {
+		log.Printf("GetAllTaFlows error: %s", err.Error())
+		return err
+	}
+	log.Println("GenerateRolesOnDb.. taFlows:", taFlows)
+	return err
+}
+func validateRoles(ctx context.Context, action string, order string, query *database.IQuery) error {
+	var err error
+	switch action {
+	case constants.AddFlowStepAction:
+		err = validateRole[AddStoryStatus, AddStoryStatusPolicy](ctx, types.NewString(action), order, query)
+	default:
+		return nil
+	}
+	if err != nil {
+		log.Println("validateRole error", err)
+		return err
+	}
+	return nil
+}
+
 func FlowProcessor(ctx context.Context, action string, order string, query *database.IQuery) (string, error) {
 	var err error
 	var value string
-	err = validateRole[AddStoryStatus, AddStoryStatusPolicy](ctx, types.NewString(action), order, query)
+	err = validateRoles(ctx, action, order, query)
 	if err != nil {
-		log.Println("validateRole error", err)
 		return "", err
 	}
 	switch action {

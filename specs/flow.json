@@ -22,6 +22,14 @@
       "Type": "[]byte",
       "Scannable": true,
       "Nullable": true
+    },
+    {
+      "Name": "FkUser",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Key": false,
+      "Getter": true,
+      "Title": "FkUser"
     }
   ]
 }

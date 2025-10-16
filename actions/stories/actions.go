@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"log"
 	"sort"
 	db "stories/database"
@@ -14,6 +13,8 @@ import (
 	"stories/pkg/workflow/queries/pg"
 	"stories/types"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -219,7 +220,7 @@ type ShowFlowInput struct {
 	Ticket         types.Int                       `yaml:"ticket"`
 	ShowEmptyTasks bool                            `yaml:"show_empty_tasks" default:"false"`
 	Task           WorkflowType[models.TaTracking] `yaml:"task,omitempty"`
-	Filter         string                          `yaml:"filter,omitempty"`
+	Filter         types.String                    `yaml:"filter,omitempty"`
 	ByDay          bool                            `yaml:"by_day,omitempty"`
 	PageNumber     types.Int                       `yaml:"page_number,omitempty"`
 	PageSize       types.Int                       `yaml:"page_size,omitempty"`
@@ -326,7 +327,8 @@ func DoShowWorkflowTaskData[T db.Scanner](order string, query *db.IQuery) (strin
 
 func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, error) {
 	var value string
-	getFlow, err := UnmarshallGetFlow([]byte(order), query)
+	yalmOrder := utils.FormatYaml(order)
+	getFlow, err := UnmarshallGetFlow([]byte(yalmOrder), query)
 	if err != nil {
 		return value, err
 	}
@@ -463,7 +465,7 @@ func UpdateWorkflow[T db.Scanner](getFlow ShowFlowInput, query *db.IQuery,
 	values []interface{},
 	funcs ...func(*common.Workflow[T], ...interface{}) pg.Monad[T]) (*common.Workflow[T], error) {
 	wf, err := GetWorkflow[T](getFlow.PkFlow, query)
-	wf.Filter.Sentence = getFlow.Filter
+	wf.Filter.Sentence = getFlow.Filter.String()
 	wf.ByDay = getFlow.ByDay
 	wf.Page.PageNumber = types.AsInt(getFlow.PageNumber)
 	wf.Page.PageSize = types.AsInt(getFlow.PageSize)

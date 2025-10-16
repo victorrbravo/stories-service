@@ -61,6 +61,12 @@
         "flow"     jsonb DEFAULT '{}'::jsonb
     );
 
+    alter table ta_flow add column "fk_user" integer;
+ALTER TABLE ta_flow
+        ADD CONSTRAINT fk_user
+            FOREIGN KEY (fk_user)
+                REFERENCES ta_user(pk_user);
+
     create table "ta_story"
     (
         "pk_story" serial primary key,

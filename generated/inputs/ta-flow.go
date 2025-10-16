@@ -10,6 +10,7 @@ type TaFlow struct {
 	PkFlow types.Int `yaml:"pk_flow"`
 	Name types.String `yaml:"name"`
 	Flow []byte `yaml:"flow"`
+	FkUser types.Int `yaml:"fk_user"`
 }
 
 func  InsertTaFlow(order string, query *database.IQuery) error {
@@ -20,6 +21,7 @@ func  InsertTaFlow(order string, query *database.IQuery) error {
     _, err = models.CreateTaFlow(*query,
             handler.Name,
             handler.Flow,
+            handler.FkUser,
     )
     if err != nil {
         return err
@@ -74,6 +76,7 @@ func  UpdateTaFlow(order string, query *database.IQuery) error {
     err = taFlow.Update(*query,
             handler.Name,
             handler.Flow,
+            handler.FkUser,
     )
     if err != nil {
         return err

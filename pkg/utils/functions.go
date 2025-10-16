@@ -4,12 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/dgrijalva/jwt-go"
-	"gopkg.in/yaml.v3"
 	"image/jpeg"
 	"io/ioutil"
 	"log"
@@ -24,6 +18,13 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/dgrijalva/jwt-go"
+	"gopkg.in/yaml.v3"
 )
 
 func ParseTemplate[T any](tmpls string, data *T) (string, error) {
@@ -127,7 +128,12 @@ func FormatYaml(input string) string {
 	input = strings.TrimLeft(input, "\r\n")
 
 	value := formatYamlArray(input, tab)
-	return value
+	reStartMinus := regexp.MustCompile(`(?m)^(.*?:\s*)>([^\r\n]+)`)
+
+	// Replace ">value" with "">value""
+	result := reStartMinus.ReplaceAllString(value, `$1">$2"`)
+
+	return result
 }
 
 func IsCoordinates(value string) bool {

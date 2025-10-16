@@ -780,19 +780,11 @@ func TestProcessShowFlowData(t *testing.T) {
 		t.Error(err)
 	}
 	query := pgQuery.NewQuery()
+
 	input := `
 action: show_flow_data
-ticket: 63
-filter: 
-by_day: false
-page_number: 1
-page_size: 12
-`
-
-	input = `
-action: show_flow_data
 ticket: 193
-filter:  
+filter: >oct13 
 page_number: 1
 page_size: 12
 by_day: true
