@@ -2,9 +2,11 @@ package date_parser
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer"
-	"time"
 )
 
 var Lexer = lexer.MustSimple([]lexer.SimpleRule{
@@ -13,8 +15,10 @@ var Lexer = lexer.MustSimple([]lexer.SimpleRule{
 	{"And", `(?i)\band\b`},
 	{"Or", `(?i)\bor\b`},
 	{"Not", `(?i)\bnot\b`},
-	{"Date", `[A-Za-z]{3}[0-9]{1,2}`},   // e.g., Jun13
-	{"Ident", `[a-zA-Z_][a-zA-Z0-9_]*`}, // e.g., cash, Cafe
+	{"Date", `[A-Za-z]{3}[0-9]{1,2}`},        // e.g., Jun13
+	{"Ident", `[a-zA-Z_][a-zA-Z0-9_]*`},      // e.g., cash, Cafe
+	{"Quoted", `"[a-zA-Z_][a-zA-Z0-9_\s]*"`}, // e.g., cash, Cafe
+
 })
 
 type Expr struct {
@@ -37,7 +41,7 @@ type Comparison struct {
 
 type Tag struct {
 	Not  bool   `[ @"not" ]`
-	Name string `@Ident`
+	Name string `@Ident|@Quoted`
 }
 
 type ParsedResult struct {
@@ -88,7 +92,7 @@ func ExtractTerms(input string) (ParsedResult, error) {
 					result.OrTerms = append(result.OrTerms, andExpr.Comparison.Date)
 				}
 			case andExpr.Tag != nil:
-				tag := andExpr.Tag.Name
+				tag := strings.Trim(andExpr.Tag.Name, `"`)
 				if andExpr.Tag.Not {
 					result.AndNotTerms = append(result.AndNotTerms, tag)
 				} else {

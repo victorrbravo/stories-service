@@ -2,7 +2,6 @@ package input
 
 import (
 	"context"
-	"gopkg.in/yaml.v3"
 	"log"
 	"stories/actions/stories"
 	"stories/constants"
@@ -10,6 +9,8 @@ import (
 	pg "stories/generated/inputs"
 	"stories/pkg/utils"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 type ProcessorFunc func(context.Context, string, string, *database.IQuery) (string, error)

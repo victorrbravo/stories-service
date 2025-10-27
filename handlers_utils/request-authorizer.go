@@ -108,7 +108,7 @@ func (handler *RequestAuthorizer) ServeHTTP(writer http.ResponseWriter, request 
 	email, err = getJWTToken(request)
 	log.Println("after email", email)
 	ctx := context.Background()
-	handler.Ctx = context.WithValue(ctx, "email", email)
+	emailCtx := context.WithValue(ctx, "email", email)
 	log.Println("handler.Ctx", handler.Ctx, " email", email, " err", err)
 	log.Println("\"handler.Ctx ServeHTTP getJWTToken email", email, " err", err)
 	if err != nil {
@@ -121,6 +121,7 @@ func (handler *RequestAuthorizer) ServeHTTP(writer http.ResponseWriter, request 
 		RespondWithError(writer, helpers.NewHttpError(http.StatusForbidden, constants.YouHaveNoAccessToResource))
 	} else if len(users) > 0 {
 		taUser := users[0]
+		handler.Ctx = context.WithValue(emailCtx, "user_id", types.AsInt(taUser.PkUser))
 		log.Println("models.TaUser{}.GetTaUserByEmail checking taUser", taUser)
 	} else {
 		RespondWithError(writer, helpers.NewHttpError(http.StatusForbidden, constants.YouHaveNoAccessToResource))

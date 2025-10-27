@@ -4,18 +4,21 @@ package pg
 import (
 	"context"
 	"errors"
-	"github.com/alecthomas/participle/v2"
-	"github.com/alecthomas/participle/v2/lexer"
 	"log"
 	"reflect"
 	db "stories/database"
 	"stories/pkg/workflow/common"
 	"strings"
+
+	"github.com/alecthomas/participle/v2"
+	"github.com/alecthomas/participle/v2/lexer"
 )
 
 const (
 	AndOperator = " AND "
 	EndTask     = "END"
+	PgTrue      = "TRUE"
+	PgFalse     = "FALSE"
 )
 
 type Boolean bool
@@ -354,6 +357,9 @@ func ReducesFilter[T db.Scanner](wf *common.Workflow[T], name string) (string, e
 	value, err := ReduceWheres(ctx, &wheres, name)
 	if err != nil {
 		return value, err
+	}
+	if strings.Compare(value, EndTask) == 0 {
+		return PgTrue, nil
 	}
 	return value, nil
 }

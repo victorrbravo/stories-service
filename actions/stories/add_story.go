@@ -112,7 +112,7 @@ func FlowProcessor(ctx context.Context, action string, order string, query *data
 	case "steps_schema":
 		value, err = DoGetStepsSchema(order, query)
 	case "new_story_flow":
-		_, err = NewStoryFlow(order, query)
+		_, err = NewStoryFlow(ctx, order, query)
 	case "new_step_sub": // add sub
 		err = NewStepSub(ctx, order, query)
 	case "new_step_tips": // add multiple tips
@@ -672,12 +672,10 @@ func NewStepTips(ctx context.Context, order string, query *database.IQuery) erro
 		}
 
 	} else {
+		userID := types.NewInt(ctx.Value("user_id").(int))
 		nameFlow := fmt.Sprintf("%s_story_for_%s", constants.FlowTipsSuffix, taStep.PkTracking.String())
 		nameStory := types.NewString(nameFlow)
-		taFlow, err := models.CreateTaFlow(*query,
-			types.NewString(nameFlow),
-			[]byte(DefaultStartWorkflow),
-		)
+		taFlow, err := models.CreateTaFlow(*query, types.NewString(nameFlow), []byte(DefaultStartWorkflow), userID)
 		if err != nil {
 			return err
 		}
@@ -763,11 +761,13 @@ func NewStepSub(ctx context.Context, order string, query *database.IQuery) error
 		}
 
 	} else {
+		userID := types.NewInt(ctx.Value("user_id").(int))
 		nameFlow := fmt.Sprintf("%s_story_for_%s", constants.SubSuffix, taStep.PkTracking.String())
 		nameStory := types.NewString(nameFlow)
 		taFlow, err := models.CreateTaFlow(*query,
 			types.NewString(nameFlow),
 			[]byte(DefaultStartWorkflow),
+			userID,
 		)
 		if err != nil {
 			return err
@@ -1188,7 +1188,7 @@ func UnmarshallTicket(order []byte) (Ticket, error) {
 	return ticket, nil
 }
 
-func NewStoryFlow(order string, query *database.IQuery) (*models.TaStory, error) {
+func NewStoryFlow(ctx context.Context, order string, query *database.IQuery) (*models.TaStory, error) {
 	var taStory *models.TaStory
 	yamlOrder := utils.FormatYaml(order)
 	handler, err := UnmarshallTicket([]byte(yamlOrder))
@@ -1198,36 +1198,23 @@ func NewStoryFlow(order string, query *database.IQuery) (*models.TaStory, error)
 	start := types.NewString(constants.Start)
 	images := types.NewStringArray([]string{})
 	roles := types.NewStringArray([]string{})
+	valueID := ctx.Value("user_id").(int)
+	if valueID == 0 {
+		return nil, errors.New("value id not found in context")
+	}
+	userID := types.NewInt(valueID)
+
 	nameFlow := ""
 	log.Println("handler.Email", handler.Email)
 	log.Println("handler.UserID", handler.UserID)
-	if types.IsNil(handler.UserID) {
-		if types.IsNil(handler.Email) {
-			return taStory, fmt.Errorf("email is required")
-		}
-		taUsers, err := models.GetTaUserByEmail(*query, handler.Email)
-		if err != nil {
-			return taStory, err
-		}
-		log.Println("taUsers", taUsers)
-		if taUsers == nil || len(taUsers) == 0 {
-			log.Println("user not found")
-			return taStory, fmt.Errorf("user not found")
-		}
-		log.Println("len(taUsers)", len(taUsers))
-		taUser := taUsers[0]
-		handler.UserID = taUser.PkUser
-		username := taUser.Username.String()
-		prefix := username
-		log.Println("prefix", prefix)
-		nameFlow = fmt.Sprintf("%s_%s", prefix, handler.Name)
-	} else {
-		nameFlow = fmt.Sprintf("%s_%s", handler.UserID, handler.Name)
-	}
+	log.Println("userID", userID)
+	nameFlow = fmt.Sprintf("v%s_%s", userID, handler.Name)
+
 	log.Println("creating ta_flow name_flow", nameFlow)
 	taFlow, err := models.CreateTaFlow(*query,
 		types.NewString(nameFlow),
 		[]byte(DefaultStartWorkflow),
+		userID,
 	)
 	if err != nil {
 		return taStory, err
