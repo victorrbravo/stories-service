@@ -41,15 +41,20 @@ type Comparison struct {
 
 type Tag struct {
 	Not  bool   `[ @"not" ]`
-	Name string `@Ident|@Quoted`
+	Name string `( @Ident | @Quoted)`
 }
 
 type ParsedResult struct {
-	AndTerms    []string
-	OrTerms     []string
-	AndNotTerms []string
-	LessThan    string
-	GreaterThan string
+	AndTerms        []string
+	OrTerms         []string
+	AndNotTerms     []string
+	LessThan        string
+	GreaterThan     string
+	AndLiteralTerms []string
+}
+
+func IsQuoted(s string) bool {
+	return len(s) >= 2 && strings.HasPrefix(s, `"`) && strings.HasSuffix(s, `"`)
 }
 
 func removeString(slice []string, target string) []string {
@@ -92,12 +97,18 @@ func ExtractTerms(input string) (ParsedResult, error) {
 					result.OrTerms = append(result.OrTerms, andExpr.Comparison.Date)
 				}
 			case andExpr.Tag != nil:
+				isQuoted := IsQuoted(andExpr.Tag.Name)
 				tag := strings.Trim(andExpr.Tag.Name, `"`)
 				if andExpr.Tag.Not {
 					result.AndNotTerms = append(result.AndNotTerms, tag)
 				} else {
 					if !isOrGroup {
-						result.AndTerms = append(result.AndTerms, tag)
+						if isQuoted {
+							result.AndLiteralTerms = append(result.AndLiteralTerms, tag)
+						} else {
+							result.AndTerms = append(result.AndTerms, tag)
+						}
+
 					} else {
 						result.OrTerms = append(result.OrTerms, tag)
 					}
@@ -115,6 +126,9 @@ func ExtractTerms(input string) (ParsedResult, error) {
 		result.AndTerms = nil
 	}
 
+	if len(result.AndLiteralTerms) == 0 {
+		result.AndLiteralTerms = nil
+	}
 	return result, nil
 }
 

@@ -87,6 +87,14 @@ func ValidateYAML(input string) bool {
 	return err == nil
 }
 
+func EncloseIfQuoted(s string) string {
+	count := strings.Count(s, `"`)
+	if count >= 2 {
+		return "'" + s + "'"
+	}
+	return s
+}
+
 func FormatYaml(input string) string {
 	// Define the regular expression pattern
 	const TAB_STRING = "     "

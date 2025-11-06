@@ -2,10 +2,11 @@ package parser
 
 import (
 	"fmt"
-	"github.com/alecthomas/participle/v2"
-	"github.com/alecthomas/participle/v2/lexer"
 	"log"
 	"strings"
+
+	"github.com/alecthomas/participle/v2"
+	"github.com/alecthomas/participle/v2/lexer"
 )
 
 // Define the lexer using participle's expected [][]string format
@@ -16,6 +17,7 @@ var logicalLexer = lexer.MustSimple([]lexer.SimpleRule{
 	{"Punct", `[\(\)]`},
 	{"Operator", `[<>]=?|==|!=`},
 	{"Date", `[A-Za-z]{3}[0-9]{1,2}`}, // e.g., Jun13
+	{"Quoted", `"[a-zA-Z_][a-zA-Z0-9_\s]*"`},
 })
 
 // Grammar struct definitions

@@ -787,9 +787,9 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 
 	input := `
-action: show_flow_data
+action: show_flow_data 
 ticket: 198
-filter: 'coffee and cafe'
+filter: '"Ricotta bread"'
 page_number: 1
 page_size: 12
 by_day: true
