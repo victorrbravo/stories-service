@@ -789,7 +789,7 @@ func TestProcessShowFlowData(t *testing.T) {
 	input := `
 action: show_flow_data 
 ticket: 198
-filter: '"Ricotta bread"'
+filter: '"Éxito"'
 page_number: 1
 page_size: 12
 by_day: true

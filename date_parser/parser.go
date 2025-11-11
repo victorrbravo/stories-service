@@ -16,8 +16,8 @@ var Lexer = lexer.MustSimple([]lexer.SimpleRule{
 	{"Or", `(?i)\bor\b`},
 	{"Not", `(?i)\bnot\b`},
 	{"Date", `[A-Za-z]{3}[0-9]{1,2}`},        // e.g., Jun13
-	{"Ident", `[a-zA-Z_][a-zA-Z0-9_]*`},      // e.g., cash, Cafe
-	{"Quoted", `"[a-zA-Z_][a-zA-Z0-9_\s]*"`}, // e.g., cash, Cafe
+	{"Ident", `[[\p{L}_][[\p{L}\p{N}_]*`},    // e.g., cash, Cafe
+	{"Quoted", `"[\p{L}_][\p{L}\p{N}_\s]*"`}, // e.g., cash, Cafe
 
 })
 
