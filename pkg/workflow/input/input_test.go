@@ -361,7 +361,7 @@ func TestProcessAddFlowStep(t *testing.T) {
 		t.Error(err)
 	}
 	query := pgQuery.NewQuery()
-	input1 := `action: add_flow_step ticket: 193 status: Party Bread images: 9B8D5838-C94D-4F0B-8D3C-FCC6F8565552.jpg, amount: 25 summary: Café in felicites pie Shake media_date: 2025-04-19T18:21:04Z type: step  position: (-72.48988389969156,7.893224051670705) tags: Saturday,cafe,Café,felicites,pie,Shake user_id:2`
+	input1 := `action: add_flow_step ticket: 198 status: Tres media amount: 18876 summary: Bill media_date: 2025-11-12T01:59:14Z type: step  position: (-72.48997951061656, 7.893217399513308) tags: Tres,media,Bill `
 	fmt.Println("input1", input1)
 	order := []byte(input1)
 	ctx := context.Background()

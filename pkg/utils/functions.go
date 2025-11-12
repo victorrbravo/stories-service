@@ -101,7 +101,7 @@ func FormatYaml(input string) string {
 	if ValidateYAML(input) {
 		return input
 	}
-	pattern := `(\r?\n)?[\p{L}\p{N}_]+:\s*`
+	pattern := `(\r?\n)?[\p{L}_]+:\s*`
 
 	// Compile the regular expression
 	regexpPattern := regexp.MustCompile(pattern)
