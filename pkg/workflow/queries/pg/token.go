@@ -271,6 +271,7 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 		}
 		start1 := time.Now()
 		statuses, err := wf.Statuses(ctx, false, false)
+		allStatuses, err := wf.AllStatuses(ctx, false)
 		if len(wf.Filter.IncludedWrapped) > 0 {
 			statuses = wf.Filter.IncludedWrapped
 		}
@@ -305,15 +306,25 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 		log.Printf("StatsField elapsed %s", elapsed1)
 		newQuery := wf.Query
 		var value scanners.Float
+		var valueAll scanners.Float
 
 		_, err = (*newQuery).QueryOne(SumAmountFieldTaTracking, &value, types.NewStringArray(statuses), wf.CurrentIDInt)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			log.Println("Error StatsField err", err)
+			log.Println("Error Filter StatsField err", err)
 			return wf, err
 		}
-		var valueFloat float64
+		_, err = (*newQuery).QueryOne(SumAmountFieldTaTracking, &valueAll, types.NewStringArray(allStatuses), wf.CurrentIDInt)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			log.Println("Error All Statuses StatsField err", err)
+			return wf, err
+		}
+		var valueFloat, valuePercFloat float64
 		valueFloat = types.AsFloat(value.Value)
-		wf.Data.AmountField = types.NewString(FormatToMoney(valueFloat))
+		if types.AsFloat(valueAll.Value) > 0 {
+			valuePercFloat = 100 * types.AsFloat(value.Value) / types.AsFloat(valueAll.Value)
+		}
+		wf.Data.AmountField = types.NewString(FormatToMoney(valueFloat, true))
+		wf.Data.AmountFieldPerc = types.NewString(FormatToMoney(valuePercFloat, false))
 
 		var duration scanners.String
 		durationValue, err := (*newQuery).QueryOne(SelectSumTimeFieldToken, &duration, types.NewStringArray(statuses), wf.CurrentIDInt)
@@ -526,7 +537,7 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		}
 		elapsed := time.Since(timeStart)
 		log.Printf("RoleField elapsed: %v", elapsed)
-		wf.Data.AmountField = types.NewString(FormatToMoney(amountSum))
+		wf.Data.AmountField = types.NewString(FormatToMoney(amountSum, true))
 
 		return wf, nil
 	}
@@ -547,7 +558,7 @@ func calculateWrappedAmount[T db.Scanner](wf *common.Workflow[T], firstDate time
 	if err != nil {
 		log.Println("SumAmountField Error SumAmountFieldForWeekTaTracking", err)
 	}
-	wrapped.Amount = types.NewString(FormatToMoney(types.AsFloat(valueAmount.Value)))
+	wrapped.Amount = types.NewString(FormatToMoney(types.AsFloat(valueAmount.Value), true))
 }
 
 func truncateBogotaMidnightAsUTC(t time.Time) string {

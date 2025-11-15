@@ -477,12 +477,12 @@ func TestProcessAddFlowStepOrderByDate(t *testing.T) {
 	input := `
 action: add_flow_step
 ticket: 198
-status: Nevado
+status: Nevadin tutu
 images: 
  - ABC897B7-71DA-4C08-B7E8-B7F2F071D445
 amount: 1270.00
 summary: JV coffee
-media_date: 2025-10-24T15:02:26Z
+media_date: 2025-11-12T15:02:26Z
 type: step
 `
 	order := []byte(input)
@@ -789,7 +789,7 @@ func TestProcessShowFlowData(t *testing.T) {
 	input := `
 action: show_flow_data 
 ticket: 198
-filter: '"Éxito"'
+filter: Coffee and Capuchino and Cafe
 page_number: 1
 page_size: 12
 by_day: true

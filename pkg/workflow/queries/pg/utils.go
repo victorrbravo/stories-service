@@ -48,7 +48,7 @@ func ConvertToDaysHours(durationStr string) (string, error) {
 }
 
 // formatMoney formats a float64 number as a string with currency format "$0,000.00"
-func FormatToMoney(amount float64) string {
+func FormatToMoney(amount float64, hasSymbol bool) string {
 	// Convert the float to a string with 2 decimal places
 	amountStr := fmt.Sprintf("%.2f", amount)
 
@@ -69,9 +69,12 @@ func FormatToMoney(amount float64) string {
 
 	// Concatenate the formatted whole part, decimal point, and fractional part
 	formatted := result.String() + "." + fractional
-
+	var symbol string
+	if hasSymbol {
+		symbol = "$"
+	}
 	// Prepend the dollar sign
-	return "$" + formatted
+	return symbol + formatted
 }
 
 func CheckPeriodDates(date1 types.String, date2 types.String, timeZone string, byDay bool) bool {

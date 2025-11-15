@@ -70,32 +70,36 @@ type Wrapped struct {
 }
 
 type Data struct {
-	Count        types.Int         `json:"count"` // checked
-	TimeField    types.String      `json:"time_field"`
-	InfoField    types.String      `json:"info_field"`
-	AmountField  types.String      `json:"amount_field"`
-	Roles        types.StringArray `json:"roles"`
-	Images       types.StringArray `json:"images"`
-	Videos       types.StringArray `json:"videos"`
-	Percentage   float64           `json:"percentage"`
-	UpdateAtDiff types.String      `json:"update_at_diff"`
-	Summary      types.String      `json:"summary"`
-	Amount       types.Float       `json:"amount"`
-	Distance     types.Float       `json:"distance"`
-	Total        types.Int         `json:"total"`
-	FillValue    types.Int         `json:"fill_value"` // Measure progress in time, money or other type of value
-	FillSelect   FillType          `json:"fill_select"`
-	Rows         []interface{}     `json:"rows"`
-	IDCurrent    types.Int         `json:"id_current"`
-	ToExport     Exportable        `json:"to_export"`
-	Stats        Values            `json:"stats"`
-	ID           types.Int         `json:"id"`
-	TipsIdField  types.Int         `json:"tips_id_field"`
-	SubIdField   types.Int         `json:"fk_story_sub"`
-	Position     types.Coordinates `json:"position"`
-	Description  types.String      `json:"description"`
-	DistanceDiff types.Float       `json:"distance_diff"`
-	Tags         types.StringArray `json:"tags"`
+	Count            types.Int         `json:"count"` // checked
+	TimeField        types.String      `json:"time_field"`
+	InfoField        types.String      `json:"info_field"`
+	AmountField      types.String      `json:"amount_field"`
+	AmountFieldPerc  types.String      `json:"amount_field_perc"`
+	Roles            types.StringArray `json:"roles"`
+	Images           types.StringArray `json:"images"`
+	Videos           types.StringArray `json:"videos"`
+	Percentage       float64           `json:"percentage"`
+	UpdateAtDiff     types.String      `json:"update_at_diff"`
+	UpdateAtDiffPerc types.String      `json:"update_at_diff_perc"`
+	Summary          types.String      `json:"summary"`
+	Amount           types.Float       `json:"amount"`
+	Distance         types.Float       `json:"distance"`
+	Total            types.Int         `json:"total"`
+	TotalPerc        types.String      `json:"total_perc"`
+	FillValue        types.Int         `json:"fill_value"` // Measure progress in time, money or other type of value
+	FillSelect       FillType          `json:"fill_select"`
+	Rows             []interface{}     `json:"rows"`
+	IDCurrent        types.Int         `json:"id_current"`
+	ToExport         Exportable        `json:"to_export"`
+	Stats            Values            `json:"stats"`
+	ID               types.Int         `json:"id"`
+	TipsIdField      types.Int         `json:"tips_id_field"`
+	SubIdField       types.Int         `json:"fk_story_sub"`
+	Position         types.Coordinates `json:"position"`
+	Description      types.String      `json:"description"`
+	DistanceDiff     types.Float       `json:"distance_diff"`
+	DistanceDiffPerc types.Float       `json:"distance_diff_perc"`
+	Tags             types.StringArray `json:"tags"`
 }
 
 type JobWorkflow[T db.Scanner] struct {
@@ -492,6 +496,24 @@ func (wf *Workflow[T]) Last(ctx context.Context) (*Task, error) {
 
 func (wf *Workflow[T]) Statuses(ctx context.Context, quotes bool, recalculate bool) ([]string, error) {
 	return wf.calculateStatuses(ctx, quotes, recalculate)
+}
+
+func (wf *Workflow[T]) AllStatuses(ctx context.Context, quotes bool) ([]string, error) {
+	var list []string
+	list = make([]string, 0)
+	for _, task := range wf.Tasks {
+		if types.IsNil(task.Report) || task.Report.ToBool() == true {
+			name := task.Name
+			var title string
+			if quotes {
+				title = "'" + name + "'"
+			} else {
+				title = name
+			}
+			list = append(list, title)
+		}
+	}
+	return list, nil
 }
 
 func (wf *Workflow[T]) CalculateInitialTask() (string, error) {
