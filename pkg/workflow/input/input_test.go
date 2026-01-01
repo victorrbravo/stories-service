@@ -278,7 +278,7 @@ func TestProcessInputNewPayment(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: new_story_flow
-name: December 2025
+name: Chacachinto
 summary: activities
 email: victorrbravo@gmail.com
 content_type: Senda
@@ -792,8 +792,8 @@ func TestProcessShowFlowData(t *testing.T) {
 
 	input := `
 action: show_flow_data 
-ticket: 201
-filter: Coffee and Capuchino and Cafe
+ticket: 205
+filter: >jan1
 page_number: 1
 page_size: 12
 by_day: true
@@ -1328,6 +1328,34 @@ name: Tiramisu18
 summary: tiramisu recipe for homemade cooking
 email: solazver@gmail.com
 content_type: Senda
+`
+	order := []byte(input)
+	ctx := context.Background()
+	newCtx := context.WithValue(ctx, "email", "victorrbravo@gmail.com")
+	userCtx := context.WithValue(newCtx, "user_id", 2)
+	_, err = ProcessInput(userCtx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestProcessUpdatePolicy(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: update_policy
+pk_policy: 12
+condition: '[{"ticket": 210}, {"ticket": 205}, {"ticket": 193}, {"ticket": 198}, {"ticket": 201}]'
 `
 	order := []byte(input)
 	ctx := context.Background()

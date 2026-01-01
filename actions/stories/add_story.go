@@ -1223,7 +1223,7 @@ func NewStoryFlow(ctx context.Context, order string, query *database.IQuery) (*m
 		handler.Name,
 		start,
 		handler.Summary,
-		handler.UserID,
+		userID,
 		taFlow.PkFlow,
 		types.NewString("story"),
 		types.Now(),
