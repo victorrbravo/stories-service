@@ -13,9 +13,9 @@ type ContentType string
 
 const (
 	Cooking ContentType = "Cooking"
-	Tourist             = "Tourist"
-	Errands             = "Errands"
-	Senda               = "Senda"
+	Tourist ContentType = "Tourist"
+	Errands ContentType = "Errands"
+	Senda   ContentType = "Senda"
 )
 
 var NilContentType = NewNilContentType()

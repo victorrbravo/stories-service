@@ -22,7 +22,7 @@ func (bytes *Bytes) Scan(src interface{}) error {
 	case string:
 		*bytes = []byte(value)
 	default:
-		return fmt.Errorf(constants.InvalidGenderValue)
+		return fmt.Errorf(constants.InvalidGenderValue, value)
 	}
 	return nil
 }

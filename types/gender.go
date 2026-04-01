@@ -14,10 +14,10 @@ type Gender rune
 // Gender values
 const (
 	Female          Gender = 'F'
-	Male                   = 'M'
-	unknownGender          = 0
-	MaLeLowerCase          = 'm'
-	FemaleLowerCase        = 'f'
+	Male            Gender = 'M'
+	unknownGender   Gender = 0
+	MaLeLowerCase   Gender = 'm'
+	FemaleLowerCase Gender = 'f'
 )
 
 func (gender Gender) convertToValue() (string, error) {

@@ -9,7 +9,7 @@ const (
 	InvalidValueForFloat                       = "invalid value for float `%v'"
 	NotValidValueForTimeZone                   = "not valid value for timestamp timezone"
 	InvalidValueForGender                      = "invalid value for gender `%v'"
-	GenderCannotBeEmpty                        = "gender cannot be empty"
+	GenderCannotBeEmpty                        = "gender cannot be empty %v"
 	DateCannotBeEmpty                          = "date cannot be empty"
 	InvalidValueForInteger                     = "invalid value for integer `%v'"
 	InvalidValueForString                      = "invalid value for string `%v'"

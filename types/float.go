@@ -60,13 +60,10 @@ func (value *Float) Scan(src interface{}) error {
 		if err != nil {
 			return err
 		}
-		break
 	case float32:
 		raw = float64(val)
-		break
 	case float64:
 		raw = val
-		break
 	default:
 		return fmt.Errorf(constants.InvalidValueForFloat, src)
 	}

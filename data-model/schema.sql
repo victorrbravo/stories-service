@@ -360,10 +360,10 @@ insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at)
     FROM ta_role r, ta_policy p
     WHERE r."name" = 'user' AND p."action" = 'view' AND p."resource" = 'report';
 
-    INSERT INTO ta_policy
+    INSERT INTO __ta_policy__
     (resource, "action", condition)
-    VALUES (
-            'flows', 'basic', ''{
- "action": "add_flow_step","permises": { "execute": "is _owner"
-}}''::jsonb
-           )
+VALUES (
+    'flows',
+    'basic',
+    '{"action": "add_flow_step", "permises": {"execute": "is_owner"}}'::jsonb
+);

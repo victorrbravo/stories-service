@@ -12,12 +12,12 @@ type RelationshipType string
 
 const (
 	Owner             RelationshipType = "Owner or Investor"
-	Client                             = "Client or Customer"
-	Investment                         = "Investment"
-	Partner                            = "Partner"
-	Supplier                           = "Supplier"
-	Employer                           = "Employer"
-	OtherRelationship                  = "Other"
+	Client            RelationshipType = "Client or Customer"
+	Investment        RelationshipType = "Investment"
+	Partner           RelationshipType = "Partner"
+	Supplier          RelationshipType = "Supplier"
+	Employer          RelationshipType = "Employer"
+	OtherRelationship RelationshipType = "Other"
 )
 
 func (rt RelationshipType) MarshalJSON() ([]byte, error) {

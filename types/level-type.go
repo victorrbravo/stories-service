@@ -11,10 +11,10 @@ type LevelType string
 
 const (
 	LevelHigh       LevelType = "High"
-	LevelMediumHigh           = "Medium-High"
-	LevelMedium               = "Medium"
-	LevelMediumLow            = "Medium-Low"
-	LevelLow                  = "Low"
+	LevelMediumHigh LevelType = "Medium-High"
+	LevelMedium     LevelType = "Medium"
+	LevelMediumLow  LevelType = "Medium-Low"
+	LevelLow        LevelType = "Low"
 )
 
 func (lt LevelType) IsValid() error {

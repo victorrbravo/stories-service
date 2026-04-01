@@ -50,10 +50,8 @@ func (uuid *UUID) Scan(src interface{}) error {
 		return nil
 	case string:
 		parsed, err = twinj.Parse(input)
-		break
 	case []byte:
 		parsed, err = twinj.Parse(string(input))
-		break
 	}
 	if err != nil {
 		return err

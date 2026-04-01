@@ -126,7 +126,6 @@ func (date *DateTime) Scan(value interface{}) error {
 		switch instance := value.(type) {
 		case time.Time:
 			*date = DateTime{instance, true}
-			break
 		default:
 			return fmt.Errorf(constants.InvalidTypeForInputParameter)
 		}
@@ -146,14 +145,38 @@ func (date DateTime) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (date *DateTime) UnmarshalJSON(data []byte) error {
 	var err error
-	var t time.Time
 	if string(data) == constants.JSONNil {
 		*date = DateTime{time.Time{}, true}
-	} else {
-		t, err = time.Parse(iso8601Quoted, string(data))
-		if err == nil {
-			*date = DateTime{t, true}
-		}
+		return nil
+	}
+
+	var raw string
+	if err = json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	var t time.Time
+	if raw == "" {
+		*date = DateTime{time.Time{}, true}
+		return nil
+	}
+
+	// try RFC3339 first, then our accepted patterns
+	if t, err = time.Parse(time.RFC3339, raw); err == nil {
+		*date = DateTime{t, true}
+		return nil
+	}
+	if t, err = time.Parse(Iso8601, raw); err == nil {
+		*date = DateTime{t, true}
+		return nil
+	}
+	if t, err = time.Parse(withoutTimezone, raw); err == nil {
+		*date = DateTime{t, true}
+		return nil
+	}
+	if t, err = time.Parse(standardFormat, raw); err == nil {
+		*date = DateTime{t, true}
+		return nil
 	}
 	return err
 }
@@ -199,18 +222,24 @@ func NewDateTime(value string) (DateTime, error) {
 	if value == "" {
 		return NilDateTime, nil
 	}
-	t, err := time.Parse(time.RFC3339, value)
-	if err != nil {
-		t, err = time.Parse(withoutTimezone, value)
-		if err != nil {
-			t, err = time.Parse(standardFormat, value)
-			if err != nil {
-				return NilDateTime, err
-			}
-			return NilDateTime, err
-		}
+
+	var t time.Time
+	var err error
+
+	if t, err = time.Parse(time.RFC3339, value); err == nil {
+		return DateTime{t, true}, nil
 	}
-	return DateTime{t, true}, nil
+	if t, err = time.Parse(Iso8601, value); err == nil {
+		return DateTime{t, true}, nil
+	}
+	if t, err = time.Parse(withoutTimezone, value); err == nil {
+		return DateTime{t, true}, nil
+	}
+	if t, err = time.Parse(standardFormat, value); err == nil {
+		return DateTime{t, true}, nil
+	}
+
+	return NilDateTime, err
 }
 
 // Now wrapper around the native function

@@ -2,7 +2,6 @@ package types
 
 import (
 	"database/sql/driver"
-	"errors"
 	"fmt"
 	"stories/constants"
 )
@@ -13,7 +12,7 @@ type PortfolioType string
 // Portfolio Constants related to DB types
 const (
 	PortfolioPublic  PortfolioType = "Public"
-	PortfolioPrivate               = "Private"
+	PortfolioPrivate PortfolioType = "Private"
 )
 
 // Type of Portfolio
@@ -22,8 +21,8 @@ type PortfolioAccessType string
 // Portfolio Constants related to DB types
 const (
 	PortfolioAccessOwner        PortfolioAccessType = "Owner"
-	PortfolioAccessReadOnly                         = "Read Only"
-	PortfolioAccessWriteAndRead                     = "Write & Read"
+	PortfolioAccessReadOnly     PortfolioAccessType = "Read Only"
+	PortfolioAccessWriteAndRead PortfolioAccessType = "Write & Read"
 )
 
 // Type of Location
@@ -31,17 +30,17 @@ type LocationType string
 
 const (
 	LocationHeadquarters LocationType = "Headquarters"
-	LocationOffice                    = "Office"
+	LocationOffice       LocationType = "Office"
 )
 
 type ProbabilityType string
 
 const (
 	ProbabilityHigh       ProbabilityType = "High"
-	ProbabilityMediumHigh                 = "Medium-High"
-	ProbabilityMedium                     = "Medium"
-	ProbabilityMediumLow                  = "Medium-Low"
-	ProbabilityLow                        = "Low"
+	ProbabilityMediumHigh ProbabilityType = "Medium-High"
+	ProbabilityMedium     ProbabilityType = "Medium"
+	ProbabilityMediumLow  ProbabilityType = "Medium-Low"
+	ProbabilityLow        ProbabilityType = "Low"
 )
 
 func (lt ProbabilityType) Value() (driver.Value, error) {
@@ -56,7 +55,7 @@ func (lt ProbabilityType) IsValid() error {
 	case ProbabilityHigh, ProbabilityMedium, ProbabilityLow, ProbabilityMediumLow, ProbabilityMediumHigh:
 		return nil
 	}
-	return errors.New(fmt.Sprintf(constants.FieldMustBeType, "Probability", "High, Medium,Low, Medium-Low, Medium-High"))
+	return fmt.Errorf(constants.FieldMustBeType, "Probability", "High, Medium,Low, Medium-Low, Medium-High")
 }
 
 // Rating Type string
@@ -64,8 +63,8 @@ type RatingType string
 
 const (
 	RatingHigh   RatingType = "High"
-	RatingMedium            = "Medium"
-	RatingLow               = "Low"
+	RatingMedium RatingType = "Medium"
+	RatingLow    RatingType = "Low"
 )
 
 func (lt RatingType) Value() (driver.Value, error) {
@@ -80,7 +79,7 @@ func (lt RatingType) IsValid() error {
 	case RatingHigh, RatingMedium, RatingLow:
 		return nil
 	}
-	return errors.New(fmt.Sprintf(constants.FieldMustBeType, "RatingType", "High,  Medium, Low"))
+	return fmt.Errorf(constants.FieldMustBeType, "RatingType", "High,  Medium, Low")
 }
 
 // Impact Type string
@@ -89,10 +88,10 @@ type ImpactType string
 
 const (
 	ImpactHigh       ImpactType = "High"
-	ImpactMediumHigh            = "Medium-High"
-	ImpactMedium                = "Medium"
-	ImpactMediumLow             = "Medium-Low"
-	ImpactLow                   = "Low"
+	ImpactMediumHigh ImpactType = "Medium-High"
+	ImpactMedium     ImpactType = "Medium"
+	ImpactMediumLow  ImpactType = "Medium-Low"
+	ImpactLow        ImpactType = "Low"
 )
 
 func (lt ImpactType) Value() (driver.Value, error) {
@@ -107,7 +106,7 @@ func (lt ImpactType) IsValid() error {
 	case ImpactHigh, ImpactMedium, ImpactLow, ImpactMediumLow, ImpactMediumHigh:
 		return nil
 	}
-	return errors.New(fmt.Sprintf(constants.FieldMustBeType, "Impact", "High, Medium,Low, Medium, Medium-High, Low"))
+	return fmt.Errorf(constants.FieldMustBeType, "Impact", "High, Medium,Low, Medium, Medium-High, Low")
 }
 
 //  TimePeriodType
@@ -116,7 +115,7 @@ type TimePeriodType string
 
 const (
 	ShortTime TimePeriodType = "Short Term"
-	LongTIme                 = "Long Term"
+	LongTIme  TimePeriodType = "Long Term"
 )
 
 func (lt TimePeriodType) Value() (driver.Value, error) {
@@ -131,7 +130,7 @@ func (lt TimePeriodType) IsValid() error {
 	case ShortTime, LongTIme:
 		return nil
 	}
-	return errors.New(fmt.Sprintf(constants.FieldMustBeType, "TimePeriodType", "Short Term, Long Term"))
+	return fmt.Errorf(constants.FieldMustBeType, "TimePeriodType", "Short Term, Long Term")
 }
 
 // TrendDirectionType
@@ -140,10 +139,10 @@ type TrendDirectionType string
 
 const (
 	UpIncreasing   TrendDirectionType = "Up / Increasing"
-	Increasing                        = "Increasing"
-	Neutral                           = "Neutral"
-	Decreasing                        = "Decreasing"
-	DownDecreasing                    = "Down / Decreasing"
+	Increasing     TrendDirectionType = "Increasing"
+	Neutral        TrendDirectionType = "Neutral"
+	Decreasing     TrendDirectionType = "Decreasing"
+	DownDecreasing TrendDirectionType = "Down / Decreasing"
 )
 
 func (lt TrendDirectionType) Value() (driver.Value, error) {
@@ -158,7 +157,7 @@ func (lt TrendDirectionType) IsValid() error {
 	case UpIncreasing, Increasing, Neutral, Decreasing, DownDecreasing:
 		return nil
 	}
-	return errors.New(fmt.Sprintf(constants.FieldMustBeType, "TrendDirectionType", "UpIncreasing, Increasing, Neutral, Decreasing, DownDecreasing"))
+	return fmt.Errorf(constants.FieldMustBeType, "TrendDirectionType", "UpIncreasing, Increasing, Neutral, Decreasing, DownDecreasing")
 }
 
 // ImpactOnCompanyType
@@ -167,7 +166,7 @@ type ImpactOnCompanyType string
 
 const (
 	Negative ImpactOnCompanyType = "Negative"
-	Positive                     = "Positive"
+	Positive ImpactOnCompanyType = "Positive"
 )
 
 func (lt ImpactOnCompanyType) Value() (driver.Value, error) {
@@ -182,7 +181,7 @@ func (lt ImpactOnCompanyType) IsValid() error {
 	case Negative, Positive:
 		return nil
 	}
-	return errors.New(fmt.Sprintf(constants.FieldMustBeType, "ImpactOnCompanyType", "Negative, Positive"))
+	return fmt.Errorf(constants.FieldMustBeType, "ImpactOnCompanyType", "Negative, Positive")
 }
 
 func IsValidPortfolioType(value PortfolioType) bool {
@@ -196,8 +195,8 @@ type CountryType string
 
 const (
 	USA    CountryType = "United States"
-	France             = "France"
-	Mexico             = "Mexico"
+	France CountryType = "France"
+	Mexico CountryType = "Mexico"
 )
 
 // Notification Type
@@ -224,7 +223,7 @@ func (lt NotificationType) IsValid() error {
 	case Any, Event, Portfolio, Organization, KRF, News, Account, PortofolioNewsAndNotifications, CompanyPriceAlert, Connections, FINVARNotifications:
 		return nil
 	}
-	return errors.New(fmt.Sprintf(constants.FieldMustBeType, "NotificationType", "Any, Event, Portfolio, Organization, KRF, New, Account, Portfolios News & Notifications, Company Price Alert, Connections, FINVARNotifications"))
+	return fmt.Errorf(constants.FieldMustBeType, "NotificationType", "Any, Event, Portfolio, Organization, KRF, New, Account, Portfolios News & Notifications, Company Price Alert, Connections, FINVARNotifications")
 }
 
 func (lt NotificationType) isNil() bool {
@@ -256,7 +255,7 @@ func (lt CategoryType) IsValid() error {
 	case FINVARNotification, NewsAndEvents, UserPost:
 		return nil
 	}
-	return errors.New(fmt.Sprintf(constants.FieldMustBeType, "category", "Notifications, News & Events or User Post"))
+	return fmt.Errorf(constants.FieldMustBeType, "CategoryType", "Notifications, News & Events or User Post")
 }
 
 func (lt CategoryType) Value() (driver.Value, error) {
@@ -282,7 +281,7 @@ func (lt NotificationIconType) IsValid() error {
 	case NotifIncreasing, NotifDecreasing, NotifNeutral:
 		return nil
 	}
-	return errors.New(fmt.Sprintf(constants.FieldMustBeType, "notification_icon_type", "Increasing,Decreasing, Neutral or NotifUndefined"))
+	return fmt.Errorf(constants.FieldMustBeType, "NotificationIconType", "Increasing,Decreasing, Neutral or NotifUndefined")
 }
 
 func (lt NotificationIconType) Value() (driver.Value, error) {
@@ -309,7 +308,7 @@ func (mt MeasurementType) IsValid() error {
 	case UnitCurrency, UnitDataDay, UnitPercentage, UnitBoolean, UnitInteger, UnitString:
 		return nil
 	}
-	return errors.New(fmt.Sprintf(constants.FieldMustBeType, "MeasurementType", "UnitCurrency,UnitDataDay,UnitPercentage,UnitBoolean,UnitInteger,UnitString"))
+	return fmt.Errorf(constants.FieldMustBeType, "MeasurementType", "UnitCurrency,UnitDataDay,UnitPercentage,UnitBoolean,UnitInteger,UnitString")
 }
 
 func (lt MeasurementType) isNil() bool {
@@ -341,7 +340,7 @@ func (mt OrganizationExtendedFilter) IsValid() error {
 	case ExtendedCurrency, ExtendedMarketPrice, ExtendedName, ExtendedTicker:
 		return nil
 	}
-	return errors.New(fmt.Sprintf(constants.FieldMustBeType, "OrganizationExtendedFilter", "currency, market_price, name, ticker"))
+	return fmt.Errorf(constants.FieldMustBeType, "OrganizationExtendedFilter", "currency, market_price, name, ticker")
 }
 
 func (lt OrganizationExtendedFilter) isNil() bool {

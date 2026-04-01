@@ -86,7 +86,6 @@ func initializeStruct(valueType reflect.Type, valuePtr reflect.Value, rootKey st
 			integer, err = strconv.Atoi(os.Getenv(key))
 			if err != nil {
 				continue
-				return err
 			}
 			field.SetInt(int64(integer))
 		case reflect.Struct:

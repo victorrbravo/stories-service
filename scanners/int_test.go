@@ -13,14 +13,14 @@ func TestInt_ScanRow(t *testing.T) {
 	var scanner scanners.Int
 	var err error
 	query = database.NewQuery()
-	err = query.QueryOne("SELECT 1234", &scanner)
+	_, err = query.QueryOne("SELECT 1234", &scanner)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if types.AsInt(scanner.Value) != 1234 {
 		t.Fatalf("cannot scan a simple string value from the database")
 	}
-	err = query.QueryOne("SELECT NULL", &scanner)
+	_, err = query.QueryOne("SELECT NULL", &scanner)
 	if err != nil {
 		t.Fatal(err)
 	}
