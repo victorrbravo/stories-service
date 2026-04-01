@@ -9,6 +9,7 @@ import (
 	db "stories/database"
 	"stories/generated/models"
 	"stories/pkg/utils"
+	"stories/pkg/workflow"
 	"stories/pkg/workflow/common"
 	"stories/pkg/workflow/queries/pg"
 	"stories/types"
@@ -215,6 +216,19 @@ const UpdateAttributeFlow = `
 UPDATE ta_flow SET flow=jsonb_set(flow, $1::text[], $2::jsonb,true) WHERE pk_flow=$3
 `
 
+const AddNewStepPolicy = `UPDATE ta_policy
+SET condition = condition || jsonb_build_array(jsonb_build_object('ticket', $1::integer))
+WHERE name = 'add_flow_step';
+`
+const DeleteNewStepPolicy = `UPDATE ta_policy
+SET condition = (
+    SELECT jsonb_agg(elem)
+    FROM jsonb_array_elements(condition) AS elem
+    WHERE elem->>'ticket' <> '205'
+)
+WHERE name = 'add_flow_step'
+`
+
 type ShowFlowInput struct {
 	PkFlow         int                             `yaml:"flow" default:"1"`
 	Ticket         types.Int                       `yaml:"ticket"`
@@ -404,10 +418,13 @@ func UpdateWorkflowData[T db.Scanner](wf *common.Workflow[T]) (string, error) {
 
 func UpdateWorkflowDataInt[T db.Scanner](wf *common.Workflow[T]) (WorkflowData, error) {
 	ctx := context.Background()
+	var diffStatuses []string
 	statuses, err := wf.Statuses(ctx, false, true)
 	if len(wf.Filter.IncludedWrapped) > 0 {
+		diffStatuses = workflow.SliceDiff(statuses, wf.Filter.IncludedWrapped)
 		statuses = wf.Filter.IncludedWrapped
 	}
+	log.Println("UpdateWorkflowDataInt", len(diffStatuses), len(wf.Filter.IncludedWrapped))
 	if err != nil {
 		return WorkflowData{}, err
 	}

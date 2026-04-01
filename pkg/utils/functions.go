@@ -139,8 +139,8 @@ func FormatYaml(input string) string {
 	reStartMinus := regexp.MustCompile(`(?m)^(.*?:\s*)>([^\r\n]+)`)
 
 	// Replace ">value" with "">value""
-	result := reStartMinus.ReplaceAllString(value, `$1">$2"`)
-
+	pre_result := reStartMinus.ReplaceAllString(value, `$1">$2"`)
+	result := strings.ReplaceAll(pre_result, CommaToReplaceToken, CommaReplacedToken)
 	return result
 }
 

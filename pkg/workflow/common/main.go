@@ -446,7 +446,6 @@ func (wf *Workflow[T]) findNextTask(task *Task) (string, error) {
 		}
 		next, ok = wf.Tasks[nextName]
 		if !ok {
-
 			return "", fmt.Errorf("findNextTask Incorrect value for task name %s", nextName)
 		}
 		if wf.excludeReported == false && (types.AsBool(next.Report) == false) {

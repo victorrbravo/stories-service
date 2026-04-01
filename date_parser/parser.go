@@ -132,6 +132,10 @@ func ExtractTerms(input string) (ParsedResult, error) {
 	return result, nil
 }
 
+func monthKey(t time.Time) int {
+	return t.Year()*100 + int(t.Month())
+}
+
 func GenerateSQLWhereDate(input string, ope string) (string, error) {
 	// Validate input length
 	if len(input) < 4 || len(input) > 5 {
@@ -143,7 +147,8 @@ func GenerateSQLWhereDate(input string, ope string) (string, error) {
 	dayStr := input[3:]
 
 	// Get current year
-	year := time.Now().Year()
+	now := time.Now()
+	year := now.Year()
 
 	// Parse full date string in local (UTC-5) timezone
 	dateStr := fmt.Sprintf("%s %s %d", monthAbbrev, dayStr, year)
@@ -153,6 +158,15 @@ func GenerateSQLWhereDate(input string, ope string) (string, error) {
 	t, err := time.ParseInLocation("Jan 2 2006", dateStr, loc)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse date: %v", err)
+	}
+
+	if monthKey(now) < monthKey(t) {
+		year = year - 1
+		newDate := fmt.Sprintf("%s %s %d", monthAbbrev, dayStr, year)
+		t, err = time.ParseInLocation("Jan 2 2006", newDate, loc)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse date: %v", err)
+		}
 	}
 
 	// Convert to UTC
