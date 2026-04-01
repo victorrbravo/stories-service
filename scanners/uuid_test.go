@@ -12,7 +12,7 @@ func TestUUID_ScanRow(t *testing.T) {
 	var scanner UUID
 	var err error
 	query = database.NewQuery()
-	err = query.QueryOne("SELECT uuid_generate_v4()", &scanner)
+	_, err = query.QueryOne("SELECT uuid_generate_v4()", &scanner)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,7 +26,7 @@ func TestUUID_ScanRow2(t *testing.T) {
 	var scanner UUID
 	var err error
 	query = database.NewQuery()
-	err = query.QueryOne("SELECT NULL", &scanner)
+	_, err = query.QueryOne("SELECT NULL", &scanner)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -37,7 +37,6 @@ func (boolean *Bool) Scan(src interface{}) error {
 	case bool:
 		boolean.notNil = true
 		boolean.value = value
-		break
 	default:
 		return fmt.Errorf(constants.InvalidValueForBoolean, src)
 	}

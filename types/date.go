@@ -42,7 +42,6 @@ func (date *Date) Scan(value interface{}) error {
 		switch instance := value.(type) {
 		case time.Time:
 			*date = Date(instance)
-			break
 		default:
 			return fmt.Errorf(constants.InvalidTypeForInputParameter)
 		}

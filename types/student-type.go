@@ -14,8 +14,8 @@ var NilStudentType = StudentType("")
 
 const (
 	NormalStudent StudentType = "NormalStudent"
-	Admin                     = "Admin"
-	Distinguished             = "Distinguished"
+	Admin         StudentType = "Admin"
+	Distinguished StudentType = "Distinguished"
 )
 
 func (enum StudentType) IsValid() bool {

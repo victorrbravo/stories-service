@@ -8,13 +8,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/twpayne/go-geom"
-	"github.com/twpayne/go-geom/encoding/ewkb"
-	"github.com/twpayne/go-geom/encoding/wkb"
 	"log"
 	"regexp"
 	"stories/constants"
 	"strconv"
+
+	"github.com/twpayne/go-geom"
+	"github.com/twpayne/go-geom/encoding/ewkb"
+	"github.com/twpayne/go-geom/encoding/wkb"
 )
 
 type Coordinates struct {
@@ -169,7 +170,7 @@ func (coordinates Coordinates) Value() (driver.Value, error) {
 
 	wkbData, err := wkb.Marshal(point, binary.LittleEndian)
 	if err != nil {
-		log.Println("Failed to convert point to WKB: %v", err)
+		log.Printf("Failed to convert point to WKB: %v", err)
 		return "", err
 	}
 

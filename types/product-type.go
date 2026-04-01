@@ -12,12 +12,12 @@ type ProductType string
 
 const (
 	Debt      ProductType = "Debt"
-	Equity                = "Equity"
-	Mezzanine             = "Mezzanine"
-	Services              = "Services"
-	Shares                = "Shares or Equity-linked"
-	Hedging               = "Hedging & Financial Markets"
-	OtherType             = "Other"
+	Equity    ProductType = "Equity"
+	Mezzanine ProductType = "Mezzanine"
+	Services  ProductType = "Services"
+	Shares    ProductType = "Shares or Equity-linked"
+	Hedging   ProductType = "Hedging & Financial Markets"
+	OtherType ProductType = "Other"
 )
 
 func (enum ProductType) IsValid() bool {

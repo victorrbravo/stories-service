@@ -34,7 +34,7 @@ type testType struct {
 }
 
 func TestReflect_ScanRow(t *testing.T) {
-	var query database.IQuery
+	var query database.IQuery = database.NewQuery()
 	var scanner Reflect
 	value := testType{}
 	var err error

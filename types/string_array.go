@@ -63,7 +63,6 @@ func (stringArray *StringArray) fromString(value string) error {
 					return fmt.Errorf("expecting the `{' character but found `%c'", chr)
 				}
 				currentState = reading
-				break
 			case '}':
 				if len(buffer.String()) > 0 {
 					stringArray.Array = append(stringArray.Array, buffer.String())
@@ -76,7 +75,6 @@ func (stringArray *StringArray) fromString(value string) error {
 				} else {
 					return fmt.Errorf("unexpected `%v' found while scanning", chr)
 				}
-				break
 			default:
 				if currentState == reading {
 					buffer.WriteRune(chr)
@@ -134,7 +132,6 @@ func (stringArray *StringArray) Scan(src interface{}) error {
 	switch value := src.(type) {
 	case nil:
 		*stringArray = NilStringArray
-		break
 	case string:
 		return stringArray.fromString(value)
 	case []byte:

@@ -76,8 +76,8 @@ func TestMarshallDateTime(t *testing.T) {
 		spected string
 	}{
 		// Valid Marshal
-		{name: "[1]: Simple DateTime", value: types.DateTime(init), spected: init.Format(`"` + iso8601 + `"`)},
-		{name: "[2]: Simple DateTime", value: types.DateTime(year), spected: year.Format(`"` + iso8601 + `"`)},
+		{name: "[1]: Simple DateTime", value: types.FromTime(init), spected: init.Format(`"` + iso8601 + `"`)},
+		{name: "[2]: Simple DateTime", value: types.FromTime(year), spected: year.Format(`"` + iso8601 + `"`)},
 		{name: "[3]: Simple DateTime", value: types.DateTime{}, spected: "null"},
 	}
 	// using tt.name from the case to use it as the `t.Run` test name

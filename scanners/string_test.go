@@ -8,17 +8,17 @@ import (
 )
 
 func TestString_ScanRow(t *testing.T) {
-	var query database.IQuery
+	var query database.IQuery = database.NewQuery() // or appropriate constructor
 	var scanner String
 	var err error
-	err = query.QueryOne("SELECT 'string value'", &scanner)
+	_, err = query.QueryOne("SELECT 'string value'", &scanner)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if types.AsString(scanner.Value) != "string value" {
 		t.Fatalf("cannot scan a simple string value from the database")
 	}
-	err = query.QueryOne("SELECT NULL", &scanner)
+	_, err = query.QueryOne("SELECT NULL", &scanner)
 	if err != nil {
 		t.Fatal(err)
 	}

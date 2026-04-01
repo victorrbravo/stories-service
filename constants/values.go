@@ -2,7 +2,7 @@ package constants
 
 const (
 	CurrentTimeZone string = "America/New_York"
-	
+
 	ProfileStatementNameOrganization            = "profile"
 	ProfileNamePeriod                           = "Current Profile"
 	JWTAccessEnvironmentOSName                  = "JWT_ACCESS_SECRET"
