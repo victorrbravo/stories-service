@@ -11,6 +11,7 @@ import (
 	db "stories/database"
 	"stories/date_parser"
 	"stories/generated/models"
+	"stories/pkg/workflow"
 	"stories/pkg/workflow/common"
 	"stories/scanners"
 	"stories/types"
@@ -453,14 +454,17 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		amountSum := 0.0
 		amountSumParcial := 0.0
+		var diffStatuses []string
 		n := 0
 		statuses, err := wf.Statuses(ctx, false, false)
 		if err != nil {
 			return wf, err
 		}
 		if len(wf.Filter.IncludedWrapped) > 0 {
+			diffStatuses = workflow.SliceDiff(statuses, wf.Filter.IncludedWrapped)
 			statuses = wf.Filter.IncludedWrapped
 		}
+		log.Println("diffStatuses: ", diffStatuses)
 		var previousTask *common.Task
 		loc, err := time.LoadLocation(constants.TimezoneBogota)
 		if err != nil {

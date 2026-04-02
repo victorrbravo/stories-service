@@ -9,4 +9,6 @@ const (
 `
 	BearerPrefix                            = "Bearer "
 	HeaderMessageInvalidAuthorizationHeader = "Invalid Authorization header"
+	CommaToReplaceToken                     = "#comma#"
+	CommaReplacedToken                      = ","
 )

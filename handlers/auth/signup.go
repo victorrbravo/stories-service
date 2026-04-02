@@ -1,13 +1,10 @@
 package auth
 
 import (
-	"crypto/tls"
+	"flag"
 	"fmt"
-	"github.com/go-playground/validator/v10"
-	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
-	"net/smtp"
 	"os"
 	"stories/database"
 	"stories/generated/models"
@@ -15,6 +12,11 @@ import (
 	"stories/helpers"
 	"stories/pkg/utils"
 	"stories/types"
+	"strings"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/resend/resend-go/v3"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type SignupUserHandler struct {
@@ -50,59 +52,30 @@ func (handler SignupUserHandler) GetQuery() database.IQuery {
 	return handler.Query
 }
 
-func sendEmailTLS(from string, password string, smtpHost string, smtpPort, to string, subject string, body string) error {
-	// Sender email configuration
+type stringSlice []string
 
-	// Authentication setup
-	auth := smtp.PlainAuth("", from, password, smtpHost)
+func (s *stringSlice) String() string {
+	return strings.Join(*s, " ")
+}
 
-	// SMTP client with TLS configuration
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true, // Skip certificate verification, not recommended in production
-		ServerName:         smtpHost,
-	}
-	conn, err := tls.Dial("tcp", smtpHost+":"+smtpPort, tlsConfig)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
-	// Sending email
-	client, err := smtp.NewClient(conn, smtpHost)
-	if err != nil {
-		return err
-	}
-
-	if err := client.Auth(auth); err != nil {
-		return err
-	}
-
-	if err := client.Mail(from); err != nil {
-		return err
-	}
-
-	if err := client.Rcpt(to); err != nil {
-		return err
-	}
-
-	w, err := client.Data()
-	if err != nil {
-		return err
-	}
-	message := fmt.Sprintf("Subject: %s\nContent-Type: text/html; charset=UTF-8\n\n%s", subject, body)
-	bytesBody := []byte(message)
-	_, err = w.Write(bytesBody)
-	if err != nil {
-		return err
-	}
-
-	err = w.Close()
-	if err != nil {
-		return err
-	}
-
-	log.Println("Email sent successfully!")
+func (s *stringSlice) Set(value string) error {
+	*s = append(*s, value)
 	return nil
+}
+
+func resendSendEmail() {
+	apiKey := os.Getenv("RESEND_API_KEY")
+	client := resend.NewClient(apiKey)
+	var toMails stringSlice
+	flag.Var(&toMails, "m", "Add a mail")
+	flag.Parse()
+	params := &resend.SendEmailRequest{
+		From:    "support@doitall.work",
+		To:      toMails,
+		Subject: "Bienvenido a Doitall",
+		Html:    "<h1>Bienvenido a Doitall, 🔥</h1>",
+	}
+	client.Emails.Send(params)
 }
 
 // Get currently authenticated user's information
@@ -159,20 +132,9 @@ func (handler SignupUserHandler) ServeHTTP(writer http.ResponseWriter, request *
 	urlToSend := buildUrlToSend(handler.Email, code)
 	log.Println("urlToSend", urlToSend, "created taUser ID:", taUser.PkUser)
 
-	smtpConf, err := getSMTPConfiguration()
-	if err != nil {
-		log.Println("Error trying to get SMTP configuration", err.Error())
-		handlers_utils.ResponseWithInternalError(writer)
-		return
-	}
 	body := fmt.Sprintf(DefaultSignUpBodyEmail, handler.Name, handler.LastName, urlToSend)
-	err = sendEmailTLS(smtpConf.SmtpUsername,
-		smtpConf.SmtpPassword,
-		smtpConf.SmtpHost,
-		smtpConf.SmtpPort,
-		handler.Email,
-		DefaultSubjectSignUpEmail,
-		body)
+	log.Println("body", body)
+	//err = SendEmail()
 
 	if err != nil {
 		log.Println("Error sending email", err.Error())

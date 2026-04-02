@@ -145,6 +145,9 @@ func FlowProcessor(ctx context.Context, action string, order string, query *data
 	case "select_the_category":
 		value, err = DoAIQuestion(order, query, "")
 
+	case "suggest_short_name_words_for_video":
+		value, err = GemQuestion(order, query, "Can you summarize the description of this video in 2 words, and write at least 10 words associated with this video, and a scene description of most 2 lines. The response should be in a json format")
+		//value, err = GemQuestion(order, query, "Puedes resumir la descripcion dle video en dos palabras incluye una lista de maximo 5 tips o informaciones importantes dichas en el video La respuesta debe estar en un formato json")
 	case "suggest_short_name_for_image":
 		value, err = DoAIQuestion(order, query, "Summarize the image in two words or less")
 	case "suggest_words_for_image":
@@ -664,13 +667,28 @@ func NewStepTips(ctx context.Context, order string, query *database.IQuery) erro
 	}
 
 	var taStoryTips *models.TaStory
+	var numberOfTips = 0
 	if !types.IsNil(taStep.FkStoryTips) {
 		taStoryTips, err = models.GetTaStoryByPkStory(*query, taStep.FkStoryTips)
 		if err != nil {
-			log.Println("error getting story", err)
+			log.Println("tips error getting story", err)
 			return err
 		}
-
+		taFlow, err := models.GetTaFlowByPkFlow(*query, taStoryTips.FkFlow)
+		if err != nil {
+			log.Println("tips error getting flow", err)
+			return err
+		}
+		var wf common.Workflow[models.TaTracking]
+		err = json.Unmarshal(taFlow.Flow, &wf)
+		if err != nil {
+			log.Println("tips error unmarshalling flow", err)
+			return err
+		}
+		lenTasks := len(wf.Tasks)
+		if lenTasks > 0 {
+			numberOfTips = len(wf.Tasks) - 1
+		}
 	} else {
 		userID := types.NewInt(ctx.Value("user_id").(int))
 		nameFlow := fmt.Sprintf("%s_story_for_%s", constants.FlowTipsSuffix, taStep.PkTracking.String())
@@ -709,7 +727,7 @@ func NewStepTips(ctx context.Context, order string, query *database.IQuery) erro
 	}
 
 	for index, tip := range handler.Tips.Array {
-		status := fmt.Sprintf("tip_%d", index)
+		status := fmt.Sprintf("tip_%d", index+numberOfTips)
 		action := fmt.Sprintf(`
 action: add_flow_step
 ticket: %s
@@ -1187,6 +1205,14 @@ func UnmarshallTicket(order []byte) (Ticket, error) {
 
 	return ticket, nil
 }
+func userIDFromContext(ctx context.Context) (types.Int, error) {
+	value, ok := ctx.Value("user_id").(int)
+	if !ok || value <= 0 {
+		return types.NilInt, errors.New("user_id not found or invalid in context")
+	}
+
+	return types.NewInt(value), nil
+}
 
 func NewStoryFlow(ctx context.Context, order string, query *database.IQuery) (*models.TaStory, error) {
 	var taStory *models.TaStory
@@ -1198,12 +1224,11 @@ func NewStoryFlow(ctx context.Context, order string, query *database.IQuery) (*m
 	start := types.NewString(constants.Start)
 	images := types.NewStringArray([]string{})
 	roles := types.NewStringArray([]string{})
-	valueID := ctx.Value("user_id").(int)
-	if valueID == 0 {
-		return nil, errors.New("value id not found in context")
+	userID, err := userIDFromContext(ctx)
+	if err != nil {
+		log.Println("Error getting user id from context:", err)
+		return taStory, err
 	}
-	userID := types.NewInt(valueID)
-
 	nameFlow := ""
 	log.Println("handler.Email", handler.Email)
 	log.Println("handler.UserID", handler.UserID)
@@ -1217,6 +1242,7 @@ func NewStoryFlow(ctx context.Context, order string, query *database.IQuery) (*m
 		userID,
 	)
 	if err != nil {
+		log.Println("taFlow creation error:", err)
 		return taStory, err
 	}
 	taStory, err = models.CreateTaStory(*query,
@@ -1236,7 +1262,7 @@ func NewStoryFlow(ctx context.Context, order string, query *database.IQuery) (*m
 	stringArr := []string{}
 	log.Println("creating ta_tracking")
 
-	models.CreateTaTracking(*query,
+	taTracking, err := models.CreateTaTracking(*query,
 		taStory.PkStory,
 		start,
 		types.NilString(),
@@ -1251,6 +1277,18 @@ func NewStoryFlow(ctx context.Context, order string, query *database.IQuery) (*m
 		types.NewString(order),
 		types.NewStringArray(stringArr),
 	)
+	if err != nil {
+		log.Println("ta_tracking creation error:", err)
+		return taStory, err
+	}
+	log.Println("taStory PkStory", taStory.PkStory)
+	log.Println("TaTracking taTracking", taTracking.PkTracking)
+	err = (*query).Exec(AddNewStepPolicy, taStory.PkStory)
+	if err != nil {
+		log.Println("AddNewPolicy error updating story", err)
+		return taStory, err
+	}
+
 	return taStory, nil
 }
 
@@ -1410,27 +1448,7 @@ func DoAddStepFlowAt[T database.Scanner](ctx context.Context, order string, inse
 		return err
 	}
 	strOrder := adaptStringBeforeYaml(order)
-	tags := addStep.Tags.String()
 	addStep.UserID = types.NewInt(2)
-	categories, err := DoAskAboutCategories(tags, addStep.UserID, query)
-	if err != nil {
-		log.Println("get DoAskAboutCategories error", err)
-		return err
-	}
-	newTags := addStep.Tags.String()
-	if !types.IsNil(addStep.Tags) {
-		newTags = newTags + ","
-	}
-
-	categoryStr, err := extractResponse(categories)
-	if err != nil {
-		log.Println("Error extractResponse error extracting category", err)
-	} else {
-		newTags = newTags + categoryStr
-	}
-	newTags = strings.ReplaceAll(newTags, "\"", "")
-	log.Println("**DoAddStepFlowAt newTags |", newTags, "|")
-	addStep.Tags = types.NewStringArray(strings.Split(newTags, ","))
 	addStep.metaOrder = types.NewString(strOrder)
 	err = DoAddStepFlowAtIntl[T](ctx, addStep, insert, query)
 	if err != nil {

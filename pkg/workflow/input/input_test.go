@@ -295,9 +295,9 @@ content_type: Senda
 
 func TestProcessInputNewStoryTIps(t *testing.T) {
 	var err error
-	config := db.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
-		Password: "stories",
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
 	}
 	var pgQuery db.PostgresQuery
 	pgQuery.Initialize(&config)
@@ -307,13 +307,14 @@ func TestProcessInputNewStoryTIps(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: new_step_tips step_id: 167
-tips: tips1 for Oporto, tips2 for Burgos, tips3 from Barcelona, tips4 from Madrid
-`
+action: new_step_tips step_id: 2884
+tips: La pizza La Veleña combina queso de Chitaga con bocadillo veleño#comma#,La pizza Gaucha incluye carne mechada con chimichurri y chorizo artesanal#comma#,El valor total de la pizza consumida en el video fue de 42.000 pesos#comma#,Ranking de pizzerías en Bucaramanga 1° Lucius#comma# 2° Gauchos y 3° Patagonia#comma#,La masa se describe como suave#comma# de buena calidad y fácil de doblar,`
 	inputFormated := utils.FormatYaml(input)
 	order := []byte(inputFormated)
 	ctx := context.Background()
-	_, err = ProcessInput(ctx, order, &query)
+	newCtx := context.WithValue(ctx, "email", "victorrbravo@gmail.com")
+	userCtx := context.WithValue(newCtx, "user_id", 2)
+	_, err = ProcessInput(userCtx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -436,9 +437,9 @@ updated_at: 2024-03-26T10:10:00Z
 
 func TestProcessAddFlowStepSub(t *testing.T) {
 	var err error
-	config := db.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
-		Password: "stories",
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
 	}
 	var pgQuery db.PostgresQuery
 	pgQuery.Initialize(&config)
@@ -771,16 +772,20 @@ name: 762ED0C1-959C-400F-AABC-4E31C4BF5CD6.jpg
 }
 
 const DB_HOST = "doitall.work"
+const DB_LOCAL_HOST = "localhost"
+const DB_LOCAL_PASS = "stories"
 const DB_NAME = "stories"
 const DB_PASS = "3MncMarinoned9140**1020__"
+
 const DB_USER = "stories"
 const OPEN_API_KEY = "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"
+const GOOGLE_API_KEY = "AIzaSyB14bjScN9L_jLR2XXEUCe1Z98X2ICTII4"
 
 func TestProcessShowFlowData(t *testing.T) {
 	var err error
 	config := database.DatabaseConfig{
-		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
-		Password: DB_PASS,
+		Host: DB_LOCAL_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_LOCAL_PASS,
 	}
 	var pgQuery db.PostgresQuery
 	pgQuery.Initialize(&config)
@@ -791,12 +796,12 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 
 	input := `
-action: show_flow_data 
-ticket: 205
-filter: >jan1
+action: show_flow_data
+ticket: 227
+filter: Bill
+by_day: false
 page_number: 1
 page_size: 12
-by_day: true
 `
 
 	order := []byte(input)
@@ -806,7 +811,7 @@ by_day: true
 		t.Error(err)
 	}
 
-	fmt.Println("value data response", response)
+	fmt.Println("value data response: |", response, "|")
 }
 
 func TestProcessAddUserPolicy(t *testing.T) {
@@ -1095,6 +1100,36 @@ image_id: 5895050E-3FE2-48AF-B191-80BF2AEF8E63.jpg
 	fmt.Println("value data response", response)
 }
 
+func TestProcessSuggestVideoShortWordsName(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
+	}
+	err = os.Setenv("GOOGLE_API_KEY", GOOGLE_API_KEY)
+	if err != nil {
+		t.Fatalf("Failed to set env var: %v", err)
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: suggest_short_name_words_for_video
+image_id: 2775C51A-2BFB-4800-BE0E-C81068F76AE9
+`
+	order := []byte(input)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("value data response", response)
+}
+
 func TestProcessAskAboutCategory(t *testing.T) {
 	var err error
 	config := database.DatabaseConfig{
@@ -1324,9 +1359,9 @@ func TestProcessNewStoryFlow(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: new_story_flow
-name: Tiramisu18
-summary: tiramisu recipe for homemade cooking
-email: solazver@gmail.com
+name: February 2026
+summary: February days
+email: victorrbravo@gmail.com
 content_type: Senda
 `
 	order := []byte(input)
