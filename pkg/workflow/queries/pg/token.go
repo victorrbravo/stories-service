@@ -40,13 +40,14 @@ FROM cte WHERE {{.Key2Link}}='{{.Status}}' AND  {{.Key1Link}}='{{.Token}}'  ;
 	SelectPositionFieldToken = `
 WITH cte AS (
 SELECT {{.Key2Link}} ,{{.Key1Link}}, {{.TrackingTable}}.{{.TimeField}},{{.PkField}},roles,images,
-	ST_Distance(ST_Transform({{.Position}},3857), ST_Transform(LEAD({{.Position}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})), 3857)) AS diff
-FROM {{.TrackingTable}} JOIN {{.TableName}} ON {{.Key1Link}}={{.PkField}} ORDER BY {{.Key1Link}}, ARRAY_POSITION(ARRAY[{{.Statuses}}], {{.Key2Link}})  
+	ST_Distance(ST_Transform({{.Position}},3857), ST_Transform(LEAD({{.Position}}) over (ORDER BY {{.Key1Link}}, ARRAY_POSITION($1::text[], {{.Key2Link}})), 3857)) AS diff
+FROM {{.TrackingTable}} JOIN {{.TableName}} ON {{.Key1Link}}={{.PkField}} WHERE {{.TrackingTable}}.{{.Key2Link}}=ANY($1::text[]) ORDER BY {{.Key1Link}}, ARRAY_POSITION($1::text[], {{.Key2Link}})  
 )
 SELECT 
 CASE WHEN diff IS NULL THEN -1 ELSE diff END AS distance
 FROM cte {{if ne .Filter ""}} WHERE {{.Filter}} AND {{.PkField}} = '{{.Token}}'{{end}};
 `
+
 	SelectTimeFieldToken = `
 WITH cte AS (
 SELECT {{.Key2Link}} ,{{.Key1Link}},{{.TrackingTable}}.{{.TimeField}},{{.PkField}},roles,images,
@@ -157,6 +158,7 @@ func DistanceField[T db.Scanner](wf *common.Workflow[T], parameters ...interface
 		log.Println("after", after)
 		for _, name := range pagStatuses {
 			current := wf.Tasks[name]
+			paginatedStatuses, _, _ := Paginate(statuses, wf.Page)
 			if types.AsBool(current.Report) == false {
 				n++
 				continue
@@ -167,7 +169,7 @@ func DistanceField[T db.Scanner](wf *common.Workflow[T], parameters ...interface
 				n++
 				continue
 			}
-			_, err = (*newQuery).QueryOne(newSQL, &distance)
+			_, err = (*newQuery).QueryOne(newSQL, &distance, types.NewStringArray(paginatedStatuses))
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				log.Println("error position query err", err, "newSQL", newSQL)
 				n++
@@ -177,7 +179,7 @@ func DistanceField[T db.Scanner](wf *common.Workflow[T], parameters ...interface
 				current.Data.DistanceDiff = types.NewFloat(-1)
 			} else {
 				current.Data.DistanceDiff = distance.Value
-				if n > 0 && n < (nTasks-1) {
+				if n >= 0 && n < (nTasks-1) {
 					distanceSum = distanceSum + types.AsFloat(distance.Value)
 				}
 			}

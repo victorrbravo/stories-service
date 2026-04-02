@@ -37,7 +37,6 @@ func (integer *Int) Scan(src interface{}) error {
 	case int32:
 		integer.notNil = true
 		integer.value = int(value)
-		break
 	case int64:
 		integer.value = int(value)
 		integer.notNil = true

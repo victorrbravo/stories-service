@@ -71,3 +71,8 @@ func (*Query) Commit() error {
 func (*Query) Rollback() {
 	// This is intentionally no-op as single queries are committed automatically
 }
+
+// NewQuery returns a new query object reusing the same database connection.
+func (repo *Query) NewQuery() IQuery {
+	return &Query{db: repo.db, instance: repo.instance, config: repo.config}
+}

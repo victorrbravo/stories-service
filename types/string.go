@@ -27,11 +27,9 @@ func (str *String) Scan(src interface{}) error {
 	case nil:
 		str.notNil = false
 		str.value = ""
-		break
 	case string:
 		str.notNil = true
 		str.value = value
-		break
 	case []byte:
 		str.notNil = true
 		str.value = string(value)

@@ -265,9 +265,9 @@ pk_tracking: 14
 
 func TestProcessInputNewPayment(t *testing.T) {
 	var err error
-	config := db.DatabaseConfig{
-		Host: "localhost", Name: "stories", Port: 5432, User: "stories",
-		Password: "stories",
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
 	}
 	var pgQuery db.PostgresQuery
 	pgQuery.Initialize(&config)
@@ -278,12 +278,16 @@ func TestProcessInputNewPayment(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: new_story_flow
-name: the_new_flow_to_test
-summary: an afternoon in Merida
+name: Chacachinto
+summary: activities
+email: victorrbravo@gmail.com
+content_type: Senda
+
 `
 	order := []byte(input)
 	ctx := context.Background()
-	_, err = ProcessInput(ctx, order, &query)
+	ctxUsr := context.WithValue(ctx, "user_id", 2)
+	_, err = ProcessInput(ctxUsr, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
@@ -477,13 +481,13 @@ func TestProcessAddFlowStepOrderByDate(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_flow_step
-ticket: 198
-status: Nevadin tutu
+ticket: 201
+status: Metro market
 images: 
  - ABC897B7-71DA-4C08-B7E8-B7F2F071D445
-amount: 1270.00
-summary: JV coffee
-media_date: 2025-11-12T15:02:26Z
+amount: 37300.00
+summary: Market
+media_date: 2025-11-25T23:02:26Z
 type: step
 `
 	order := []byte(input)
@@ -1359,6 +1363,34 @@ name: February 2026
 summary: February days
 email: victorrbravo@gmail.com
 content_type: Senda
+`
+	order := []byte(input)
+	ctx := context.Background()
+	newCtx := context.WithValue(ctx, "email", "victorrbravo@gmail.com")
+	userCtx := context.WithValue(newCtx, "user_id", 2)
+	_, err = ProcessInput(userCtx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestProcessUpdatePolicy(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: update_policy
+pk_policy: 12
+condition: '[{"ticket": 210}, {"ticket": 205}, {"ticket": 193}, {"ticket": 198}, {"ticket": 201}]'
 `
 	order := []byte(input)
 	ctx := context.Background()

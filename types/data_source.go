@@ -2,7 +2,6 @@ package types
 
 import (
 	"database/sql/driver"
-	"errors"
 	"fmt"
 
 	"stories/constants"
@@ -34,7 +33,7 @@ func (mt DataSource) IsValid() error {
 		DataSourceCNBC, DataSourceFinancialTimes, DataSourceWallStreetJounral, DataSourceCNN, DataSourceFortune, DataSourceWallStreetJournal:
 		return nil
 	}
-	return errors.New(fmt.Sprintf(constants.FieldMustBeType, "DataSource", "Finvar, SEC, CIAWorldFactbook, QuandlSharadar, WorldBank, IMF, BBC, WorldTradeOrganization,CNBC, FinancialTimes, WallStreetJounral, CNN, Fortune, WallStreetJournal"))
+	return fmt.Errorf(constants.FieldMustBeType, "DataSource", "Finvar, SEC, CIAWorldFactbook, QuandlSharadar, WorldBank, IMF, BBC, WorldTradeOrganization,CNBC, FinancialTimes, WallStreetJounral, CNN, Fortune, WallStreetJournal")
 }
 
 func (lt DataSource) isNil() bool {
