@@ -63,19 +63,43 @@ func (s *stringSlice) Set(value string) error {
 	return nil
 }
 
-func resendSendEmail() {
-	apiKey := os.Getenv("RESEND_API_KEY")
+func ResendSendEmailWithTemplate(toMails []string, first_name string, code string, expiration string) error {
+	apiKey := os.Getenv("API_RESEND_KEY")
 	client := resend.NewClient(apiKey)
-	var toMails stringSlice
-	flag.Var(&toMails, "m", "Add a mail")
+	params := &resend.SendEmailRequest{
+		From: "DoItAll <support@doitall.work>",
+		To:   toMails,
+		Template: &resend.EmailTemplate{
+			Id: "signup",
+			Variables: map[string]interface{}{
+				"first_name": first_name,
+				"expiration": expiration,
+				"code":       code,
+			},
+		},
+	}
+	_, err := client.Emails.Send(params)
+	if err != nil {
+		return fmt.Errorf("error sending email: %w", err)
+	}
+	return nil
+}
+
+func ResendSendEmail(toMails []string, subject string, body string) error {
+	apiKey := os.Getenv("API_RESEND_KEY")
+	client := resend.NewClient(apiKey)
 	flag.Parse()
 	params := &resend.SendEmailRequest{
 		From:    "support@doitall.work",
 		To:      toMails,
-		Subject: "Bienvenido a Doitall",
-		Html:    "<h1>Bienvenido a Doitall, 🔥</h1>",
+		Subject: subject,
+		Html:    body,
 	}
-	client.Emails.Send(params)
+	_, err := client.Emails.Send(params)
+	if err != nil {
+		return fmt.Errorf("error sending email: %w", err)
+	}
+	return nil
 }
 
 // Get currently authenticated user's information
@@ -132,9 +156,7 @@ func (handler SignupUserHandler) ServeHTTP(writer http.ResponseWriter, request *
 	urlToSend := buildUrlToSend(handler.Email, code)
 	log.Println("urlToSend", urlToSend, "created taUser ID:", taUser.PkUser)
 
-	body := fmt.Sprintf(DefaultSignUpBodyEmail, handler.Name, handler.LastName, urlToSend)
-	log.Println("body", body)
-	//err = SendEmail()
+	err = ResendSendEmailWithTemplate([]string{handler.Email}, handler.Name.String(), code, "15")
 
 	if err != nil {
 		log.Println("Error sending email", err.Error())

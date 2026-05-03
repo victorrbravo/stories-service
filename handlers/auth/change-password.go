@@ -2,7 +2,6 @@ package auth
 
 import (
 	"fmt"
-	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
 	"stories/constants"
@@ -12,6 +11,8 @@ import (
 	"stories/handlers_utils"
 	"stories/helpers"
 	"stories/types"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type ChangePasswordHandler struct {
@@ -46,12 +47,12 @@ func (handler ChangePasswordHandler) ServeHTTP(writer http.ResponseWriter, reque
 	log.Println("taSessions err", err)
 	log.Println("len taSessions", taSessions)
 	if err != nil {
-		log.Println(fmt.Sprintf("Error getting token %s", searchCode))
+		log.Printf("Error getting token %s", searchCode)
 		handlers_utils.ResponseWithInternalError(writer)
 		return
 	}
 	if len(taSessions) == 0 {
-		log.Println(fmt.Sprintf("Token %s not found", searchCode))
+		log.Printf("Token %s not found", searchCode)
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(constants.InvalidToken, searchCode)))
 		return
 	}
@@ -70,7 +71,7 @@ func (handler ChangePasswordHandler) ServeHTTP(writer http.ResponseWriter, reque
 	pkUser := taSession.FkUser
 	taUser, err := models.GetTaUserByPkUser(handler.Query, pkUser)
 	if err != nil {
-		log.Println(fmt.Sprintf("Error getting user %d", pkUser))
+		log.Printf("Error getting user %v", pkUser)
 		handlers_utils.ResponseWithInternalError(writer)
 		return
 	}
@@ -96,7 +97,7 @@ func (handler ChangePasswordHandler) ServeHTTP(writer http.ResponseWriter, reque
 		types.NilString(),
 	)
 	if err != nil {
-		log.Println(fmt.Sprintf("Error updating user %d", pkUser))
+		log.Println(fmt.Sprintf("Error updating user %+v", pkUser))
 		handlers_utils.ResponseWithInternalError(writer)
 		return
 	}

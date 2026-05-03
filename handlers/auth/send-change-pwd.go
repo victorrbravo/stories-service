@@ -68,12 +68,7 @@ func (handler SendChangePwdHandler) ServeHTTP(writer http.ResponseWriter, reques
 			Please write this code <div style="color: black; font-family: Arial; font-size: 16px;">%s</div> in Use2 App, <br/>  in order to change your current password.</br>
 		Use2 app. .
 `, newCode)
-	smtpConf, err := getSMTPConfiguration()
-	if err != nil {
-		log.Println("Error trying to get SMTP configuration", err.Error())
-		handlers_utils.ResponseWithInternalError(writer)
-		return
-	}
+
 	_, err = models.CreateTaSession(handler.Query,
 		types.NewString(newCode),
 		taUser.PkUser,
@@ -85,13 +80,7 @@ func (handler SendChangePwdHandler) ServeHTTP(writer http.ResponseWriter, reques
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusInternalServerError, err.Error()))
 		return
 	}
-	err = sendEmailTLS(smtpConf.SmtpUsername,
-		smtpConf.SmtpPassword,
-		smtpConf.SmtpHost,
-		smtpConf.SmtpPort,
-		email,
-		DefaultChangePassword,
-		body)
+	err = ResendSendEmail([]string{email}, DefaultChangePassword, body)
 
 	if err != nil {
 		log.Println("ChangePassword Error sending email", err.Error())

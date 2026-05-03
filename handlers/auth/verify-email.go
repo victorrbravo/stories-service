@@ -55,7 +55,7 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 	searchCode := types.NewString(code)
 	taSessions, err := models.GetTaSessionByToken(handler.Query, searchCode)
 	if err != nil {
-		log.Println(fmt.Sprintf("Error getting token %s", code))
+		log.Printf("Error getting token %s", code)
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(InvalidToken, code)))
 		return
 
@@ -67,7 +67,7 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 	now := types.NowUTC()
 	taUser, err := models.GetTaUserByPkUser(handler.Query, taSession.FkUser)
 	if err != nil {
-		log.Println(fmt.Sprintf("Error getting user %d", taSession.FkUser))
+		log.Printf("Error getting user %v", taSession.FkUser)
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(InvalidToken, code)))
 		return
 	}
@@ -78,7 +78,7 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 			handlers_utils.ResponseWithInternalError(writer)
 			return
 		}
-		log.Println(fmt.Sprintf("Token %s has expired", code))
+		log.Printf("Token %s has expired", code)
 		linkResend := fmt.Sprintf("%s?code=%s", urlResend, code)
 		nameUser := fmt.Sprintf("%s", taUser.Email)
 		writeHTMLWithTemplate(writer, VerificationData{Name: nameUser,
@@ -90,7 +90,7 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 	log.Println("Session found: ", taSession.PkSession)
 
 	if taUser.Activated.ToBool() {
-		log.Println(fmt.Sprintf("User %s was already activated", taUser.Email))
+		log.Printf("User %s was already activated", taUser.Email)
 		writeHTMLWithTemplate(writer, VerificationData{Name: taUser.Email.String(), TemplateContent: AlreadyVerifiedEmail})
 		return
 
@@ -107,11 +107,11 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 		types.NilString(),
 	)
 	if err != nil {
-		log.Println(fmt.Sprintf("Error updating user %d", taSession.FkUser))
+		log.Printf("Error updating user %v", taSession.FkUser)
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(InvalidToken, code)))
 		return
 	}
-	log.Println(fmt.Sprintf("User %s was activated succesfully", email))
+	log.Printf("User %s was activated succesfully", email)
 	// Redirect to the login page
 	log.Println("VerificationData taUser.Email: |", email, "|")
 	data := VerificationData{Name: email.String(), TemplateContent: SuccessVerifyEmail}

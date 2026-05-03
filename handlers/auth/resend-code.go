@@ -82,19 +82,8 @@ func (handler ResendCodeHandler) ServeHTTP(writer http.ResponseWriter, request *
 			Please click <a href="%s"><b>here</b></a> to verify your email.</br>
 		Please use this code to verify your email address on Use2 Team.
 `, buildUrlToSend(email, newCode))
-	smtpConf, err := getSMTPConfiguration()
-	if err != nil {
-		log.Println("Error trying to get SMTP configuration", err.Error())
-		handlers_utils.ResponseWithInternalError(writer)
-		return
-	}
-	err = sendEmailTLS(smtpConf.SmtpUsername,
-		smtpConf.SmtpPassword,
-		smtpConf.SmtpHost,
-		smtpConf.SmtpPort,
-		taUser.Email.String(),
-		DefaultResendSubjectEmail,
-		body)
+
+	err = ResendSendEmail([]string{taUser.Email.String()}, DefaultResendSubjectEmail, body)
 
 	if err != nil {
 		log.Println("Error sending email", err.Error())
