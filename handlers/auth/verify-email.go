@@ -51,14 +51,14 @@ func (handler VerifyEmailHandler) ServeHTTP(writer http.ResponseWriter, request 
 		return
 	}
 	// Get the token from the query string
-	log.Println("code is not empty")
+	log.Printf("code is not empty: %v", code)
+	log.Printf("query: %v", query)
 	searchCode := types.NewString(code)
 	taSessions, err := models.GetTaSessionByToken(handler.Query, searchCode)
-	if err != nil {
+	if taSessions == nil || err != nil {
 		log.Printf("Error getting token %s", code)
 		handlers_utils.RespondWithError(writer, helpers.NewHttpError(http.StatusBadRequest, fmt.Sprintf(InvalidToken, code)))
 		return
-
 	}
 	taSession := taSessions[0]
 	log.Println("Started At", taSession.StartedAt)

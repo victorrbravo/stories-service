@@ -16,9 +16,10 @@ import (
 
 	"github.com/twinj/uuid"
 
-	"github.com/dgrijalva/jwt-go"
 	"stories/constants"
 	"stories/types"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 type AccessDetails struct {
@@ -208,6 +209,22 @@ func TokenValid(t string) (jwt.MapClaims, error) {
 		return nil, err
 	}
 	return token.Claims.(jwt.MapClaims), nil
+}
+
+func VerifyRefreshToken(t string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(t, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(os.Getenv(constants.JWTRefreshEnvironmentOSName)), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims, nil
+	}
+	return nil, fmt.Errorf("invalid token")
 }
 
 func DateEqual(date1, date2 time.Time) bool {

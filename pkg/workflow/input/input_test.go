@@ -797,8 +797,8 @@ func TestProcessShowFlowData(t *testing.T) {
 
 	input := `
 action: show_flow_data
-ticket: 227
-filter: Bill
+ticket: 239
+filter: >may4 and not bill
 by_day: false
 page_number: 1
 page_size: 12
