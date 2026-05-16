@@ -17,6 +17,8 @@ var Lexer = lexer.MustSimple([]lexer.SimpleRule{
 	{"Not", `(?i)\bnot\b`},
 	{"Date", `[A-Za-z]{3}[0-9]{1,2}`},        // e.g., Jun13
 	{"Ident", `[[\p{L}_][[\p{L}\p{N}_]*`},    // e.g., cash, Cafe
+	{"Number", `[0-9]+`},                     // function param numbers, e.g. 2
+	{"Punct", `[\(\),\-]`},                   // dash + comma for function calls
 	{"Quoted", `"[\p{L}_][\p{L}\p{N}_\s]*"`}, // e.g., cash, Cafe
 
 })
@@ -40,8 +42,23 @@ type Comparison struct {
 }
 
 type Tag struct {
-	Not  bool   `[ @"not" ]`
-	Name string `( @Ident | @Quoted)`
+	Not      bool          `[ @"not" ]`
+	Name     string        `( @Ident | @Quoted)`
+	FuncArgs *FunctionArgs `@@?`
+}
+
+// FunctionArgs is the trailing part of a function-style tag, e.g. the
+// "- amount,2" in "max- amount,2". Each parameter is captured as a
+// string (identifiers and numbers both come through as strings).
+type FunctionArgs struct {
+	Params []string `"-" @(Ident|Number) ( "," @(Ident|Number) )*`
+}
+
+// Function is the extracted representation of a function-style tag
+// found in an expression: its name plus its string parameter list.
+type Function struct {
+	Name   string
+	Params []string
 }
 
 type ParsedResult struct {
@@ -51,6 +68,7 @@ type ParsedResult struct {
 	LessThan        string
 	GreaterThan     string
 	AndLiteralTerms []string
+	Functions       []Function
 }
 
 func IsQuoted(s string) bool {
@@ -72,6 +90,7 @@ func ExtractTerms(input string) (ParsedResult, error) {
 		participle.Lexer(Lexer),
 		participle.Elide("Whitespace"),
 		participle.CaseInsensitive("And", "Or", "Not"),
+		participle.UseLookahead(2),
 	)
 
 	expr, err := parser.ParseString("", input)
@@ -97,6 +116,16 @@ func ExtractTerms(input string) (ParsedResult, error) {
 					result.OrTerms = append(result.OrTerms, andExpr.Comparison.Date)
 				}
 			case andExpr.Tag != nil:
+				// Function-style tag: "fnName- p1,p2,...". These are
+				// routed to result.Functions and do NOT participate as
+				// And/Or terms.
+				if andExpr.Tag.FuncArgs != nil {
+					result.Functions = append(result.Functions, Function{
+						Name:   strings.Trim(andExpr.Tag.Name, `"`),
+						Params: andExpr.Tag.FuncArgs.Params,
+					})
+					continue
+				}
 				isQuoted := IsQuoted(andExpr.Tag.Name)
 				tag := strings.Trim(andExpr.Tag.Name, `"`)
 				if andExpr.Tag.Not {
