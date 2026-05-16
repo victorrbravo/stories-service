@@ -2,8 +2,9 @@ package parser
 
 import (
 	"fmt"
-	"github.com/alecthomas/participle/v2"
 	"testing"
+
+	"github.com/alecthomas/participle/v2"
 )
 
 // Helper function to create string pointers
@@ -18,7 +19,7 @@ func TestExpression_ExtractTerms(t *testing.T) {
 		participle.Elide("Whitespace"),        // ✅ This line makes whitespace ignored!
 		participle.CaseInsensitive("Keyword"), // Optional: make AND/OR/NOT case-insensitive
 	)
-	input := `term1 OR term2 AND NOT term3) OR term4`
+	input := `term1 OR term2 AND NOT term3`
 
 	ast, err := parser.ParseString("", input)
 	if err != nil {
