@@ -13,8 +13,9 @@ import (
 var logicalLexer = lexer.MustSimple([]lexer.SimpleRule{
 	{"Keyword", `(?i)\bAND\b|\bOR\b|\bNOT\b`},
 	{"Ident", `[a-zA-Z_][a-zA-Z0-9_]*`},
+	{"Number", `[0-9]+`},
 	{"Whitespace", `[ \t\n\r]+`},
-	{"Punct", `[\(\)]`},
+	{"Punct", `[\(\),\-]`},
 	{"Operator", `[<>]=?|==|!=`},
 	{"Date", `[A-Za-z]{3}[0-9]{1,2}`}, // e.g., Jun13
 	{"Quoted", `"[a-zA-Z_][a-zA-Z0-9_\s]*"`},
@@ -44,19 +45,35 @@ type Comparison struct {
 	Date string `@Date`
 }
 
+// Term matches either a single identifier, an identifier followed by a
+// function-call tail (e.g. "max- amount,2"), or a parenthesized expression.
 type Term struct {
-	Ident  string      `  @Ident`
-	Nested *Expression `| "(" @@ ")"`
+	Ident    string        `  @Ident`
+	FuncArgs *FunctionArgs `  @@?`
+	Nested   *Expression   `| "(" @@ ")"`
 }
 
-// Parser instance
+// FunctionArgs describes the tail of a function-style term: a dash
+// followed by one or more comma-separated parameters (each captured as a
+// string). For example, in "max- amount,2" the params are ["amount", "2"].
+type FunctionArgs struct {
+	Params []string `"-" @(Ident|Number) ( "," @(Ident|Number) )*`
+}
+
+// Function is the extracted representation of a function call found
+// in an expression, with its name and string parameter list.
+type Function struct {
+	Name   string
+	Params []string
+}
 
 type ParserResult struct {
-	Ands    []string
-	Ors     []string
-	Nots    []string
-	Greater string
-	Less    string
+	Ands      []string
+	Ors       []string
+	Nots      []string
+	Greater   string
+	Less      string
+	Functions []Function
 }
 
 func ExtractTerms(expression string) (ParserResult, error) {
@@ -64,6 +81,7 @@ func ExtractTerms(expression string) (ParserResult, error) {
 		participle.Lexer(logicalLexer),
 		participle.Elide("Whitespace"),        // ✅ This line makes whitespace ignored!
 		participle.CaseInsensitive("Keyword"), // Optional: make AND/OR/NOT case-insensitive
+		participle.UseLookahead(2),
 	)
 	input := expression
 
@@ -81,6 +99,7 @@ func extractSimpleTerms(e *Expression, indent int) ParserResult {
 	AndTerms := []string{}
 	AndNotTerms := []string{}
 	var OrTerms []string
+	var Functions []Function
 	var greater string
 	var less string
 
@@ -96,7 +115,7 @@ func extractSimpleTerms(e *Expression, indent int) ParserResult {
 				OrTerms = append(OrTerms)
 				terms = &AndTerms
 			}
-			if and.Not.Not {
+			if and.Not != nil && and.Not.Not {
 				fmt.Println(strings.Repeat("  ", indent+2) + "NOT")
 				terms = &AndNotTerms
 			} else if and.Comparison != nil {
@@ -106,7 +125,9 @@ func extractSimpleTerms(e *Expression, indent int) ParserResult {
 					less = and.Comparison.Date
 				}
 			}
-			printTerm(and.Not.Term, indent+3, terms)
+			if and.Not != nil {
+				printTerm(and.Not.Term, indent+3, terms, &Functions)
+			}
 		}
 	}
 	if len(AndTerms) < 2 {
@@ -117,21 +138,35 @@ func extractSimpleTerms(e *Expression, indent int) ParserResult {
 		}
 	}
 	p := ParserResult{
-		Ands:    AndTerms,
-		Ors:     OrTerms,
-		Nots:    AndNotTerms,
-		Greater: greater,
-		Less:    less,
+		Ands:      AndTerms,
+		Ors:       OrTerms,
+		Nots:      AndNotTerms,
+		Greater:   greater,
+		Less:      less,
+		Functions: Functions,
 	}
 	return p
 }
 
-func printTerm(t *Term, indent int, terms *[]string) {
+func printTerm(t *Term, indent int, terms *[]string, functions *[]Function) {
+	if t == nil {
+		return
+	}
 	if t.Ident != "" {
-		fmt.Println(strings.Repeat("  ", indent)+"TERM:", t.Ident)
-		*terms = append(*terms, t.Ident)
+		if t.FuncArgs != nil {
+			fmt.Println(strings.Repeat("  ", indent)+"FUNCTION:", t.Ident, "PARAMS:", t.FuncArgs.Params)
+			*functions = append(*functions, Function{
+				Name:   t.Ident,
+				Params: t.FuncArgs.Params,
+			})
+		} else {
+			fmt.Println(strings.Repeat("  ", indent)+"TERM:", t.Ident)
+			*terms = append(*terms, t.Ident)
+		}
 	} else if t.Nested != nil {
 		fmt.Println(strings.Repeat("  ", indent) + "(nested)")
-		extractSimpleTerms(t.Nested, indent+1)
+		nested := extractSimpleTerms(t.Nested, indent+1)
+		// propagate functions found inside nested expressions
+		*functions = append(*functions, nested.Functions...)
 	}
 }
