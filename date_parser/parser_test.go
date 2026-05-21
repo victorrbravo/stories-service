@@ -57,3 +57,67 @@ func TestExtractTerms_FunctionAcrossOr(t *testing.T) {
 		t.Errorf("expected params [amount 2], got %v", got)
 	}
 }
+
+func TestExtractTerms_CtgFunction(t *testing.T) {
+	res, err := ExtractTerms(`ctg- food,drink,travel`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(res.Functions) != 1 {
+		t.Fatalf("expected 1 function, got %d: %+v", len(res.Functions), res.Functions)
+	}
+	f := res.Functions[0]
+	if f.Name != "ctg" {
+		t.Errorf("expected function name 'ctg', got %q", f.Name)
+	}
+	want := []string{"food", "drink", "travel"}
+	if len(f.Params) != len(want) {
+		t.Fatalf("expected %d params, got %d: %v", len(want), len(f.Params), f.Params)
+	}
+	for i, w := range want {
+		if f.Params[i] != w {
+			t.Errorf("param[%d]: expected %q, got %q", i, w, f.Params[i])
+		}
+	}
+}
+
+func TestExtractTerms_CtgFunctionWithOtherTerms(t *testing.T) {
+	res, err := ExtractTerms(`coffee and ctg- food,drink,travel or news`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(res.Functions) != 1 {
+		t.Fatalf("expected 1 function, got %d: %+v", len(res.Functions), res.Functions)
+	}
+	f := res.Functions[0]
+	if f.Name != "ctg" {
+		t.Errorf("expected function name 'ctg', got %q", f.Name)
+	}
+	if got := f.Params; len(got) != 3 || got[0] != "food" || got[1] != "drink" || got[2] != "travel" {
+		t.Errorf("expected params [food drink travel], got %v", got)
+	}
+
+	foundCoffee := false
+	for _, term := range res.AndTerms {
+		if term == "coffee" {
+			foundCoffee = true
+			break
+		}
+	}
+	if !foundCoffee {
+		t.Errorf("expected 'coffee' in AndTerms, got %+v", res.AndTerms)
+	}
+
+	foundNews := false
+	for _, term := range res.OrTerms {
+		if term == "news" {
+			foundNews = true
+			break
+		}
+	}
+	if !foundNews {
+		t.Errorf("expected 'news' in OrTerms, got %+v", res.OrTerms)
+	}
+}

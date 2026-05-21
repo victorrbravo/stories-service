@@ -798,7 +798,40 @@ func TestProcessShowFlowData(t *testing.T) {
 	input := `
 action: show_flow_data
 ticket: 237
-filter: max- amount,2 
+filter: max- amount,10 
+by_day: true
+page_number: 1
+page_size: 12
+`
+
+	order := []byte(input)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response: |", response, "|")
+}
+
+func TestProcessCategoryShowFlowData(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_LOCAL_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_LOCAL_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+
+	input := `
+action: show_flow_data
+ticket: 239
+filter: ctg- rent,bill,cafe,restaurant,grocery,health,fun 
 by_day: false
 page_number: 1
 page_size: 12
