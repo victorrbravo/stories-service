@@ -117,8 +117,15 @@ SELECT ta_tracking.pk_tracking FROM ta_tracking
 SELECT ta_tracking.fk_status FROM ta_tracking JOIN  ta_story ON ta_tracking.fk_story=ta_story.pk_story
 WHERE ( (($2::text[] IS NULL) AND ($6::text[] IS NULL)) OR (EXISTS ( SELECT 1 FROM unnest(tags) AS tag
     JOIN unnest($2::text[]) AS input_word ON similarity(tag, input_word) > 0.3
-    ) OR (($6::text[] IS NOT NULL) AND (lower_text_array(tags::text[]) && lower_text_array($6::text[]))))) AND ($3::text[] IS NULL OR  (NOT (lower_text_array(tags::text[]) && lower_text_array($3::text[]))))  AND ta_story.pk_story=$1 
-AND  ($4::text IS NULL OR ta_tracking.updated_at < $4::timestamptz) AND ($5::text IS NULL OR ta_tracking.updated_at > $5::timestamptz) ORDER BY ta_tracking.updated_at;
+    ) OR (($6::text[] IS NOT NULL) AND (lower_text_array(tags::text[]) && lower_text_array($6::text[]))))) AND ($3::text[] IS NULL OR  (NOT (lower_text_array(tags::text[]) && lower_text_array($3::text[]))))  AND ta_story.pk_story=$1
+AND  ($4::text IS NULL OR ta_tracking.updated_at < $4::timestamptz) AND ($5::text IS NULL OR ta_tracking.updated_at > $5::timestamptz)
+AND ($7::text IS NULL OR ta_tracking.pk_tracking IN (
+    SELECT pk_tracking FROM ta_tracking
+    WHERE ta_tracking.fk_story = $1
+    ORDER BY ta_tracking.amount_spent DESC NULLS LAST
+    LIMIT $7::int
+))
+ORDER BY ta_tracking.updated_at;
 `
 	SumAmountFieldTaTracking = `SELECT SUM(ta_tracking.amount_spent)::money::numeric FROM ta_tracking WHERE ta_tracking.fk_status=ANY($1::text[])
 AND ta_tracking.fk_story=$2
@@ -409,7 +416,28 @@ func FilterField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}
 			}
 			greaterThan = types.NewString(g)
 		}
-		rows, err := (*newQuery).QueryMany(SelectFilterUsingOptions, &statusScanned, wfId, andsWords, notWords, lessThan, greaterThan, andsLiteralWords)
+
+		// Pull a function-style term out of the parsed sentence, e.g.
+		// "max- amount,2" means: keep only the 2 rows with the largest
+		// ta_tracking.amount_spent for this story. The first param picks
+		// the field (currently only "amount" -> amount_spent is wired up)
+		// and the second param is the N. When no such function is
+		// present we send NULL and the SQL clause becomes a no-op.
+		maxAmountLimit := types.NilString()
+		for _, fn := range p.Functions {
+			if fn.Name != "max" || len(fn.Params) < 2 {
+				continue
+			}
+			if fn.Params[0] != "amount" {
+				log.Println("FilterField max function: unsupported field", fn.Params[0])
+				continue
+			}
+			maxAmountLimit = types.NewString(fn.Params[1])
+			log.Println("FilterField applying max- amount limit:", fn.Params[1])
+			break
+		}
+
+		rows, err := (*newQuery).QueryMany(SelectFilterUsingOptions, &statusScanned, wfId, andsWords, notWords, lessThan, greaterThan, andsLiteralWords, maxAmountLimit)
 		if err != nil {
 			if !errors.Is(err, sql.ErrNoRows) {
 				log.Println("FilterField Error Count SQL err", err)
