@@ -2,9 +2,7 @@ package stories
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -14,9 +12,7 @@ import (
 	"stories/pkg/workflow"
 	"stories/pkg/workflow/common"
 	"stories/pkg/workflow/queries/pg"
-	"stories/scanners"
 	"stories/types"
-	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -233,21 +229,6 @@ SET condition = (
 WHERE name = 'add_flow_step'
 `
 
-const SelectStatusTagsByStory = `
-SELECT ta_tracking.fk_status, ta_tracking.tags, ta_tracking.updated_at
-FROM ta_tracking
-WHERE ta_tracking.fk_story = $1
-`
-
-// StatusInfo aggregates per-status data extracted from ta_tracking:
-// the union of all tags seen for that status under a given story plus
-// the earliest updated_at timestamp (so within a tag group, statuses
-// can later be ordered ascending by time).
-type StatusInfo struct {
-	Tags      []string
-	UpdatedAt time.Time
-}
-
 type ShowFlowInput struct {
 	PkFlow         int                             `yaml:"flow" default:"1"`
 	Ticket         types.Int                       `yaml:"ticket"`
@@ -373,6 +354,7 @@ func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, e
 	}
 	getFlow.PkFlow = types.AsInt(taStory.FkFlow)
 	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{},
+		pg.TasksOrderField[T],
 		pg.FilterField[T],
 		pg.RoleField[T],
 		pg.DistanceField[T],
@@ -497,244 +479,6 @@ func UnmarshallGetFlow(order []byte, query *db.IQuery) (ShowFlowInput, error) {
 	return getFlow, nil
 }
 
-// TagsByStatus returns a map keyed by ta_tracking.fk_status whose value
-// is a StatusInfo aggregating the rows of the given fk_story. Tags from
-// every tracking row of the same status are unioned (deduplicated). The
-// UpdatedAt field captures the earliest updated_at across those rows so
-// callers can order statuses by time.
-func TagsByStatus(query db.IQuery, fkStory types.Int) (map[string]StatusInfo, error) {
-	result := make(map[string]StatusInfo)
-	var scanner scanners.TupleStringStringArrayDateTime
-
-	rows, err := query.QueryMany(SelectStatusTagsByStory, &scanner, fkStory)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return result, nil
-		}
-		log.Println("TagsByStatus QueryMany err", err)
-		return result, err
-	}
-
-	// Per-status set used to deduplicate tags across multiple rows.
-	seen := make(map[string]map[string]struct{})
-
-	for _, row := range rows {
-		tuple, ok := row.(scanners.TupleStringStringArrayDateTime)
-		if !ok {
-			log.Println("TagsByStatus unexpected row type")
-			continue
-		}
-		status := tuple.First.String()
-		if status == "" {
-			continue
-		}
-		info := result[status]
-		if seen[status] == nil {
-			seen[status] = make(map[string]struct{})
-		}
-		for _, tag := range tuple.Second.Array {
-			if _, dup := seen[status][tag]; dup {
-				continue
-			}
-			seen[status][tag] = struct{}{}
-			info.Tags = append(info.Tags, tag)
-		}
-		rowTime := tuple.Third.DateTime
-		if !rowTime.IsZero() {
-			if info.UpdatedAt.IsZero() || rowTime.Before(info.UpdatedAt) {
-				info.UpdatedAt = rowTime
-			}
-		}
-		result[status] = info
-	}
-	return result, nil
-}
-
-// OrderTasksByTags rebuilds wf.Tasks so that every task is preserved,
-// but their iteration order reflects the priority list provided in
-// wantedTags.
-//
-// The natural traversal is established by walking the workflow chain
-// starting at common.StartTask ("Start") and following
-// Task -> Transition -> Links[0] -> Task on each hop. Any orphan task
-// (not reachable from "Start") is appended afterwards so nothing is
-// lost.
-//
-// The final order is:
-//  1. The "Start" task itself.
-//  2. For each tag in wantedTags (in order), the tasks whose entry in
-//     tagsMap contains that tag, sorted by UpdatedAt ascending within
-//     the tag bucket.
-//  3. Any remaining tasks, in chain order.
-//
-// Example: with wantedTags = []string{"bill", "coffee"} the result
-// starts with "Start", then all tasks whose tagsMap value contains
-// "bill" (oldest UpdatedAt first), then all tasks whose tagsMap value
-// contains "coffee" (oldest first), then the rest.
-//
-// tagsMap is keyed by task name (matching wf.Tasks keys / fk_status
-// values returned by TagsByStatus) and its value carries both the union
-// of tags and the earliest UpdatedAt for that status. An empty/nil
-// wantedTags is treated as "no priority" — every task keeps the chain
-// order.
-//
-// The same map-rebuild pattern used by pg.OrderingTaskField is applied
-// here: a fresh map is assigned to wf.Tasks so the insertion order
-// reflects the priority walk.
-func OrderTasksByTags[T db.Scanner](
-	wf *common.Workflow[T],
-	tagsMap map[string]StatusInfo,
-	wantedTags []string,
-) *common.Workflow[T] {
-	if wf == nil || len(wf.Tasks) == 0 {
-		return wf
-	}
-
-	// 1. Walk the chain from "Start" to establish the natural chain order.
-	chainOrder := make([]string, 0, len(wf.Tasks))
-	visited := make(map[string]bool, len(wf.Tasks))
-	current := common.StartTask
-	if _, ok := wf.Tasks[current]; !ok {
-		log.Println("OrderTasksByTags: 'Start' task not found in wf.Tasks")
-	}
-	for {
-		task, ok := wf.Tasks[current]
-		if !ok || visited[current] {
-			break
-		}
-		visited[current] = true
-		chainOrder = append(chainOrder, current)
-
-		if len(task.Transition.Links) == 0 {
-			break
-		}
-		next := task.Transition.Links[0].Task
-		if next == "" || next == common.EndTask {
-			break
-		}
-		current = next
-	}
-	// Append any orphan tasks (not reachable from "Start") so all
-	// tasks are preserved in the rebuilt map.
-	for name := range wf.Tasks {
-		if !visited[name] {
-			chainOrder = append(chainOrder, name)
-			visited[name] = true
-		}
-	}
-
-	// hasTag returns true when tagsMap[taskName].Tags contains the
-	// given tag. The comparison is case-insensitive (strings.EqualFold),
-	// so e.g. wantedTags=["Bill"] matches a stored tag "bill" or "BILL".
-	hasTag := func(taskName, tag string) bool {
-		info, ok := tagsMap[taskName]
-		if !ok {
-			return false
-		}
-		for _, t := range info.Tags {
-			if strings.EqualFold(t, tag) {
-				return true
-			}
-		}
-		return false
-	}
-
-	// timeOf returns the UpdatedAt timestamp registered for a task in
-	// tagsMap. Tasks not present in tagsMap (e.g. "Start") get the zero
-	// value, which sorts ahead of every real timestamp.
-	timeOf := func(taskName string) time.Time {
-		if info, ok := tagsMap[taskName]; ok {
-			return info.UpdatedAt
-		}
-		return time.Time{}
-	}
-
-	ordered := make(map[string]*common.Task, len(wf.Tasks))
-	added := make(map[string]bool, len(wf.Tasks))
-	// priorityOrder records the final task sequence (without END).
-	// We later use it to rewire each task's Transition.Links[0] so
-	// that wf.Statuses() walks the chain in this same order.
-	priorityOrder := make([]string, 0, len(wf.Tasks))
-
-	addToOrdered := func(name string) {
-		if added[name] {
-			return
-		}
-		if task, ok := wf.Tasks[name]; ok {
-			ordered[name] = task
-			added[name] = true
-			priorityOrder = append(priorityOrder, name)
-		}
-	}
-
-	// 2. "Start" goes first.
-	addToOrdered(common.StartTask)
-
-	// 3. For each wanted tag (in priority order), gather every task
-	//    whose tagsMap entry contains that tag, sort the bucket by
-	//    UpdatedAt ascending, and append in that order.
-	for _, tag := range wantedTags {
-		bucket := make([]string, 0)
-		for _, name := range chainOrder {
-			if !added[name] && hasTag(name, tag) {
-				bucket = append(bucket, name)
-			}
-		}
-		sort.SliceStable(bucket, func(i, j int) bool {
-			return timeOf(bucket[i]).Before(timeOf(bucket[j]))
-		})
-		for _, name := range bucket {
-			addToOrdered(name)
-		}
-	}
-
-	// 4. Append every remaining task in chain order.
-	for _, name := range chainOrder {
-		if !added[name] {
-			addToOrdered(name)
-		}
-	}
-
-	// 5. Rewire each task's Transition.Links[0] so that the chain
-	//    walk (Task -> Transition -> Links[0] -> Task) follows
-	//    priorityOrder. The last task in the order links to
-	//    common.EndTask, which is the sentinel used by
-	//    Workflow.calculateStatuses to terminate iteration.
-	for i, name := range priorityOrder {
-		task := ordered[name]
-		if task == nil {
-			continue
-		}
-		var nextName string
-		if i < len(priorityOrder)-1 {
-			nextName = priorityOrder[i+1]
-		} else {
-			nextName = common.EndTask
-		}
-		nextQuery := ""
-		if nextName != common.EndTask {
-			nextQuery = wf.Sentence(nextName)
-		}
-		if len(task.Transition.Links) == 0 {
-			task.Transition.Links = []common.Link{{
-				Task:  nextName,
-				Query: nextQuery,
-			}}
-		} else {
-			task.Transition.Links[0].Task = nextName
-			task.Transition.Links[0].Query = nextQuery
-		}
-	}
-
-	// Invalidate any cached statuses so subsequent calls to
-	// wf.Statuses(ctx, ..., recalculate=true) actually re-walk the
-	// rewired chain.
-	wf.CacheStatuses = common.CacheStatuses{}
-
-	wf.Tasks = ordered
-	return wf
-}
-
 func UpdateWorkflow[T db.Scanner](getFlow ShowFlowInput, query *db.IQuery,
 	values []interface{},
 	funcs ...func(*common.Workflow[T], ...interface{}) pg.Monad[T]) (*common.Workflow[T], error) {
@@ -742,16 +486,6 @@ func UpdateWorkflow[T db.Scanner](getFlow ShowFlowInput, query *db.IQuery,
 	if err != nil {
 		return nil, err
 	}
-	tagsMap, err := TagsByStatus(*query, getFlow.Ticket)
-	if err != nil {
-		log.Println("FilterField err", err)
-		return nil, err
-	}
-	log.Println("tagMaps:", tagsMap)
-	nwWf := OrderTasksByTags(wf, tagsMap, []string{"bill", "coffee"})
-	ctx := context.Background()
-	newStatuses, err := nwWf.Statuses(ctx, false, true)
-	log.Println("newStatuses:", newStatuses)
 	wf.Filter.Sentence = getFlow.Filter.String()
 	wf.ByDay = getFlow.ByDay
 	wf.Page.PageNumber = types.AsInt(getFlow.PageNumber)
@@ -786,7 +520,8 @@ func DoShowWorkflowGraph[T db.Scanner](order string, query *db.IQuery) (string, 
 	}
 	getFlow.PkFlow = types.AsInt(taStory.FkFlow)
 	log.Println("DoShowWorkflowGraph getFlow pkFlow", getFlow.PkFlow)
-	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{}, pg.TimeField[T], pg.RoleField[T],
+	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{},
+		pg.TasksOrderField[T], pg.TimeField[T], pg.RoleField[T],
 		pg.CountToken[T], pg.Render[T])
 	if err != nil {
 		return value, err

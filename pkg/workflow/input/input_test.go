@@ -464,8 +464,8 @@ func TestProcessAddFlowStepSub(t *testing.T) {
 func TestProcessAddFlowStepOrderByDate(t *testing.T) {
 	var err error
 	config := database.DatabaseConfig{
-		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
-		Password: DB_PASS,
+		Host: DB_LOCAL_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_LOCAL_PASS,
 	}
 	var pgQuery db.PostgresQuery
 	err = os.Setenv("OPEN_API_KEY", OPEN_API_KEY)
@@ -481,14 +481,17 @@ func TestProcessAddFlowStepOrderByDate(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_flow_step
-ticket: 201
-status: Metro market
-images: 
- - ABC897B7-71DA-4C08-B7E8-B7F2F071D445
-amount: 37300.00
-summary: Market
-media_date: 2025-11-25T23:02:26Z
+ticket: 237
+status: Marcelo tigo18
+amount: 0
+summary: Bill
+media_date: 2026-06-06T18:55:08Z
 type: step
+position: (-72.48995875769609, 7.89307498646205)
+tags: 
+  - bill
+  - phone
+
 `
 	order := []byte(input)
 	ctx := context.Background()
@@ -831,7 +834,7 @@ func TestProcessCategoryShowFlowData(t *testing.T) {
 	input := `
 action: show_flow_data
 ticket: 239
-filter: ctg- rent,bill,cafe,restaurant,grocery,health,fun 
+filter: ctg- bill,coffee 
 by_day: false
 page_number: 1
 page_size: 12
