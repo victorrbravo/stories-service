@@ -141,6 +141,7 @@ type Workflow[T db.Scanner] struct {
 	JsonResponse      string           `json:"json_response"`
 	Filter            WfFilter         `json:"filter,omitempty"`
 	ByDay             bool             `json:"by_day,omitempty"`
+	Order             string           `json:"by_day,omitempty"`
 	Page              types.Page
 	excludeReported   bool
 }
