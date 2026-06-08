@@ -99,7 +99,10 @@ func FormatYaml(input string) string {
 	// Define the regular expression pattern
 	const TAB_STRING = "     "
 	if ValidateYAML(input) {
-		return input
+		// The input is already valid YAML, but a comma-separated scalar
+		// (e.g. "tags: a,b") is a valid string and would fail to unmarshal
+		// into a []string. Still expand inline comma lists into sequences.
+		return formatYamlArray(input, "")
 	}
 	pattern := `(\r?\n)?[\p{L}_]+:\s*`
 
@@ -180,12 +183,19 @@ func formatYamlArray(input string, tabSuffix string) string {
 	for _, line := range lines {
 		fields := strings.SplitN(line, ":", 2)
 		if len(fields) != 2 {
+			// Not a "key: value" line (e.g. an existing "  - item" list
+			// entry). Preserve it verbatim instead of dropping it.
+			result = result + line + "\n"
 			continue
 		}
 		field := strings.TrimFunc(fields[0], fEndField)
 		value := strings.TrimFunc(fields[1], fEnd)
 		items := strings.Split(value, ",")
-		if len(items) > 1 {
+		isInlineCollection := strings.HasPrefix(value, "[") || strings.HasPrefix(value, "{")
+		// Some fields (e.g. "filter") carry a comma as part of a single
+		// scalar value and must not be expanded into a sequence.
+		isScalarField := field == "filter"
+		if len(items) > 1 && !isInlineCollection && !isScalarField {
 			if !IsCoordinates(value) {
 				value = "\n"
 				for _, item := range items {

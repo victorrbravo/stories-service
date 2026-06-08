@@ -1442,8 +1442,13 @@ func extractResponse(jsonData string) (string, error) {
 	return value, nil
 }
 func DoAddStepFlowAt[T database.Scanner](ctx context.Context, order string, insert OrderInsert, query *database.IQuery) error {
+	fmt.Println("...order:", order)
+
 	yamlOrder := utils.FormatYaml(order)
+	fmt.Println("...yamlOrder:", yamlOrder)
 	addStep, err := Unmarshall[AddStoryStatus]([]byte(yamlOrder))
+	fmt.Println("...addStep err:", err)
+	fmt.Println("...addStep addStep:", addStep)
 	if err != nil {
 		return err
 	}

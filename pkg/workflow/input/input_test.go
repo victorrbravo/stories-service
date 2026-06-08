@@ -3,6 +3,7 @@ package input
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"stories/database"
 	db "stories/database"
@@ -352,8 +353,8 @@ type: new_thing
 func TestProcessAddFlowStep(t *testing.T) {
 	var err error
 	config := database.DatabaseConfig{
-		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
-		Password: DB_PASS,
+		Host: DB_LOCAL_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_LOCAL_PASS,
 	}
 	err = os.Setenv("OPEN_API_KEY", OPEN_API_KEY)
 	if err != nil {
@@ -366,14 +367,21 @@ func TestProcessAddFlowStep(t *testing.T) {
 		t.Error(err)
 	}
 	query := pgQuery.NewQuery()
-	input1 := `action: add_flow_step ticket: 198 status: Tres media amount: 18876 summary: Bill media_date: 2025-11-12T01:59:14Z type: step  position: (-72.48997951061656, 7.893217399513308) tags: Tres,media,Bill `
+	input1 := `action: show_flow_data
+ticket: 241
+filter: 'max- amount,2'
+by_day: false
+page_number: 1
+page_size: 12
+`
 	fmt.Println("input1", input1)
 	order := []byte(input1)
 	ctx := context.Background()
-	_, err = ProcessInput(ctx, order, &query)
+	response, err := ProcessInput(ctx, order, &query)
 	if err != nil {
 		t.Error(err)
 	}
+	log.Println("response", response)
 }
 
 func TestProcessUpdateTracking(t *testing.T) {
@@ -482,7 +490,7 @@ func TestProcessAddFlowStepOrderByDate(t *testing.T) {
 	input := `
 action: add_flow_step
 ticket: 237
-status: Marcelo tigo18
+status: Marcelo tigo20
 amount: 0
 summary: Bill
 media_date: 2026-06-06T18:55:08Z
