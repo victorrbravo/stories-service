@@ -190,12 +190,21 @@ func formatYamlArray(input string, tabSuffix string) string {
 		}
 		field := strings.TrimFunc(fields[0], fEndField)
 		value := strings.TrimFunc(fields[1], fEnd)
+		// Fields that must always be YAML sequences even with a single value.
+		isArrayField := field == "tags"
+		// For array fields the explicit "#comma#" token is the item
+		// separator (it is used to avoid clashing with literal commas in
+		// other fields). Turn it into a real comma so the split below
+		// expands it into individual sequence items.
+		if isArrayField {
+			value = strings.ReplaceAll(value, CommaToReplaceToken, ",")
+		}
 		items := strings.Split(value, ",")
 		isInlineCollection := strings.HasPrefix(value, "[") || strings.HasPrefix(value, "{")
 		// Some fields (e.g. "filter") carry a comma as part of a single
 		// scalar value and must not be expanded into a sequence.
 		isScalarField := field == "filter"
-		if len(items) > 1 && !isInlineCollection && !isScalarField {
+		if (len(items) > 1 || isArrayField) && !isInlineCollection && !isScalarField {
 			if !IsCoordinates(value) {
 				value = "\n"
 				for _, item := range items {

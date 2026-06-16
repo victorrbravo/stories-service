@@ -369,10 +369,11 @@ func TestProcessAddFlowStep(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input1 := `action: show_flow_data
 ticket: 241
-filter: 'max- amount,2'
+filter: '>jun7 and Padre'
 by_day: false
 page_number: 1
 page_size: 12
+
 `
 	fmt.Println("input1", input1)
 	order := []byte(input1)
@@ -487,18 +488,7 @@ func TestProcessAddFlowStepOrderByDate(t *testing.T) {
 		t.Error(err)
 	}
 	query := pgQuery.NewQuery()
-	input := `
-action: add_flow_step
-ticket: 237
-status: Marcelo tigo20
-amount: 0
-summary: Bill
-media_date: 2026-06-06T18:55:08Z
-type: step
-position: (-72.48995875769609, 7.89307498646205)
-tags: 
-  - bill
-  - phone
+	input := `action: add_flow_step ticket: 241 status: TaskPadre3 amount: 120000 summary: Padrecito1 padre2 media_date: 2026-06-10T03:32:55Z type: step  position: (-122.406417, 37.785834) tags: Padrecito1#comma#padre2#comma#TaskPadre
 
 `
 	order := []byte(input)
@@ -810,6 +800,39 @@ func TestProcessShowFlowData(t *testing.T) {
 action: show_flow_data
 ticket: 237
 filter: max- amount,10 
+by_day: true
+page_number: 1
+page_size: 12
+`
+
+	order := []byte(input)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response: |", response, "|")
+}
+
+func TestProcessShowFlowDataCtgFunction(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_LOCAL_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_LOCAL_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+
+	input := `
+action: show_flow_data
+ticket: 241
+filter: ctg- bill,coffee 
 by_day: true
 page_number: 1
 page_size: 12

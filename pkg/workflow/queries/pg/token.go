@@ -119,7 +119,7 @@ SELECT ta_tracking.fk_status FROM ta_tracking JOIN  ta_story ON ta_tracking.fk_s
 WHERE ( (($2::text[] IS NULL) AND ($6::text[] IS NULL)) OR (EXISTS ( SELECT 1 FROM unnest(tags) AS tag
     JOIN unnest($2::text[]) AS input_word ON similarity(tag, input_word) > 0.3
     ) OR (($6::text[] IS NOT NULL) AND (lower_text_array(tags::text[]) && lower_text_array($6::text[]))))) AND ($3::text[] IS NULL OR  (NOT (lower_text_array(tags::text[]) && lower_text_array($3::text[]))))  AND ta_story.pk_story=$1
-AND  ($4::text IS NULL OR ta_tracking.updated_at < $4::timestamptz) AND ($5::text IS NULL OR ta_tracking.updated_at > $5::timestamptz)
+	AND  ($4::text IS NULL OR ta_tracking.updated_at < $4::timestamptz) AND ($5::text IS NULL OR ta_tracking.updated_at > $5::timestamptz)
 AND ($7::text IS NULL OR ta_tracking.pk_tracking IN (
     SELECT pk_tracking FROM ta_tracking
     WHERE ta_tracking.fk_story = $1
@@ -436,6 +436,13 @@ func FilterField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}
 			maxAmountLimit = types.NewString(fn.Params[1])
 			log.Println("FilterField applying max- amount limit:", fn.Params[1])
 			break
+		}
+
+		// DEBUG: imprime el SQL y los valores que se envían a PostgreSQL.
+		debugParams := []interface{}{wfId, andsWords, notWords, lessThan, greaterThan, andsLiteralWords, maxAmountLimit}
+		log.Printf("FilterField SQL >>>\n%s", SelectFilterUsingOptions)
+		for i, v := range debugParams {
+			log.Printf("FilterField $%d = %#v", i+1, v)
 		}
 
 		rows, err := (*newQuery).QueryMany(SelectFilterUsingOptions, &statusScanned, wfId, andsWords, notWords, lessThan, greaterThan, andsLiteralWords, maxAmountLimit)
