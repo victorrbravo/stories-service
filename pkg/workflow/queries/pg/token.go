@@ -128,6 +128,26 @@ AND ($7::text IS NULL OR ta_tracking.pk_tracking IN (
 ))
 ORDER BY ta_tracking.updated_at;
 `
+	// Same as SelectFilterUsingOptions but, instead of ordering by
+	// updated_at, it orders the rows by ta_tracking.fk_status following the
+	// explicit order of the status list passed in $8 (i.e. wf.GetStatuses()).
+	// array_position returns the 1-based index of each fk_status inside the
+	// list, so the result preserves that ordering. Statuses missing from the
+	// list (NULL position) are pushed to the end.
+	SelectFilterUsingOptionsOrdered = `
+SELECT ta_tracking.fk_status FROM ta_tracking JOIN  ta_story ON ta_tracking.fk_story=ta_story.pk_story
+WHERE ( (($2::text[] IS NULL) AND ($6::text[] IS NULL)) OR (EXISTS ( SELECT 1 FROM unnest(tags) AS tag
+    JOIN unnest($2::text[]) AS input_word ON similarity(tag, input_word) > 0.3
+    ) OR (($6::text[] IS NOT NULL) AND (lower_text_array(tags::text[]) && lower_text_array($6::text[]))))) AND ($3::text[] IS NULL OR  (NOT (lower_text_array(tags::text[]) && lower_text_array($3::text[]))))  AND ta_story.pk_story=$1
+	AND  ($4::text IS NULL OR ta_tracking.updated_at < $4::timestamptz) AND ($5::text IS NULL OR ta_tracking.updated_at > $5::timestamptz)
+AND ($7::text IS NULL OR ta_tracking.pk_tracking IN (
+    SELECT pk_tracking FROM ta_tracking
+    WHERE ta_tracking.fk_story = $1
+    ORDER BY ta_tracking.amount_spent DESC NULLS LAST
+    LIMIT $7::int
+))
+ORDER BY array_position($8::text[], ta_tracking.fk_status) NULLS LAST;
+`
 	SumAmountFieldTaTracking = `SELECT SUM(ta_tracking.amount_spent)::money::numeric FROM ta_tracking WHERE ta_tracking.fk_status=ANY($1::text[])
 AND ta_tracking.fk_story=$2
 `
@@ -438,14 +458,13 @@ func FilterField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}
 			break
 		}
 
-		// DEBUG: imprime el SQL y los valores que se envían a PostgreSQL.
-		debugParams := []interface{}{wfId, andsWords, notWords, lessThan, greaterThan, andsLiteralWords, maxAmountLimit}
-		log.Printf("FilterField SQL >>>\n%s", SelectFilterUsingOptions)
-		for i, v := range debugParams {
-			log.Printf("FilterField $%d = %#v", i+1, v)
+		var rows []interface{}
+		if len(wf.OrderedByTags) > 0 {
+			orderedStatuses := types.NewStringArray(wf.GetStatuses())
+			rows, err = (*newQuery).QueryMany(SelectFilterUsingOptionsOrdered, &statusScanned, wfId, andsWords, notWords, lessThan, greaterThan, andsLiteralWords, maxAmountLimit, orderedStatuses)
+		} else {
+			rows, err = (*newQuery).QueryMany(SelectFilterUsingOptions, &statusScanned, wfId, andsWords, notWords, lessThan, greaterThan, andsLiteralWords, maxAmountLimit)
 		}
-
-		rows, err := (*newQuery).QueryMany(SelectFilterUsingOptions, &statusScanned, wfId, andsWords, notWords, lessThan, greaterThan, andsLiteralWords, maxAmountLimit)
 		if err != nil {
 			if !errors.Is(err, sql.ErrNoRows) {
 				log.Println("FilterField Error Count SQL err", err)
@@ -518,8 +537,8 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 				log.Println("Statuses in paginated value not found name:", name)
 				continue
 			}
-			newSQL, err := buildSQL(wf, name, SelectRoleToken)
-			if err != nil {
+			newSQL, errBuild := buildSQL(wf, name, SelectRoleToken)
+			if errBuild != nil {
 				log.Println("RoleField Error Role err", err)
 				n++
 				continue
@@ -1094,9 +1113,9 @@ func TasksOrderField[T db.Scanner](wf *common.Workflow[T], parameters ...interfa
 
 		// Force statuses to be re-walked against the rewired chain.
 		ctx := context.Background()
-		newStatuses, _ := wf.Statuses(ctx, false, true)
-		log.Println("TasksOrderField newStatuses:", newStatuses)
-
+		statuses, _ := wf.Statuses(ctx, false, true)
+		wf.OrderedByTags = wantedTags
+		log.Println("TasksOrderField is ordered:", statuses)
 		elapsed := time.Since(start1)
 		log.Printf("TasksOrderField elapsed %s", elapsed)
 		return wf, nil

@@ -144,6 +144,7 @@ type Workflow[T db.Scanner] struct {
 	Order             string           `json:"by_day,omitempty"`
 	Page              types.Page
 	excludeReported   bool
+	OrderedByTags     []string
 }
 
 type WhereTask struct {
@@ -496,6 +497,10 @@ func (wf *Workflow[T]) Last(ctx context.Context) (*Task, error) {
 
 func (wf *Workflow[T]) Statuses(ctx context.Context, quotes bool, recalculate bool) ([]string, error) {
 	return wf.calculateStatuses(ctx, quotes, recalculate)
+}
+
+func (wf *Workflow[T]) GetStatuses() []string {
+	return wf.statuses
 }
 
 func (wf *Workflow[T]) AllStatuses(ctx context.Context, quotes bool) ([]string, error) {

@@ -832,7 +832,7 @@ func TestProcessShowFlowDataCtgFunction(t *testing.T) {
 	input := `
 action: show_flow_data
 ticket: 241
-filter: ctg- bill,coffee 
+filter: 
 by_day: true
 page_number: 1
 page_size: 12
@@ -868,7 +868,7 @@ ticket: 239
 filter: ctg- bill,coffee 
 by_day: false
 page_number: 1
-page_size: 12
+page_size: 20
 `
 
 	order := []byte(input)

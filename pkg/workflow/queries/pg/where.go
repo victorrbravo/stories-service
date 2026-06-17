@@ -203,13 +203,15 @@ func ReduceWheres(ctx context.Context, ts *map[int]common.WhereTask, t string) (
 		return "", errors.New("error happens: Reduces wheres map is empty")
 	}
 	if strings.Compare((*ts)[0].Name, t) == 0 {
-		return (*ts)[0].Where, nil
+		return strings.ReplaceAll((*ts)[0].Where, "''", "'"), nil
 	}
 	index := 1
 	whereLength := len(*ts)
 	lastWhere := (*ts)[0].Where
 	for index < whereLength {
-		lastWhere, err = ReduceTwoWheres(lastWhere, (*ts)[index].Where)
+		firstWhere := strings.ReplaceAll(lastWhere, "''", "'")
+		secondWhere := strings.ReplaceAll((*ts)[index].Where, "''", "'")
+		lastWhere, err = ReduceTwoWheres(firstWhere, secondWhere)
 		if err != nil {
 			return value, err
 		}

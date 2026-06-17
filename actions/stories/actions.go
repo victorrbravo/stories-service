@@ -441,11 +441,13 @@ func UpdateWorkflowDataInt[T db.Scanner](wf *common.Workflow[T]) (WorkflowData, 
 		}
 		wfData.Tasks = append(wfData.Tasks, taskData)
 	}
-	sort.Slice(wfData.Tasks, func(i, j int) bool {
-		firstDate, _ := time.Parse(time.RFC3339, types.AsString(wfData.Tasks[i].Data.TimeField))
-		secondDate, _ := time.Parse(time.RFC3339, types.AsString(wfData.Tasks[j].Data.TimeField))
-		return firstDate.Before(secondDate)
-	})
+	if len(wf.OrderedByTags) {
+		sort.Slice(wfData.Tasks, func(i, j int) bool {
+			firstDate, _ := time.Parse(time.RFC3339, types.AsString(wfData.Tasks[i].Data.TimeField))
+			secondDate, _ := time.Parse(time.RFC3339, types.AsString(wfData.Tasks[j].Data.TimeField))
+			return firstDate.Before(secondDate)
+		})
+	}
 	return wfData, nil
 }
 
