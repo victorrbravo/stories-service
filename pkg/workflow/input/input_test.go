@@ -830,9 +830,8 @@ func TestProcessGetPkTracking(t *testing.T) {
 	query := pgQuery.NewQuery()
 
 	input := `
-action: get_tracking_by_PkTracking
-pk_tracking: 3640
-`
+action: get_tags_by_pk_tracking
+pk_tracking: 3640`
 
 	order := []byte(input)
 	ctx := context.Background()

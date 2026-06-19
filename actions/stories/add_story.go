@@ -13,6 +13,7 @@ import (
 	"stories/actions/constants"
 	"stories/database"
 	st_errors "stories/errors"
+	inputs "stories/generated/inputs"
 	"stories/generated/models"
 	"stories/generated/queries"
 	"stories/pkg/utils"
@@ -141,6 +142,8 @@ func FlowProcessor(ctx context.Context, action string, order string, query *data
 		value, err = DoPresignImage(order, query)
 	case "get_presigned_image":
 		value, err = DoGetPresignedImage(order, query)
+	case "get_tags_by_pk_tracking":
+		value, err = DoGetTagsByPkTracking(order, query)
 
 	case "select_the_category":
 		value, err = DoAIQuestion(order, query, "")
@@ -183,6 +186,36 @@ func FlowProcessor(ctx context.Context, action string, order string, query *data
 	}
 
 	return value, nil
+}
+
+func UnmarshallTaTracking(order []byte) (inputs.TaTracking, error) {
+	var taTracking inputs.TaTracking
+	var err error
+	err = yaml.Unmarshal(order, &taTracking)
+	if err != nil {
+		return taTracking, err
+	}
+	return taTracking, nil
+}
+
+func DoGetTagsByPkTracking(order string, query *database.IQuery) (string, error) {
+	handler, err := UnmarshallTaTracking([]byte(order))
+	if err != nil {
+		return "", err
+	}
+	taTracking, err := models.GetTaTrackingByPkTracking(*query,
+		handler.PkTracking,
+	)
+	if err != nil {
+		return "", err
+	}
+	dataMap := make(map[string]types.StringArray)
+	dataMap["tags"] = taTracking.Tags
+	data, err := json.Marshal(dataMap)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
 
 func DoAcceptFollower(ctx context.Context, order string, query *database.IQuery) (string, error) {
