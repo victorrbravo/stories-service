@@ -292,6 +292,10 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 	return func(error, ...interface{}) (*common.Workflow[T], error) {
 		amountSumParcial := 0.0
 		ctx := context.Background()
+		// When tasks were reordered by a "ctg- ..." filter the Wrapped
+		// objects are produced per tag node in RoleField; StatsField must
+		// not overwrite them with week/day wrappeds.
+		orderedByTags := len(wf.OrderedByTags) > 0
 		var previousTask *common.Task
 		var current *common.Task
 
@@ -319,7 +323,7 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 				log.Println("task name:", name, "Error AmountField err", err)
 				continue
 			}
-			if previousTask != nil && CheckPeriodDates(previousTask.Data.TimeField, current.Data.TimeField, constants.TimezoneBogota, wf.ByDay) {
+			if !orderedByTags && previousTask != nil && CheckPeriodDates(previousTask.Data.TimeField, current.Data.TimeField, constants.TimezoneBogota, wf.ByDay) {
 				firstDate, _ := time.Parse(time.RFC3339, types.AsString(previousTask.Data.TimeField))
 				firstDate = firstDate.In(loc)
 				wrapped := new(common.Wrapped)
@@ -521,6 +525,13 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		}
 		log.Println("diffStatuses: ", diffStatuses)
 		var previousTask *common.Task
+		// When a "ctg- ..." filter ordered the tasks by tag,
+		// wf.OrderedByTags carries the priority list (e.g. ["bill",
+		// "coffee"]). In that mode we group the Wrapped objects per tag
+		// node instead of per week/day. previousTag tracks the node tag
+		// of previousTask so we can detect a tag change.
+		orderedByTags := len(wf.OrderedByTags) > 0
+		var previousTag string
 		loc, err := time.LoadLocation(constants.TimezoneBogota)
 		if err != nil {
 			fmt.Errorf("invalid timezone: %v", err)
@@ -564,7 +575,25 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 			current.Data.Position = role.Ninth
 			current.Data.Description = role.Tenth
 			current.Data.Tags = role.Eleventh
-			if previousTask != nil && CheckPeriodDates(previousTask.Data.TimeField, current.Data.TimeField, constants.TimezoneBogota, wf.ByDay) {
+			if orderedByTags {
+				// Tag-grouped mode: emit a Wrapped on the previous task
+				// whenever the node tag changes (e.g. last "bill" node ->
+				// first "coffee" node). The Wrapped carries the total of
+				// the tag that just ended.
+				currentTag := nodeTagFor(current.Data.Tags.Array, wf.OrderedByTags)
+				if previousTask != nil && !strings.EqualFold(previousTag, currentTag) {
+					// amountSumParcial holds the running total of every
+					// node already visited for previousTag (current's own
+					// amount is added below, after the reset), i.e. exactly
+					// the total for the tag that just ended.
+					wrapped := new(common.Wrapped)
+					wrapped.Label = previousTag
+					wrapped.Amount = types.NewString(FormatToMoney(amountSumParcial, true))
+					previousTask.Transition.Wrapped = wrapped
+					amountSumParcial = 0.0
+				}
+				previousTag = currentTag
+			} else if previousTask != nil && CheckPeriodDates(previousTask.Data.TimeField, current.Data.TimeField, constants.TimezoneBogota, wf.ByDay) {
 				firstDate, _ := time.Parse(time.RFC3339, types.AsString(previousTask.Data.TimeField))
 				firstDate = firstDate.In(loc)
 				wrapped := new(common.Wrapped)
@@ -587,7 +616,17 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 		if after != "" {
 			current = wf.Tasks[after]
 		}
-		if after == "" || (previousTask != nil && current != nil && CheckPeriodDates(previousTask.Data.TimeField, current.Data.TimeField, constants.TimezoneBogota, wf.ByDay)) {
+		if orderedByTags {
+			// Flush the last tag group: the final node closes the bucket
+			// of its own tag.
+			if previousTask != nil && previousTag != "" {
+				wrapped := new(common.Wrapped)
+				wrapped.Label = previousTag
+				wrapped.Amount = types.NewString(FormatToMoney(amountSumParcial, true))
+				previousTask.Transition.Wrapped = wrapped
+				amountSumParcial = 0.0
+			}
+		} else if after == "" || (previousTask != nil && current != nil && CheckPeriodDates(previousTask.Data.TimeField, current.Data.TimeField, constants.TimezoneBogota, wf.ByDay)) {
 			firstDate, _ := time.Parse(time.RFC3339, types.AsString(previousTask.Data.TimeField))
 			firstDate = firstDate.In(loc)
 			wrapped := new(common.Wrapped)
@@ -620,6 +659,22 @@ func calculateWrappedAmount[T db.Scanner](wf *common.Workflow[T], firstDate time
 		log.Println("SumAmountField Error SumAmountFieldForWeekTaTracking", err)
 	}
 	wrapped.Amount = types.NewString(FormatToMoney(types.AsFloat(valueAmount.Value), true))
+}
+
+// nodeTagFor returns the first tag from the wantedTags priority list that
+// is present in taskTags (case-insensitive). It mirrors how
+// OrderTasksByTags buckets each task: with wantedTags = ["bill","coffee"]
+// a task tagged "coffee" returns "coffee", a task tagged both returns
+// "bill". Tasks carrying none of the wanted tags return "".
+func nodeTagFor(taskTags []string, wantedTags []string) string {
+	for _, want := range wantedTags {
+		for _, t := range taskTags {
+			if strings.EqualFold(t, want) {
+				return want
+			}
+		}
+	}
+	return ""
 }
 
 func truncateBogotaMidnightAsUTC(t time.Time) string {

@@ -815,6 +815,35 @@ page_size: 12
 	fmt.Println("value data response: |", response, "|")
 }
 
+func TestProcessGetPkTracking(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_LOCAL_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_LOCAL_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+
+	input := `
+action: get_tracking_by_PkTracking
+pk_tracking: 3640
+`
+
+	order := []byte(input)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response: |", response, "|")
+}
+
 func TestProcessShowFlowDataCtgFunction(t *testing.T) {
 	var err error
 	config := database.DatabaseConfig{

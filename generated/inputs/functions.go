@@ -185,7 +185,11 @@ func MainProcessor(ctx context.Context, action string, order string, query *data
 	case "get_tracking_by_PkTracking":
 		ValueTaTracking, _ := GetTaTrackingByPkTracking(order, query)
 		ValuesTaTracking = append(ValuesTaTracking, *ValueTaTracking)
-
+		data, err = json.Marshal(ValuesTaTracking)
+		if err != nil {
+			return "", err
+		}
+		value = string(data)
 	case "get_tracking_by_fk_story_tips":
 		ValueTaTrackings, errSearch := GetTaTrackingByFkStoryTips(order, query)
 		if errSearch != nil {

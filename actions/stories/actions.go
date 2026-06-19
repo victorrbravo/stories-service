@@ -441,7 +441,7 @@ func UpdateWorkflowDataInt[T db.Scanner](wf *common.Workflow[T]) (WorkflowData, 
 		}
 		wfData.Tasks = append(wfData.Tasks, taskData)
 	}
-	if len(wf.OrderedByTags) {
+	if len(wf.OrderedByTags) == 0 {
 		sort.Slice(wfData.Tasks, func(i, j int) bool {
 			firstDate, _ := time.Parse(time.RFC3339, types.AsString(wfData.Tasks[i].Data.TimeField))
 			secondDate, _ := time.Parse(time.RFC3339, types.AsString(wfData.Tasks[j].Data.TimeField))
