@@ -144,6 +144,10 @@ func FlowProcessor(ctx context.Context, action string, order string, query *data
 		value, err = DoGetPresignedImage(order, query)
 	case "get_tags_by_pk_tracking":
 		value, err = DoGetTagsByPkTracking(order, query)
+	case "add_tag_by_pk_tracking":
+		value, err = DoAddTagToTracking(order, query)
+	case "delete_tag_by_pk_tracking":
+		value, err = DoDeleteTagFromTracking(order, query)
 
 	case "select_the_category":
 		value, err = DoAIQuestion(order, query, "")
@@ -216,6 +220,82 @@ func DoGetTagsByPkTracking(order string, query *database.IQuery) (string, error)
 		return "", err
 	}
 	return string(data), nil
+}
+
+// TagOnTracking is the input for the add/delete single-tag actions on
+// ta_tracking. It carries the row to modify (pk_tracking) and the tag value.
+type TagOnTracking struct {
+	PkTracking types.Int    `yaml:"pk_tracking"`
+	Tag        types.String `yaml:"tag"`
+}
+
+// persistTrackingTags updates only the "tags" column of the ta_tracking row and
+// returns the resulting tags as JSON: {"tags": [...]}.
+func persistTrackingTags(taTracking *models.TaTracking, tags []string, query *database.IQuery) (string, error) {
+	newTags := types.NewStringArray(tags)
+	err := taTracking.UpdateByOne(*query, func() (string, any) {
+		return "tags", newTags
+	})
+	if err != nil {
+		return "", err
+	}
+	dataMap := make(map[string]types.StringArray)
+	dataMap["tags"] = newTags
+	data, err := json.Marshal(dataMap)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+// DoAddTagToTracking appends a tag to the "tags" array of the ta_tracking row
+// identified by pk_tracking. If the tag is already present it is a no-op.
+func DoAddTagToTracking(order string, query *database.IQuery) (string, error) {
+	handler, err := Unmarshall[TagOnTracking]([]byte(order))
+	if err != nil {
+		return "", err
+	}
+	tag := types.AsString(handler.Tag)
+	if tag == "" {
+		return "", errors.New("tag is empty")
+	}
+	taTracking, err := models.GetTaTrackingByPkTracking(*query,
+		handler.PkTracking,
+	)
+	if err != nil {
+		return "", err
+	}
+	if taTracking.Tags.Includes(tag) {
+		return persistTrackingTags(taTracking, taTracking.Tags.Array, query)
+	}
+	tags := append(taTracking.Tags.Array, tag)
+	return persistTrackingTags(taTracking, tags, query)
+}
+
+// DoDeleteTagFromTracking removes a tag from the "tags" array of the
+// ta_tracking row identified by pk_tracking. Tags that don't match are kept.
+func DoDeleteTagFromTracking(order string, query *database.IQuery) (string, error) {
+	handler, err := Unmarshall[TagOnTracking]([]byte(order))
+	if err != nil {
+		return "", err
+	}
+	tag := types.AsString(handler.Tag)
+	if tag == "" {
+		return "", errors.New("tag is empty")
+	}
+	taTracking, err := models.GetTaTrackingByPkTracking(*query,
+		handler.PkTracking,
+	)
+	if err != nil {
+		return "", err
+	}
+	tags := make([]string, 0, len(taTracking.Tags.Array))
+	for _, entry := range taTracking.Tags.Array {
+		if entry != tag {
+			tags = append(tags, entry)
+		}
+	}
+	return persistTrackingTags(taTracking, tags, query)
 }
 
 func DoAcceptFollower(ctx context.Context, order string, query *database.IQuery) (string, error) {

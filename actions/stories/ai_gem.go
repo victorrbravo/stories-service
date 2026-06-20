@@ -65,6 +65,7 @@ func GemQuestion(order string, query *database.IQuery, question string) (string,
 	var file *genai.File
 	log.Println("imagePath", imagePath)
 	file, err = uploadVideoFile(ctx, imagePath, *client)
+	fmt.Println("error uploading video:", err)
 	if err != nil {
 		log.Println("err uploading video", err)
 		return cleanJSON, err

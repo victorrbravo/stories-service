@@ -780,7 +780,11 @@ const DB_PASS = "3MncMarinoned9140**1020__"
 
 const DB_USER = "stories"
 const OPEN_API_KEY = "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"
-const GOOGLE_API_KEY = "AIzaSyB14bjScN9L_jLR2XXEUCe1Z98X2ICTII4"
+
+// const GOOGLE_API_KEY = "AIzaSyB14bjScN9L_jLR2XXEUCe1Z98X2ICTII4"
+const GOOGLE_API_KEY = "AIzaSyBnIF_2j7kU1yZ-3ETg-yZ-_wR8kk_dv2U"
+const AWS_ACCESS_KEY_ID = "AKIAYJKDBCUA4WH5EZOK"
+const AWS_SECRET_ACCESS_KEY = "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"
 
 func TestProcessShowFlowData(t *testing.T) {
 	var err error
@@ -799,7 +803,7 @@ func TestProcessShowFlowData(t *testing.T) {
 	input := `
 action: show_flow_data
 ticket: 237
-filter: max- amount,10 
+filter: max- amount,10 and >jun1
 by_day: true
 page_number: 1
 page_size: 12
@@ -832,6 +836,64 @@ func TestProcessGetPkTracking(t *testing.T) {
 	input := `
 action: get_tags_by_pk_tracking
 pk_tracking: 3640`
+
+	order := []byte(input)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response: |", response, "|")
+}
+
+func TestProcessAddTagByPkTracking(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_LOCAL_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_LOCAL_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+
+	input := `
+action: add_tag_by_pk_tracking
+pk_tracking: 3640
+tag: Istana`
+
+	order := []byte(input)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response: |", response, "|")
+}
+
+func TestProcessDeleteTagByPkTracking(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_LOCAL_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_LOCAL_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+
+	input := `
+action: delete_tag_by_pk_tracking
+pk_tracking: 3640
+tag: Istana Marcelo`
 
 	order := []byte(input)
 	ctx := context.Background()
@@ -1198,13 +1260,22 @@ image_id: 5895050E-3FE2-48AF-B191-80BF2AEF8E63.jpg
 func TestProcessSuggestVideoShortWordsName(t *testing.T) {
 	var err error
 	config := database.DatabaseConfig{
-		Host: DB_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
-		Password: DB_PASS,
+		Host: DB_LOCAL_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_LOCAL_PASS,
 	}
 	err = os.Setenv("GOOGLE_API_KEY", GOOGLE_API_KEY)
 	if err != nil {
 		t.Fatalf("Failed to set env var: %v", err)
 	}
+	err = os.Setenv("AWS_ACCESS_KEY_ID", AWS_ACCESS_KEY_ID)
+	if err != nil {
+		t.Fatalf("Failed to set env var: %v", err)
+	}
+	err = os.Setenv("AWS_SECRET_ACCESS_KEY", AWS_SECRET_ACCESS_KEY)
+	if err != nil {
+		t.Fatalf("Failed to set env var: %v", err)
+	}
+
 	var pgQuery db.PostgresQuery
 	pgQuery.Initialize(&config)
 	err = pgQuery.Connect()
@@ -1213,8 +1284,8 @@ func TestProcessSuggestVideoShortWordsName(t *testing.T) {
 	}
 	query := pgQuery.NewQuery()
 	input := `
-action: suggest_short_name_words_for_video
-image_id: 2775C51A-2BFB-4800-BE0E-C81068F76AE9
+action: suggest_short_name_words_for_video 
+image_id: 2A544CD7-7175-4599-80A0-60279915DA49
 `
 	order := []byte(input)
 	ctx := context.Background()
