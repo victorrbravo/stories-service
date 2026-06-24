@@ -19,21 +19,6 @@ type GeminiResponse struct {
 	AssociatedWords []string `json:"associated_words"`
 }
 
-func uploadVideoFile(ctx context.Context, videoPath string, client genai.Client) (*genai.File, error) {
-	fmt.Println("Uploading video...")
-
-	fileOptions := genai.UploadFileConfig{
-		MIMEType: "video/mov",
-	}
-	// Third argument is the config (can be nil)
-	file, err := client.Files.UploadFromPath(ctx, videoPath, &fileOptions)
-	if err != nil {
-		log.Println("Error Google AI gemini err:", err)
-		return nil, err
-	}
-	return file, err
-}
-
 func GemQuestion(order string, query *database.IQuery, question string) (string, error) {
 	var cleanJSON string
 	ctx := context.Background()
@@ -62,30 +47,15 @@ func GemQuestion(order string, query *database.IQuery, question string) (string,
 	if err != nil {
 		return cleanJSON, err
 	}
-	var file *genai.File
 	log.Println("imagePath", imagePath)
-	file, err = uploadVideoFile(ctx, imagePath, *client)
-	fmt.Println("error uploading video:", err)
+	// Read the file downloaded from S3 and send it as inline data (base64).
+	// genai.Blob.Data is a []byte; encoding/json base64-encodes it automatically
+	// when the SDK serializes the request, so we pass the raw bytes here.
+	videoBytes, err := os.ReadFile(imagePath)
 	if err != nil {
-		log.Println("err uploading video", err)
+		log.Println("error GemQuestion reading downloaded video file", err)
 		return cleanJSON, err
 	}
-	fileName := file.Name
-	// 2. Wait for processing
-	fmt.Println("file.Name", fileName)
-	fmt.Print("Processing video...")
-	for {
-		file, err = client.Files.Get(ctx, fileName, nil)
-		if err != nil {
-			log.Println("error GemQuestion processing video", err)
-			return cleanJSON, err
-		}
-		if file.State == genai.FileStateActive {
-			break
-		}
-		fmt.Print(".")
-	}
-	fmt.Println("\nVideo is ready!")
 
 	// 3. Fixed Config: ThinkingLevel is inside ThinkingConfig
 	config := &genai.GenerateContentConfig{
@@ -95,14 +65,15 @@ func GemQuestion(order string, query *database.IQuery, question string) (string,
 		},
 	}
 
-	// 4. Fixed GenerateContent: FileData is passed inside the contents slice
-	// Note: We use "gemini-3-flash-preview" as requested
-	resp, err := client.Models.GenerateContent(ctx, "gemini-3-flash-preview",
+	// 4. GenerateContent: inline video data is passed inside the contents slice.
+	// gemini-2.5-flash handles video understanding and is available on the free tier
+	// (gemini-2.5-pro typically requires billing).
+	resp, err := client.Models.GenerateContent(ctx, "gemini-2.5-flash",
 		[]*genai.Content{
 			{
 				Parts: []*genai.Part{
 					{Text: question},
-					{FileData: &genai.FileData{FileURI: file.URI}}, // Fixed FileURI field name
+					{InlineData: &genai.Blob{MIMEType: "video/mov", Data: videoBytes}},
 				},
 			},
 		},
