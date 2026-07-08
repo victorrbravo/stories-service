@@ -488,8 +488,19 @@ func TestProcessAddFlowStepOrderByDate(t *testing.T) {
 		t.Error(err)
 	}
 	query := pgQuery.NewQuery()
-	input := `action: add_flow_step ticket: 241 status: TaskPadre3 amount: 120000 summary: Padrecito1 padre2 media_date: 2026-06-10T03:32:55Z type: step  position: (-122.406417, 37.785834) tags: Padrecito1#comma#padre2#comma#TaskPadre
-
+	input := `action: add_flow_step
+ticket: 244
+status: Sports Broadcast1
+videos: 
+  - 035ACE95-B216-4BC9-9F52-FBB5014246EF
+amount: 20000
+summary: A vertical shot captures a TV displaying a sports game with players in yellow jerseys next to a wooden shelf filled with various items and visible wires. A foot in a black and blue striped slipper is seen in the upper right of the frame.
+media_date: 2026-07-03T19:24:41Z
+type: step
+position: (-72.49, 7.8931000000000004)
+tags: 
+  - captures
+  - wires
 `
 	order := []byte(input)
 	ctx := context.Background()
