@@ -367,3 +367,15 @@ VALUES (
     'basic',
     '{"action": "add_flow_step", "permises": {"execute": "is_owner"}}'::jsonb
 );
+
+-- Folders: a folder can contain many stories, a story belongs to one folder
+    create table "ta_folder"
+    (
+        "pk_folder"  serial primary key,
+        "name"       varchar not null,
+        "user_id"    int REFERENCES "ta_user" ("pk_user"),
+        "created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        "updated_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    );
+
+alter table ta_story add column fk_folder int REFERENCES ta_folder(pk_folder);
