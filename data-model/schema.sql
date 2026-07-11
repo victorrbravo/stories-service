@@ -78,6 +78,7 @@ ALTER TABLE ta_flow
         constraint "story_status_unique" unique (pk_story, status)
     );
 
+
     create table "ta_category"
     (
         "pk_category" serial primary key,
@@ -327,6 +328,17 @@ insert into ta_tracking (images, videos, roles, fk_status, fk_story, updated_at)
                                     CONSTRAINT uq_user_policy UNIQUE ("fk_user", "fk_policy")
     );
 
+    -- Folders: a folder can contain many stories, a story belongs to one folder
+    create table "ta_folder"
+    (
+        "pk_folder"  serial primary key,
+        "name"       varchar not null,
+        "user_id"    int REFERENCES "ta_user" ("pk_user"),
+        "created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        "updated_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    );
+
+    alter table ta_story add column fk_folder int REFERENCES ta_folder(pk_folder);
 
     -- Insert roles
     INSERT INTO ta_role ("name") VALUES
