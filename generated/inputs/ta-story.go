@@ -16,6 +16,7 @@ type TaStory struct {
 	StoryType types.String `yaml:"story_type"`
 	UpdatedAt types.DateTime `yaml:"updated_at"`
 	ContentType types.ContentType `yaml:"content_type"`
+	FkFolder types.Int `yaml:"fk_folder"`
 }
 
 func  InsertTaStory(order string, query *database.IQuery) error {
@@ -32,6 +33,7 @@ func  InsertTaStory(order string, query *database.IQuery) error {
             handler.StoryType,
             handler.UpdatedAt,
             handler.ContentType,
+            handler.FkFolder,
     )
     if err != nil {
         return err
@@ -92,6 +94,7 @@ func  UpdateTaStory(order string, query *database.IQuery) error {
             handler.StoryType,
             handler.UpdatedAt,
             handler.ContentType,
+            handler.FkFolder,
     )
     if err != nil {
         return err
@@ -128,6 +131,19 @@ func  GetTaStoryByFkFlow(order string, query *database.IQuery) ([]models.TaStory
     }
     taStories, err := models.GetTaStoryByFkFlow(*query,
             handler.FkFlow,
+    )
+    if err != nil {
+        return taStories, err
+    }
+    return taStories, nil
+}
+func  GetTaStoryByFkFolder(order string, query *database.IQuery) ([]models.TaStory, error) {
+    handler, err := UnmarshallTaStory([]byte(order))
+    if err != nil {
+        return nil, err
+    }
+    taStories, err := models.GetTaStoryByFkFolder(*query,
+            handler.FkFolder,
     )
     if err != nil {
         return taStories, err

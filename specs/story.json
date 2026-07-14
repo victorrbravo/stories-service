@@ -87,6 +87,15 @@
       "Scannable": true,
       "Nullable": true,
       "Title": "ContentType"
+    },
+    {
+      "Name": "FkFolder",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Nullable": true,
+      "Getter": true,
+      "Searchable": true,
+      "Title": "FkFolder"
     }
   ],
   "OrderBy": "updated_at ASC"

@@ -130,6 +130,13 @@ func MainProcessor(ctx context.Context, action string, order string, query *data
                     ValueTaFolder, _ := GetTaFolderByPkFolder(order, query)
                     ValuesTaFolder = append(ValuesTaFolder, *ValueTaFolder)
                 
+                case "get_folder_by_user_id":
+                    ValueTaFolders, errSearch := GetTaFolderByUserID(order, query)
+                    if errSearch != nil  {
+                            return value, errSearch
+                    }
+                    data, err = json.Marshal( ValueTaFolders )
+                    value = string(data)
     			case "add_policy":
     			    err = InsertTaPolicy(order, query)
     			case "delete_policy":

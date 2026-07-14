@@ -824,6 +824,7 @@ func NewStepTips(ctx context.Context, order string, query *database.IQuery) erro
 			types.NewString("tips"),
 			types.Now(),
 			types.Senda,
+			types.NilInt,
 		)
 		if err != nil {
 			log.Println("error creating story", err)
@@ -917,6 +918,7 @@ func NewStepSub(ctx context.Context, order string, query *database.IQuery) error
 			types.NewString("sub"),
 			types.Now(),
 			types.Senda,
+			types.NilInt,
 		)
 		if err != nil {
 			log.Println("error creating story", err)
@@ -1367,6 +1369,7 @@ func NewStoryFlow(ctx context.Context, order string, query *database.IQuery) (*m
 		types.NewString("story"),
 		types.Now(),
 		handler.ContentType,
+		types.NilInt,
 	)
 	log.Println("creating ta_story err", err)
 	if err != nil {
@@ -1619,6 +1622,7 @@ func DoAddStepFlow(order string, query *database.IQuery) error {
 		types.NilString(),
 		types.Now(),
 		types.Senda,
+		types.NilInt,
 	)
 
 	models.CreateTaTracking(*query,
@@ -1666,6 +1670,7 @@ func DoAddStepIntl(status AddStoryStatus, query *database.IQuery) (types.Int, er
 		types.NilString(),
 		types.Now(),
 		types.NewNilContentType(),
+		types.NilInt,
 	)
 	if err != nil {
 		return value, err
