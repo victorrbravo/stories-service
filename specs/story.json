@@ -31,6 +31,7 @@
       "Scannable": true,
       "Nullable": true,
       "Getter": true,
+      "Searchable": true,
       "Title": "Name"
     },
     {
@@ -89,13 +90,13 @@
       "Title": "ContentType"
     },
     {
-      "Name": "FkFolder",
+      "Name": "FkFlow",
       "Type": "types.Int",
       "Scannable": true,
       "Nullable": true,
       "Getter": true,
       "Searchable": true,
-      "Title": "FkFolder"
+      "Title": "FkFlow"
     }
   ],
   "OrderBy": "updated_at ASC"

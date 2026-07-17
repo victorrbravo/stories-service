@@ -1728,12 +1728,72 @@ func TestProcessAddStoryToFolderByNames(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: add_story_to_folder
-story_name: Bucaramanga
+story_name: July 2026
 folder_name: Cities
 `
 	order := []byte(input)
 	ctx := context.Background()
-	response, err := ProcessInput(ctx, order, &query)
+	ctxUsr := context.WithValue(ctx, "user_id", 2)
+	response, err := ProcessInput(ctxUsr, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response: |", response, "|")
+}
+
+func TestProcessUpdateFolderOfStory(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_LOCAL_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_LOCAL_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: update_folder_of_story
+pk_story: 244
+pk_folder: 2
+remove: true
+`
+	order := []byte(input)
+	ctx := context.Background()
+	ctxUsr := context.WithValue(ctx, "user_id", 2)
+	response, err := ProcessInput(ctxUsr, order, &query)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("value data response: |", response, "|")
+}
+
+func TestProcessUpdateFolderOfStoryRemove(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_LOCAL_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_LOCAL_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+	query := pgQuery.NewQuery()
+	input := `
+action: update_folder_of_story
+pk_story: 244
+remove: true
+`
+	order := []byte(input)
+	ctx := context.Background()
+	ctxUsr := context.WithValue(ctx, "user_id", 2)
+	response, err := ProcessInput(ctxUsr, order, &query)
 	if err != nil {
 		t.Error(err)
 	}

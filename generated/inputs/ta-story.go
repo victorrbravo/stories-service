@@ -16,7 +16,7 @@ type TaStory struct {
 	StoryType types.String `yaml:"story_type"`
 	UpdatedAt types.DateTime `yaml:"updated_at"`
 	ContentType types.ContentType `yaml:"content_type"`
-	FkFolder types.Int `yaml:"fk_folder"`
+	FkFlow types.Int `yaml:"fk_flow"`
 }
 
 func  InsertTaStory(order string, query *database.IQuery) error {
@@ -33,7 +33,7 @@ func  InsertTaStory(order string, query *database.IQuery) error {
             handler.StoryType,
             handler.UpdatedAt,
             handler.ContentType,
-            handler.FkFolder,
+            handler.FkFlow,
     )
     if err != nil {
         return err
@@ -94,7 +94,7 @@ func  UpdateTaStory(order string, query *database.IQuery) error {
             handler.StoryType,
             handler.UpdatedAt,
             handler.ContentType,
-            handler.FkFolder,
+            handler.FkFlow,
     )
     if err != nil {
         return err
@@ -110,6 +110,19 @@ func  GetAllTaStory(query *database.IQuery) ([]models.TaStory, error) {
         return taStory, err
     }
     return taStory, nil
+}
+func  GetTaStoryByName(order string, query *database.IQuery) ([]models.TaStory, error) {
+    handler, err := UnmarshallTaStory([]byte(order))
+    if err != nil {
+        return nil, err
+    }
+    taStories, err := models.GetTaStoryByName(*query,
+            handler.Name,
+    )
+    if err != nil {
+        return taStories, err
+    }
+    return taStories, nil
 }
 func  GetTaStoryByUserID(order string, query *database.IQuery) ([]models.TaStory, error) {
     handler, err := UnmarshallTaStory([]byte(order))
@@ -137,13 +150,13 @@ func  GetTaStoryByFkFlow(order string, query *database.IQuery) ([]models.TaStory
     }
     return taStories, nil
 }
-func  GetTaStoryByFkFolder(order string, query *database.IQuery) ([]models.TaStory, error) {
+func  GetTaStoryByFkFlow(order string, query *database.IQuery) ([]models.TaStory, error) {
     handler, err := UnmarshallTaStory([]byte(order))
     if err != nil {
         return nil, err
     }
-    taStories, err := models.GetTaStoryByFkFolder(*query,
-            handler.FkFolder,
+    taStories, err := models.GetTaStoryByFkFlow(*query,
+            handler.FkFlow,
     )
     if err != nil {
         return taStories, err

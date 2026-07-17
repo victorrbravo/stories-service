@@ -3,6 +3,7 @@ package stories
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"stories/database"
 	pg "stories/generated/inputs"
@@ -25,6 +26,8 @@ func FolderProcessor(ctx context.Context, action string, order string, query *da
 		value, err = GetFoldersByUserID[models.TaTracking](ctx, order, query)
 	case "add_story_to_folder":
 		value, err = AddStoryToFolder(ctx, order, query)
+	case "update_folder_of_story":
+		value, err = UpdateFolderOfStory(ctx, order, query)
 	}
 	if err != nil {
 		return value, err
@@ -90,7 +93,11 @@ type addStoryToFolderInput struct {
 // by resolving story_name and folder_name to their ids first.
 func AddStoryToFolder(ctx context.Context, order string, query *database.IQuery) (string, error) {
 	fmt.Println("...order:", order)
-	userID := types.NewInt(ctx.Value("user_id").(int))
+	valueID, ok := ctx.Value("user_id").(int)
+	if !ok {
+		return "", errors.New("User ID required")
+	}
+	userID := types.NewInt(valueID)
 	var input addStoryToFolderInput
 	err := yaml.Unmarshal([]byte(order), &input)
 	if err != nil {
@@ -143,15 +150,82 @@ func AddStoryToFolder(ctx context.Context, order string, query *database.IQuery)
 	return string(data), nil
 }
 
+// updateFolderOfStoryInput carries the ids of the story and folder to link,
+// plus a remove flag. When remove is true the story's fk_folder is set to null
+// (pk_folder is ignored); otherwise fk_folder is set to pk_folder.
+type updateFolderOfStoryInput struct {
+	PkStory  types.Int `yaml:"pk_story"`
+	PkFolder types.Int `yaml:"pk_folder"`
+	Remove   bool      `yaml:"remove"`
+}
+
+// UpdateFolderOfStory updates ta_story.fk_folder for the given story. It follows
+// the same approach as AddStoryToFolder, but when remove is true it clears the
+// association by setting fk_folder to null. The generated Update uses COALESCE,
+// so nulling a column requires an explicit statement instead.
+func UpdateFolderOfStory(ctx context.Context, order string, query *database.IQuery) (string, error) {
+	fmt.Println("...order:", order)
+	var input updateFolderOfStoryInput
+	err := yaml.Unmarshal([]byte(order), &input)
+	if err != nil {
+		return "", err
+	}
+
+	if types.IsNil(input.PkStory) {
+		return "", fmt.Errorf("update_folder_of_story requires pk_story")
+	}
+
+	linkStory, err := models.GetTaStoryByPkStory(*query, input.PkStory)
+	if err != nil {
+		return "", err
+	}
+
+	if input.Remove {
+		err = (*query).Exec(
+			"UPDATE \"ta_story\" SET \"fk_folder\" = NULL, \"updated_at\" = $1 WHERE \"pk_story\" = $2",
+			types.Now(),
+			input.PkStory,
+		)
+		if err != nil {
+			return "", err
+		}
+		linkStory.FkFolder = types.NilInt
+		linkStory.UpdatedAt = types.Now()
+	} else {
+		if types.IsNil(input.PkFolder) {
+			return "", fmt.Errorf("update_folder_of_story requires pk_folder when remove is false")
+		}
+		err = linkStory.Update(*query,
+			types.NilString(),
+			types.NilString(),
+			types.NilString(),
+			types.NilInt,
+			types.NilInt,
+			types.NilString(),
+			types.Now(),
+			types.NilContentType,
+			input.PkFolder)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	data, err := json.Marshal(*linkStory)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
 func getPkStoryByName(name types.String, userID types.Int, query *database.IQuery) (types.Int, error) {
-	folders, err := models.GetTaFolderByUserIDAndName(*query, userID, name)
+	names, err := models.GetTaStoryByName(*query, name)
 	if err != nil {
 		return types.NilInt, err
 	}
-	if len(folders) == 0 {
+	if len(names) == 0 {
 		return types.NilInt, fmt.Errorf("getPkStoryByName not found for %s", name)
 	}
-	return folders[0].PkFolder, nil
+	return names[0].PkStory, nil
 }
 
 func getPkFolderByName(name types.String, query *database.IQuery) (types.Int, error) {

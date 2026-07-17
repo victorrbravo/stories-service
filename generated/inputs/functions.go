@@ -130,8 +130,8 @@ func MainProcessor(ctx context.Context, action string, order string, query *data
                     ValueTaFolder, _ := GetTaFolderByPkFolder(order, query)
                     ValuesTaFolder = append(ValuesTaFolder, *ValueTaFolder)
                 
-                case "get_folder_by_user_id":
-                    ValueTaFolders, errSearch := GetTaFolderByUserID(order, query)
+                case "get_folder_by_name":
+                    ValueTaFolders, errSearch := GetTaFolderByName(order, query)
                     if errSearch != nil  {
                             return value, errSearch
                     }
@@ -195,8 +195,8 @@ func MainProcessor(ctx context.Context, action string, order string, query *data
                     ValueTaStory, _ := GetTaStoryByPkStory(order, query)
                     ValuesTaStory = append(ValuesTaStory, *ValueTaStory)
                 
-                case "get_story_by_user_id":
-                    ValueTaStories, errSearch := GetTaStoryByUserID(order, query)
+                case "get_story_by_name":
+                    ValueTaStories, errSearch := GetTaStoryByName(order, query)
                     if errSearch != nil  {
                             return value, errSearch
                     }
