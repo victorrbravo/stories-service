@@ -1757,9 +1757,9 @@ func TestProcessUpdateFolderOfStory(t *testing.T) {
 	query := pgQuery.NewQuery()
 	input := `
 action: update_folder_of_story
-pk_story: 244
+pk_story: 243
 pk_folder: 2
-remove: true
+remove: false
 `
 	order := []byte(input)
 	ctx := context.Background()

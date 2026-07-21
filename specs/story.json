@@ -16,6 +16,22 @@
       "Title": "UserID"
     }
   ],
+  "SearcherSecondary": [
+    {
+      "Name": "Name",
+      "Type": "types.String",
+      "Scannable": true,
+      "Nullable": true,
+      "Title": "Name"
+    },
+    {
+      "Name": "UserID",
+      "Type": "types.Int",
+      "Scannable": true,
+      "Nullable": true,
+      "Title": "UserID"
+    }
+  ],
   "Attrs": [
     {
       "Name": "PkStory",
@@ -31,7 +47,6 @@
       "Scannable": true,
       "Nullable": true,
       "Getter": true,
-      "Searchable": true,
       "Title": "Name"
     },
     {
@@ -90,13 +105,13 @@
       "Title": "ContentType"
     },
     {
-      "Name": "FkFlow",
+      "Name": "FkFolder",
       "Type": "types.Int",
       "Scannable": true,
       "Nullable": true,
       "Getter": true,
       "Searchable": true,
-      "Title": "FkFlow"
+      "Title": "FkFolder"
     }
   ],
   "OrderBy": "updated_at ASC"

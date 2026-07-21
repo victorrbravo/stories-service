@@ -12,17 +12,17 @@ import (
  * Generated queries (these can be used perfectly instead of writing them by hand
  */
 const (
-    TaStoryCreateQuery = "INSERT INTO \"ta_story\" (\"name\",\"status\",\"summary\",\"user_id\",\"fk_flow\",\"story_type\",\"updated_at\",\"content_type\",\"fk_flow\") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING (\"pk_story\")"
-    AllTaStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\", \"content_type\", \"fk_flow\" FROM \"ta_story\" ORDER BY \"updated_at asc\" "
-    TaStoryByPkStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\", \"content_type\", \"fk_flow\" FROM \"ta_story\" WHERE \"pk_story\" = $1"
-    TaStoryByNameQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\", \"content_type\", \"fk_flow\" FROM \"ta_story\" WHERE \"name\" = $1"
-    TaStoryByUserIDQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\", \"content_type\", \"fk_flow\" FROM \"ta_story\" WHERE \"user_id\" = $1"
-    TaStoryByFkFlowQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\", \"content_type\", \"fk_flow\" FROM \"ta_story\" WHERE \"fk_flow\" = $1"
-    TaStoryByFkFlowQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\", \"content_type\", \"fk_flow\" FROM \"ta_story\" WHERE \"fk_flow\" = $1"
-    TaStoryUpdateQuery = "UPDATE \"ta_story\" SET \"name\" = COALESCE($1, \"name\"), \"status\" = COALESCE($2, \"status\"), \"summary\" = COALESCE($3, \"summary\"), \"user_id\" = COALESCE($4, \"user_id\"), \"fk_flow\" = COALESCE($5, \"fk_flow\"), \"story_type\" = COALESCE($6, \"story_type\"), \"updated_at\" = COALESCE($7, \"updated_at\"), \"content_type\" = COALESCE($8, \"content_type\"), \"fk_flow\" = COALESCE($9, \"fk_flow\") WHERE \"pk_story\" = $10"
+    TaStoryCreateQuery = "INSERT INTO \"ta_story\" (\"name\",\"status\",\"summary\",\"user_id\",\"fk_flow\",\"story_type\",\"updated_at\",\"content_type\",\"fk_folder\") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING (\"pk_story\")"
+    AllTaStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\", \"content_type\", \"fk_folder\" FROM \"ta_story\" ORDER BY \"updated_at asc\" "
+    TaStoryByPkStoryQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\", \"content_type\", \"fk_folder\" FROM \"ta_story\" WHERE \"pk_story\" = $1"
+    TaStoryByUserIDQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\", \"content_type\", \"fk_folder\" FROM \"ta_story\" WHERE \"user_id\" = $1"
+    TaStoryByFkFlowQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\", \"content_type\", \"fk_folder\" FROM \"ta_story\" WHERE \"fk_flow\" = $1"
+    TaStoryByFkFolderQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\", \"content_type\", \"fk_folder\" FROM \"ta_story\" WHERE \"fk_folder\" = $1"
+    TaStoryUpdateQuery = "UPDATE \"ta_story\" SET \"name\" = COALESCE($1, \"name\"), \"status\" = COALESCE($2, \"status\"), \"summary\" = COALESCE($3, \"summary\"), \"user_id\" = COALESCE($4, \"user_id\"), \"fk_flow\" = COALESCE($5, \"fk_flow\"), \"story_type\" = COALESCE($6, \"story_type\"), \"updated_at\" = COALESCE($7, \"updated_at\"), \"content_type\" = COALESCE($8, \"content_type\"), \"fk_folder\" = COALESCE($9, \"fk_folder\") WHERE \"pk_story\" = $10"
     TaStoryDeleteQuery = "DELETE FROM \"ta_story\" WHERE \"pk_story\" = $1"
-    TaStoryByStoryTypeAndUserIDQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\", \"content_type\", \"fk_flow\" FROM \"ta_story\" WHERE \"story_type\" = $1 AND \"user_id\" = $2 ORDER BY updated_at ASC"
-    TaStoryListOfFields = " ta_story.\"pk_story\", ta_story.\"name\", ta_story.\"status\", ta_story.\"summary\", ta_story.\"user_id\", ta_story.\"fk_flow\", ta_story.\"story_type\", ta_story.\"updated_at\", ta_story.\"content_type\", ta_story.\"fk_flow\""
+    TaStoryByStoryTypeAndUserIDQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\", \"content_type\", \"fk_folder\" FROM \"ta_story\" WHERE \"story_type\" = $1 AND \"user_id\" = $2 ORDER BY updated_at ASC"
+    TaStoryByNameAndUserIDQuery = "SELECT \"pk_story\", \"name\", \"status\", \"summary\", \"user_id\", \"fk_flow\", \"story_type\", \"updated_at\", \"content_type\", \"fk_folder\" FROM \"ta_story\" WHERE \"name\" = $1 AND \"user_id\" = $2 ORDER BY updated_at ASC"
+    TaStoryListOfFields = " ta_story.\"pk_story\", ta_story.\"name\", ta_story.\"status\", ta_story.\"summary\", ta_story.\"user_id\", ta_story.\"fk_flow\", ta_story.\"story_type\", ta_story.\"updated_at\", ta_story.\"content_type\", ta_story.\"fk_folder\""
 )
 
 type TaStory struct {
@@ -35,7 +35,7 @@ type TaStory struct {
 	StoryType types.String `json:"story_type"`
 	UpdatedAt types.DateTime `json:"updated_at"`
 	ContentType types.ContentType `json:"content_type"`
-	FkFlow types.Int `json:"fk_flow"`
+	FkFolder types.Int `json:"fk_folder"`
 }
 
 func (taStory TaStory) ListOfFields() string {
@@ -55,7 +55,7 @@ func (taStory TaStory) ScanRow(rows database.RowInterface) (interface{}, error) 
 		&taStory.StoryType,
 		&taStory.UpdatedAt,
 		&taStory.ContentType,
-		&taStory.FkFlow,
+		&taStory.FkFolder,
 	)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func CreateTaStory(
 	storyType types.String,
 	updatedAt types.DateTime,
 	contentType types.ContentType,
-	fkFlow types.Int,
+	fkFolder types.Int,
 ) (*TaStory, error) {
 	var err error
     var scanner scanners.Int
@@ -89,7 +89,7 @@ func CreateTaStory(
 		storyType,
 		updatedAt,
 		contentType,
-		fkFlow,
+		fkFolder,
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -106,7 +106,7 @@ func CreateTaStory(
 	    StoryType: storyType,
 	    UpdatedAt: updatedAt,
 	    ContentType: contentType,
-	    FkFlow: fkFlow,
+	    FkFolder: fkFolder,
 	}
 	return taStory, nil
 }
@@ -124,7 +124,7 @@ var err error
     storyType := types.NilString()
     updatedAt := types.NilDateTime
     contentType := types.NilContentType
-    fkFlow := types.NilInt
+    fkFolder := types.NilInt
     for _, option := range options {
     		actionName, value := option()
     		switch actionName {
@@ -144,8 +144,8 @@ var err error
             updatedAt = value.(types.DateTime)
             case "contentType":
             contentType = value.(types.ContentType)
-            case "fkFlow":
-            fkFlow = value.(types.Int)
+            case "fkFolder":
+            fkFolder = value.(types.Int)
 		default:
 			return errors.New("unsupported field")
 		}
@@ -160,7 +160,7 @@ var err error
         storyType,
         updatedAt,
         contentType,
-        fkFlow,
+        fkFolder,
         taStory.PkStory,
     )
 	if err != nil {
@@ -180,7 +180,7 @@ func (taStory *TaStory) Update(
     storyType types.String,
     updatedAt types.DateTime,
     contentType types.ContentType,
-    fkFlow types.Int,
+    fkFolder types.Int,
 ) error {
     var err error
 	err = query.Exec(
@@ -193,7 +193,7 @@ func (taStory *TaStory) Update(
         storyType,
         updatedAt,
         contentType,
-        fkFlow,
+        fkFolder,
         taStory.PkStory,
     )
 	if err != nil {
@@ -207,7 +207,7 @@ func (taStory *TaStory) Update(
     taStory.StoryType = storyType
     taStory.UpdatedAt = updatedAt
     taStory.ContentType = contentType
-    taStory.FkFlow = fkFlow
+    taStory.FkFolder = fkFolder
     return nil
 }
 
@@ -266,23 +266,48 @@ pageBase types.PageBase) (types.Page, error) {
 	return page, nil
 }
 
-
-func GetTaStoryByName(query database.IQuery, value types.String) ([]TaStory, error) {
+func GetTaStoryByNameAndUserID(query database.IQuery,
+name types.String,
+userID types.Int,
+) ([]TaStory, error) {
 	    var err error
-    	var rows []interface{}
-    	var list []TaStory
-    	rows, err = query.QueryMany(TaStoryByNameQuery, &TaStory{}, value)
-    	if err != nil {
-    		if err == sql.ErrNoRows {
-    			return make([]TaStory, 0), nil
-    		}
-    		return nil, err
-    	}
-    	for _, row := range rows {
-    		list = append(list, row.(TaStory))
-    	}
-    	return list, nil
+        var rows []interface{}
+        var list []TaStory
+	rows, err = query.QueryMany(TaStoryByNameAndUserIDQuery, &TaStory{},
+    name,
+    userID,
+)
+	if err != nil {
+        if err == sql.ErrNoRows {
+        	return make([]TaStory, 0), nil
+        }
+        return nil, err
+       }
+       for _, row := range rows {
+        	list = append(list, row.(TaStory))
+        }
+       return list, nil
 }
+
+func GetTaStoriesByNameAndUserIDPaged(query database.IQuery,
+name types.String,
+userID types.Int,
+pageBase types.PageBase) (types.Page, error) {
+	var err error
+	var page types.Page
+	page, err = query.QueryManyPaged(TaStoryByNameAndUserIDQuery,  &TaStory{},
+	pageBase.PageNumber,
+	pageBase.PageSize,
+        name,
+        userID,
+	)
+	if err != nil {
+    		return  page, err
+    }
+	return page, nil
+}
+
+
 func GetTaStoryByUserID(query database.IQuery, value types.Int) ([]TaStory, error) {
 	    var err error
     	var rows []interface{}
@@ -315,11 +340,11 @@ func GetTaStoryByFkFlow(query database.IQuery, value types.Int) ([]TaStory, erro
     	}
     	return list, nil
 }
-func GetTaStoryByFkFlow(query database.IQuery, value types.Int) ([]TaStory, error) {
+func GetTaStoryByFkFolder(query database.IQuery, value types.Int) ([]TaStory, error) {
 	    var err error
     	var rows []interface{}
     	var list []TaStory
-    	rows, err = query.QueryMany(TaStoryByFkFlowQuery, &TaStory{}, value)
+    	rows, err = query.QueryMany(TaStoryByFkFolderQuery, &TaStory{}, value)
     	if err != nil {
     		if err == sql.ErrNoRows {
     			return make([]TaStory, 0), nil
@@ -359,8 +384,8 @@ func (taStory TaStory) GetFkFlow() types.Int {
 	return taStory.FkFlow}
 
 
-func (taStory TaStory) GetFkFlow() types.Int {
-	return taStory.FkFlow}
+func (taStory TaStory) GetFkFolder() types.Int {
+	return taStory.FkFolder}
 
 
 func (taStory *TaStory) Delete(query database.IQuery) error {

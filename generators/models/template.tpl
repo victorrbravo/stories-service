@@ -58,6 +58,13 @@ const (
     {{ $.Model }}By{{- range $index, $attr := .Searcher }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name  .Type }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" WHERE {{- $count := 0 -}} {{ range $index, $attr := .Searcher }} {{- if $index }} AND {{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = ${{ add $index $count 1 }} {{- end }} "
     {{- end }}
     {{- end }}
+    {{- if .SearcherSecondary }}
+    {{- if checkIsNotEmpty .OrderBy }}
+    {{ $.Model }}By{{- range $index, $attr := .SearcherSecondary }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name  .Type }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" WHERE {{- $count := 0 -}} {{ range $index, $attr := .SearcherSecondary }} {{- if $index }} AND {{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = ${{ add $index $count 1 }} {{- end }} ORDER BY {{ .OrderBy }}"
+    {{- else }}
+    {{ $.Model }}By{{- range $index, $attr := .SearcherSecondary }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query = "SELECT {{- range $index, $attr := $.Attrs }} {{- if $index }},{{- end }} {{ checkForSelect .FieldName .Name  .Type }} {{- end }} FROM {{ $.Schema }}\"{{ $.TableName.ToSnakeCase }}\" WHERE {{- $count := 0 -}} {{ range $index, $attr := .SearcherSecondary }} {{- if $index }} AND {{- end }} {{ checkUpdateOrDelete $attr.FieldName $attr.Name }} = ${{ add $index $count 1 }} {{- end }} "
+    {{- end }}
+    {{- end }}
     {{ $.Model }}ListOfFields = "{{- range $index, $attr := .Attrs }} {{- if $index }},{{- end }} {{ $.TableName.ToSnakeCase }}.{{ checkForSelect .FieldName .Name  .Type }} {{- end }}"
 )
 
@@ -275,6 +282,54 @@ pageBase types.PageBase) (types.Page, error) {
 	pageBase.PageNumber,
 	pageBase.PageSize,
 	{{- range .Searcher }}
+        {{ .Name.ToCamelCase }},
+    {{- end }}
+	)
+	if err != nil {
+    		return  page, err
+    }
+	return page, nil
+}
+
+
+{{- end }}
+
+{{- if .SearcherSecondary }}
+
+func Get{{ $.Model }}By{{- range $index, $attr := .SearcherSecondary }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}(query database.IQuery,{{- range .SearcherSecondary }}
+{{ .Name.ToCamelCase }} {{.Type}},
+{{- end }}
+) ([]{{ $.Model }}, error) {
+	    var err error
+        var rows []interface{}
+        var list []{{ $.Model }}
+	rows, err = query.QueryMany({{ $.Model }}By{{- range $index, $attr := .SearcherSecondary }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query, &{{ $.Model }}{},{{- range .SearcherSecondary }}
+    {{ .Name.ToCamelCase }},
+{{- end }}
+)
+	if err != nil {
+        if err == sql.ErrNoRows {
+        	return make([]{{ $.Model }}, 0), nil
+        }
+        return nil, err
+       }
+       for _, row := range rows {
+        	list = append(list, row.({{ $.Model }}))
+        }
+       return list, nil
+}
+
+func Get{{ $.Model.Plural }}By{{- range $index, $attr := .SearcherSecondary }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Paged(query database.IQuery,
+{{- range .SearcherSecondary }}
+{{ .Name.ToCamelCase }} {{.Type}},
+{{- end }}
+pageBase types.PageBase) (types.Page, error) {
+	var err error
+	var page types.Page
+	page, err = query.QueryManyPaged({{ $.Model }}By{{- range $index, $attr := .SearcherSecondary }}{{- if $index }}And{{- end }}{{ .Name}}{{- end }}Query,  &{{ $.Model }}{},
+	pageBase.PageNumber,
+	pageBase.PageSize,
+	{{- range .SearcherSecondary }}
         {{ .Name.ToCamelCase }},
     {{- end }}
 	)

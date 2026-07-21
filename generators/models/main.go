@@ -20,17 +20,18 @@ import (
 type CustomString string
 
 type entity struct {
-	Model        CustomString
-	TableName    CustomString
-	Schema       CustomString
-	UsesEnums    bool
-	UsesTypes    bool
-	NeedsPostgis bool
-	Attrs        []attr
-	Searcher     []attr
-	OrderBy      CustomString
-	Order        CustomString
-	AddPaging    bool
+	Model             CustomString
+	TableName         CustomString
+	Schema            CustomString
+	UsesEnums         bool
+	UsesTypes         bool
+	NeedsPostgis      bool
+	Attrs             []attr
+	Searcher          []attr
+	SearcherSecondary []attr
+	OrderBy           CustomString
+	Order             CustomString
+	AddPaging         bool
 }
 
 type attr struct {
@@ -49,19 +50,20 @@ type attr struct {
 }
 
 type generatorContext struct {
-	template      *template.Template
-	testsTemplate *template.Template
-	attrs         []attr
-	searcher      []attr
-	noTypes       bool
-	model         string
-	tableName     string
-	schema        string
-	orderBy       string
-	order         string
-	addPaging     bool
-	sourcePath    string
-	targetPath    string
+	template          *template.Template
+	testsTemplate     *template.Template
+	attrs             []attr
+	searcher          []attr
+	searcherSecondary []attr
+	noTypes           bool
+	model             string
+	tableName         string
+	schema            string
+	orderBy           string
+	order             string
+	addPaging         bool
+	sourcePath        string
+	targetPath        string
 }
 
 const (
@@ -382,17 +384,18 @@ func (context *generatorContext) Write() error {
 		context.tableName = context.model
 	}
 	err = context.template.Execute(file, entity{
-		Model:        CustomString(context.model),
-		TableName:    CustomString(context.tableName),
-		Schema:       CustomString(context.schema),
-		UsesTypes:    shouldImportTypes(context.attrs),
-		UsesEnums:    shouldImportEnums(context.attrs),
-		NeedsPostgis: shouldImportPostgis(context.attrs),
-		Attrs:        context.attrs,
-		Searcher:     context.searcher,
-		OrderBy:      CustomString(context.orderBy),
-		Order:        CustomString(context.order),
-		AddPaging:    context.addPaging,
+		Model:             CustomString(context.model),
+		TableName:         CustomString(context.tableName),
+		Schema:            CustomString(context.schema),
+		UsesTypes:         shouldImportTypes(context.attrs),
+		UsesEnums:         shouldImportEnums(context.attrs),
+		NeedsPostgis:      shouldImportPostgis(context.attrs),
+		Attrs:             context.attrs,
+		Searcher:          context.searcher,
+		SearcherSecondary: context.searcherSecondary,
+		OrderBy:           CustomString(context.orderBy),
+		Order:             CustomString(context.order),
+		AddPaging:         context.addPaging,
 	})
 	context.tableName = ""
 	context.orderBy = ""
@@ -408,6 +411,7 @@ func (context *generatorContext) HandleFile(file os.FileInfo) error {
 	var entity entity
 	context.attrs = make([]attr, 0)
 	context.searcher = make([]attr, 0)
+	context.searcherSecondary = make([]attr, 0)
 	filePath := context.sourcePath + "/" + file.Name()
 	// Read all the content of the file
 	content, err := readAllTextFromFile(filePath)
@@ -437,6 +441,9 @@ func (context *generatorContext) HandleFile(file os.FileInfo) error {
 	}
 	for _, attr := range entity.Searcher {
 		context.searcher = append(context.searcher, attr)
+	}
+	for _, attr := range entity.SearcherSecondary {
+		context.searcherSecondary = append(context.searcherSecondary, attr)
 	}
 	return nil
 }

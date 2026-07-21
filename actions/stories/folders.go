@@ -218,7 +218,7 @@ func UpdateFolderOfStory(ctx context.Context, order string, query *database.IQue
 }
 
 func getPkStoryByName(name types.String, userID types.Int, query *database.IQuery) (types.Int, error) {
-	names, err := models.GetTaStoryByName(*query, name)
+	names, err := models.GetTaStoryByNameAndUserID(*query, name, userID)
 	if err != nil {
 		return types.NilInt, err
 	}
