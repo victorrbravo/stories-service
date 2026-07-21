@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"sort"
 	"stories/actions/constants"
 	"stories/database"
 	st_errors "stories/errors"
@@ -144,6 +145,8 @@ func FlowProcessor(ctx context.Context, action string, order string, query *data
 		value, err = DoGetPresignedImage(order, query)
 	case "get_tags_by_pk_tracking":
 		value, err = DoGetTagsByPkTracking(order, query)
+	case "order_by_date_story":
+		value, err = DoOrderByDateStory(order, query)
 	case "add_tag_by_pk_tracking":
 		value, err = DoAddTagToTracking(order, query)
 	case "delete_tag_by_pk_tracking":
@@ -296,6 +299,171 @@ func DoDeleteTagFromTracking(order string, query *database.IQuery) (string, erro
 		}
 	}
 	return persistTrackingTags(taTracking, tags, query)
+}
+
+// OrderByDateStory is the input for the "order_by_date_story" action. It only
+// carries the story whose flow tasks must be re-ordered by date.
+type OrderByDateStory struct {
+	PkStory types.Int `yaml:"pk_story"`
+}
+
+// setLinkValue rewires the first transition link of the task named in the raw
+// flow map: it sets "transition -> links[0] -> task" to next and
+// "transition -> links[0] -> queries" to sentence, leaving every other field of
+// the flow untouched.
+func setLinkValue(tasks map[string]interface{}, name, next, sentence string) {
+	taskObj, ok := tasks[name].(map[string]interface{})
+	if !ok {
+		return
+	}
+	transition, ok := taskObj["transition"].(map[string]interface{})
+	if !ok {
+		return
+	}
+	links, ok := transition["links"].([]interface{})
+	if !ok || len(links) == 0 {
+		return
+	}
+	link0, ok := links[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+	link0["task"] = next
+	link0["queries"] = sentence
+}
+
+// DoOrderByDateStory re-orders the tasks of the flow linked to the story
+// (ta_story.fk_flow -> ta_flow.flow) by the "updated_at" date of each task. The
+// date of a task comes from the ta_tracking row joined by fk_story (the story)
+// and fk_status (the task name). The transition chain is rewired so that
+// "transition -> links[0] -> task" (the next task) and
+// "transition -> links[0] -> queries" (the sentence selecting that next task)
+// follow the new chronological order.
+func DoOrderByDateStory(order string, query *database.IQuery) (string, error) {
+	handler, err := Unmarshall[OrderByDateStory]([]byte(order))
+	if err != nil {
+		return "", err
+	}
+	if types.IsNil(handler.PkStory) {
+		return "", errors.New("pk_story is empty")
+	}
+	taStory, err := models.GetTaStoryByPkStory(*query, handler.PkStory)
+	if err != nil {
+		return "", err
+	}
+	intFkFlow := types.AsInt(taStory.FkFlow)
+	wf, err := GetWorkflow[models.TaTracking](intFkFlow, query)
+	if err != nil {
+		return "", err
+	}
+
+	// updated_at of each task, keyed by fk_status, taken from ta_tracking of
+	// this story.
+	trackings, err := models.GetTaTrackingByFkStory(*query, handler.PkStory)
+	if err != nil {
+		return "", err
+	}
+	dateByStatus := make(map[string]types.DateTime)
+	for _, tracking := range trackings {
+		dateByStatus[tracking.FkStatus.String()] = tracking.UpdatedAt
+	}
+
+	// sentence used to "enter" each task: the head is selected by "initial",
+	// every other task by the queries of the link pointing to it.
+	head, err := wf.CalculateInitialTask()
+	if err != nil {
+		return "", err
+	}
+	sentenceFor := make(map[string]string)
+	sentenceFor[head] = wf.Initial.String()
+	for _, task := range wf.Tasks {
+		if len(task.Transition.Links) == 0 {
+			continue
+		}
+		link := task.Transition.Links[0]
+		sentenceFor[link.Task] = link.Query
+	}
+
+	// current chain order: follow links[0].task from the head until END.
+	chain := make([]string, 0, len(wf.Tasks))
+	visited := make(map[string]bool)
+	current := head
+	for current != "" && current != common.EndTask {
+		if visited[current] {
+			break
+		}
+		visited[current] = true
+		chain = append(chain, current)
+		task, ok := wf.Tasks[current]
+		if !ok || len(task.Transition.Links) == 0 {
+			break
+		}
+		current = task.Transition.Links[0].Task
+	}
+
+	// keep the "Start" sentinel pinned as head and sort the remaining tasks by
+	// their updated_at date (ascending). A missing date sorts first.
+	pinned := []string{}
+	sortable := chain
+	if len(chain) > 0 && chain[0] == common.StartTask {
+		pinned = chain[:1]
+		sortable = chain[1:]
+	}
+	sortable = append([]string{}, sortable...)
+	sort.SliceStable(sortable, func(i, j int) bool {
+		return dateByStatus[sortable[i]].Before(dateByStatus[sortable[j]])
+	})
+	newChain := append(append([]string{}, pinned...), sortable...)
+
+	// load the original flow json into a generic map so every field is
+	// preserved, then rewire only the transition chain to follow the new order.
+	taFlow, err := models.GetTaFlowByPkFlow(*query, taStory.FkFlow)
+	if err != nil {
+		return "", err
+	}
+	var flowMap map[string]interface{}
+	decoder := json.NewDecoder(bytes.NewReader(taFlow.Flow))
+	decoder.UseNumber()
+	if err = decoder.Decode(&flowMap); err != nil {
+		return "", err
+	}
+	tasks, ok := flowMap["tasks"].(map[string]interface{})
+	if !ok {
+		return "", errors.New("flow has no tasks")
+	}
+	for i, name := range newChain {
+		next := common.EndTask
+		if i < len(newChain)-1 {
+			next = newChain[i+1]
+		}
+		sentence, found := sentenceFor[next]
+		if !found {
+			sentence = wf.Sentence(next)
+		}
+		setLinkValue(tasks, name, next, sentence)
+	}
+	if len(newChain) > 0 {
+		flowMap["initial"] = sentenceFor[newChain[0]]
+	}
+
+	// save the new json back into the "flow" column of ta_flow.
+	newFlow, err := json.Marshal(flowMap)
+	if err != nil {
+		return "", err
+	}
+	err = taFlow.UpdateByOne(*query, func() (string, any) {
+		return "flow", newFlow
+	})
+	if err != nil {
+		return "", err
+	}
+
+	dataMap := map[string][]string{"order": newChain}
+	data, err := json.Marshal(dataMap)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
 
 func DoAcceptFollower(ctx context.Context, order string, query *database.IQuery) (string, error) {
