@@ -69,37 +69,58 @@ type Wrapped struct {
 	Comment  types.String  `json:"comment"`
 }
 
+// AmountByPeriod is the amount accumulated inside a single period of a
+// breakdown, e.g. one week in Data.AmountByWeek. Label is the human readable
+// name of the period ("Mon, Jan 02") and StartDate its first day.
+type AmountByPeriod struct {
+	Label     string       `json:"label"`
+	StartDate types.String `json:"start_date"`
+	Amount    types.String `json:"amount"`
+	Value     types.Float  `json:"value"`
+}
+
+// AmountByCategory is the amount accumulated by one category of a "ctg-"
+// filter, i.e. by one of the tags the filter named ("bill", "coffee").
+type AmountByCategory struct {
+	Category string       `json:"category"`
+	Amount   types.String `json:"amount"`
+	Value    types.Float  `json:"value"`
+}
+
 type Data struct {
-	Count            types.Int         `json:"count"` // checked
-	TimeField        types.String      `json:"time_field"`
-	InfoField        types.String      `json:"info_field"`
-	AmountField      types.String      `json:"amount_field"`
-	AmountFieldPerc  types.String      `json:"amount_field_perc"`
-	Roles            types.StringArray `json:"roles"`
-	Images           types.StringArray `json:"images"`
-	Videos           types.StringArray `json:"videos"`
-	Percentage       float64           `json:"percentage"`
-	UpdateAtDiff     types.String      `json:"update_at_diff"`
-	UpdateAtDiffPerc types.String      `json:"update_at_diff_perc"`
-	Summary          types.String      `json:"summary"`
-	Amount           types.Float       `json:"amount"`
-	Distance         types.Float       `json:"distance"`
-	Total            types.Int         `json:"total"`
-	TotalPerc        types.String      `json:"total_perc"`
-	FillValue        types.Int         `json:"fill_value"` // Measure progress in time, money or other type of value
-	FillSelect       FillType          `json:"fill_select"`
-	Rows             []interface{}     `json:"rows"`
-	IDCurrent        types.Int         `json:"id_current"`
-	ToExport         Exportable        `json:"to_export"`
-	Stats            Values            `json:"stats"`
-	ID               types.Int         `json:"id"`
-	TipsIdField      types.Int         `json:"tips_id_field"`
-	SubIdField       types.Int         `json:"fk_story_sub"`
-	Position         types.Coordinates `json:"position"`
-	Description      types.String      `json:"description"`
-	DistanceDiff     types.Float       `json:"distance_diff"`
-	DistanceDiffPerc types.Float       `json:"distance_diff_perc"`
-	Tags             types.StringArray `json:"tags"`
+	Count            types.Int          `json:"count"` // checked
+	TimeField        types.String       `json:"time_field"`
+	InfoField        types.String       `json:"info_field"`
+	AmountField      types.String       `json:"amount_field"`
+	AmountFieldPerc  types.String       `json:"amount_field_perc"`
+	AmountByWeek     []AmountByPeriod   `json:"amount_by_week,omitempty"`
+	AmountByDay      []AmountByPeriod   `json:"amount_by_day,omitempty"`
+	AmountByCategory []AmountByCategory `json:"amount_by_category,omitempty"`
+	Roles            types.StringArray  `json:"roles"`
+	Images           types.StringArray  `json:"images"`
+	Videos           types.StringArray  `json:"videos"`
+	Percentage       float64            `json:"percentage"`
+	UpdateAtDiff     types.String       `json:"update_at_diff"`
+	UpdateAtDiffPerc types.String       `json:"update_at_diff_perc"`
+	Summary          types.String       `json:"summary"`
+	Amount           types.Float        `json:"amount"`
+	Distance         types.Float        `json:"distance"`
+	Total            types.Int          `json:"total"`
+	TotalPerc        types.String       `json:"total_perc"`
+	FillValue        types.Int          `json:"fill_value"` // Measure progress in time, money or other type of value
+	FillSelect       FillType           `json:"fill_select"`
+	Rows             []interface{}      `json:"rows"`
+	IDCurrent        types.Int          `json:"id_current"`
+	ToExport         Exportable         `json:"to_export"`
+	Stats            Values             `json:"stats"`
+	ID               types.Int          `json:"id"`
+	TipsIdField      types.Int          `json:"tips_id_field"`
+	SubIdField       types.Int          `json:"fk_story_sub"`
+	Position         types.Coordinates  `json:"position"`
+	Description      types.String       `json:"description"`
+	DistanceDiff     types.Float        `json:"distance_diff"`
+	DistanceDiffPerc types.Float        `json:"distance_diff_perc"`
+	Tags             types.StringArray  `json:"tags"`
 }
 
 type JobWorkflow[T db.Scanner] struct {

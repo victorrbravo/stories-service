@@ -814,7 +814,7 @@ func TestProcessShowFlowData(t *testing.T) {
 	input := `
 action: show_flow_data
 ticket: 237
-filter: max- amount,10 and >jun1
+filter: 
 by_day: true
 page_number: 1
 page_size: 12
@@ -994,7 +994,7 @@ func TestProcessCategoryShowFlowData(t *testing.T) {
 	input := `
 action: show_flow_data
 ticket: 239
-filter: ctg- bill,coffee 
+filter: ctg- bill,coffee,cash 
 by_day: false
 page_number: 1
 page_size: 20

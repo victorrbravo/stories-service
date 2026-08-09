@@ -151,7 +151,40 @@ ORDER BY array_position($8::text[], ta_tracking.fk_status) NULLS LAST;
 	SumAmountFieldTaTracking = `SELECT SUM(ta_tracking.amount_spent)::money::numeric FROM ta_tracking WHERE ta_tracking.fk_status=ANY($1::text[])
 AND ta_tracking.fk_story=$2
 `
-	SumAmountFieldForWeekTaTracking = `SELECT SUM(ta_tracking.amount_spent)::money::numeric FROM ta_tracking WHERE 
+	// Same total as SumAmountFieldTaTracking, but broken down by week: one
+	// row per week (weeks start on Monday) of updated_at read in the $3
+	// timezone, from the oldest week to the newest.
+	SumAmountFieldByWeekTaTracking = `SELECT to_char(date_trunc('week', ta_tracking.updated_at AT TIME ZONE $3::text), 'YYYY-MM-DD') AS week_start,
+COALESCE(SUM(ta_tracking.amount_spent)::money::numeric, 0) AS amount
+FROM ta_tracking WHERE ta_tracking.fk_status=ANY($1::text[])
+AND ta_tracking.fk_story=$2
+GROUP BY week_start ORDER BY week_start
+`
+	// Day-granularity counterpart of SumAmountFieldByWeekTaTracking: one row
+	// per calendar day of updated_at read in the $3 timezone.
+	SumAmountFieldByDayTaTracking = `SELECT to_char(date_trunc('day', ta_tracking.updated_at AT TIME ZONE $3::text), 'YYYY-MM-DD') AS day_start,
+COALESCE(SUM(ta_tracking.amount_spent)::money::numeric, 0) AS amount
+FROM ta_tracking WHERE ta_tracking.fk_status=ANY($1::text[])
+AND ta_tracking.fk_story=$2
+GROUP BY day_start ORDER BY day_start
+`
+	// Category counterpart of SumAmountFieldByWeekTaTracking, for the tags a
+	// "ctg- bill,coffee" filter named in $3: one row per tag, ordered the way
+	// the filter listed them. A row carrying several of those tags is counted
+	// only for the first one (WITH ORDINALITY + LIMIT 1 pick it), so the rows
+	// are bucketed exactly as nodeTagFor buckets the tasks; tags are matched
+	// case-insensitively, and a row carrying none of them is left out.
+	SumAmountFieldByCategoryTaTracking = `SELECT category, COALESCE(SUM(t.amount_spent)::money::numeric, 0) AS amount
+FROM ta_tracking t
+JOIN LATERAL (
+  SELECT w.tag AS category, w.ord AS position FROM unnest($3::text[]) WITH ORDINALITY AS w(tag, ord)
+  WHERE EXISTS (SELECT 1 FROM unnest(t.tags) AS item WHERE lower(item) = lower(w.tag))
+  ORDER BY w.ord LIMIT 1
+) wanted ON TRUE
+WHERE t.fk_status=ANY($1::text[]) AND t.fk_story=$2
+GROUP BY category, wanted.position ORDER BY wanted.position
+`
+	SumAmountFieldForWeekTaTracking = `SELECT SUM(ta_tracking.amount_spent)::money::numeric FROM ta_tracking WHERE
 ta_tracking.fk_story=$2 AND ta_tracking.fk_status=ANY($3::text[])   AND updated_at >= date_trunc('week', $1::date) 
   AND updated_at < date_trunc('week', $1::date) + INTERVAL '7 days';
 `
@@ -360,6 +393,27 @@ func StatsField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{})
 		}
 		wf.Data.AmountField = types.NewString(FormatToMoney(valueFloat, true))
 		wf.Data.AmountFieldPerc = types.NewString(FormatToMoney(valuePercFloat, false))
+
+		// Same total as AmountField, split per category when a "ctg- ..."
+		// filter grouped the tasks by tag, otherwise split per day in day
+		// mode and per week in week mode.
+		if orderedByTags {
+			categories, err := sumAmountByCategory(wf, statuses, wf.OrderedByTags)
+			if err != nil {
+				log.Println("Error StatsField amount by category err", err)
+			} else {
+				wf.Data.AmountByCategory = categories
+			}
+		} else {
+			periods, err := sumAmountByPeriod(wf, statuses)
+			if err != nil {
+				log.Println("Error StatsField amount by period err", err)
+			} else if wf.ByDay {
+				wf.Data.AmountByDay = periods
+			} else {
+				wf.Data.AmountByWeek = periods
+			}
+		}
 
 		var duration scanners.String
 		durationValue, err := (*newQuery).QueryOne(SelectSumTimeFieldToken, &duration, types.NewStringArray(statuses), wf.CurrentIDInt)
@@ -641,6 +695,78 @@ func RoleField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}) 
 
 		return wf, nil
 	}
+}
+
+// sumAmountByCategory is the per-category breakdown of a "ctg- bill,coffee"
+// filter: one entry per tag the filter named, in that same order, holding the
+// sum of amount_spent of every tracking row in statuses that carries the tag.
+// Rows are bucketed the way nodeTagFor buckets the tasks in RoleField (the
+// first tag of the list wins, matched case-insensitively), but the sums cover
+// the whole filtered flow, like AmountField does, and not just the page the
+// tag Wrapped objects add up. Rows carrying none of the tags are left out, so
+// the entries need not add up to AmountField.
+func sumAmountByCategory[T db.Scanner](wf *common.Workflow[T], statuses []string, wantedTags []string) ([]common.AmountByCategory, error) {
+	var category scanners.TupleStringFloat
+	newQuery := wf.Query
+	rows, err := (*newQuery).QueryMany(SumAmountFieldByCategoryTaTracking, &category,
+		types.NewStringArray(statuses), wf.CurrentIDInt, types.NewStringArray(wantedTags))
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	categories := make([]common.AmountByCategory, 0, len(rows))
+	for _, row := range rows {
+		value, ok := row.(scanners.TupleStringFloat)
+		if !ok {
+			continue
+		}
+		amount := types.AsFloat(value.Second)
+		categories = append(categories, common.AmountByCategory{
+			Category: types.AsString(value.First),
+			Amount:   types.NewString(FormatToMoney(amount, true)),
+			Value:    types.NewFloat(amount),
+		})
+	}
+	return categories, nil
+}
+
+// sumAmountByPeriod is the breakdown of the single total
+// SumAmountFieldTaTracking returns: each entry holds the sum of amount_spent
+// of the tracking rows in statuses that fall inside one period. Like
+// calculateWrappedAmount, the period is a day when wf.ByDay is set and a week
+// (Monday start) otherwise. Periods are Bogota-local and come back oldest
+// first; a period without rows produces no entry.
+func sumAmountByPeriod[T db.Scanner](wf *common.Workflow[T], statuses []string) ([]common.AmountByPeriod, error) {
+	var period scanners.TupleStringFloat
+	newQuery := wf.Query
+	var currentSQL = SumAmountFieldByWeekTaTracking
+	if wf.ByDay {
+		currentSQL = SumAmountFieldByDayTaTracking
+	}
+	rows, err := (*newQuery).QueryMany(currentSQL, &period,
+		types.NewStringArray(statuses), wf.CurrentIDInt, constants.TimezoneBogota)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	periods := make([]common.AmountByPeriod, 0, len(rows))
+	for _, row := range rows {
+		value, ok := row.(scanners.TupleStringFloat)
+		if !ok {
+			continue
+		}
+		startDate := types.AsString(value.First)
+		label := startDate
+		if start, err := time.Parse("2006-01-02", startDate); err == nil {
+			label = start.Format("Mon, Jan 02")
+		}
+		amount := types.AsFloat(value.Second)
+		periods = append(periods, common.AmountByPeriod{
+			Label:     label,
+			StartDate: types.NewString(startDate),
+			Amount:    types.NewString(FormatToMoney(amount, true)),
+			Value:     types.NewFloat(amount),
+		})
+	}
+	return periods, nil
 }
 
 func calculateWrappedAmount[T db.Scanner](wf *common.Workflow[T], firstDate time.Time, wrapped *common.Wrapped, statuses []string) {
@@ -1168,9 +1294,8 @@ func TasksOrderField[T db.Scanner](wf *common.Workflow[T], parameters ...interfa
 
 		// Force statuses to be re-walked against the rewired chain.
 		ctx := context.Background()
-		statuses, _ := wf.Statuses(ctx, false, true)
+		wf.Statuses(ctx, false, true)
 		wf.OrderedByTags = wantedTags
-		log.Println("TasksOrderField is ordered:", statuses)
 		elapsed := time.Since(start1)
 		log.Printf("TasksOrderField elapsed %s", elapsed)
 		return wf, nil
