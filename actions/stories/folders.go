@@ -28,6 +28,8 @@ func FolderProcessor(ctx context.Context, action string, order string, query *da
 		value, err = AddStoryToFolder(ctx, order, query)
 	case "update_folder_of_story":
 		value, err = UpdateFolderOfStory(ctx, order, query)
+	case "delete_user_by_email":
+		value, err = DeleteUserByEmail(ctx, order, query)
 	}
 	if err != nil {
 		return value, err
@@ -211,6 +213,154 @@ func UpdateFolderOfStory(ctx context.Context, order string, query *database.IQue
 	}
 
 	data, err := json.Marshal(*linkStory)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+// deleteUserByEmailInput carries the email of the account to erase.
+type deleteUserByEmailInput struct {
+	Email types.String `yaml:"email"`
+}
+
+// deletedRows is the per-table row count of one delete_user_by_email run.
+type deletedRows struct {
+	Tracking         int `json:"tracking"`
+	TrackingUnlinked int `json:"tracking_unlinked"`
+	Stories          int `json:"stories"`
+	Folders          int `json:"folders"`
+	Flows            int `json:"flows"`
+	Categories       int `json:"categories"`
+	Permissions      int `json:"permissions"`
+	UserPolicies     int `json:"user_policies"`
+	UserRoles        int `json:"user_roles"`
+	Relationships    int `json:"relationships"`
+	Sessions         int `json:"sessions"`
+	User             int `json:"user"`
+}
+
+type deleteUserByEmailResult struct {
+	Email   types.String `json:"email"`
+	PkUser  types.Int    `json:"pk_user"`
+	Deleted deletedRows  `json:"deleted"`
+}
+
+// DeleteUserByEmailQuery erases every row a user owns and the user itself.
+//
+// It is a single statement on purpose: IQuery hands out a plain *Query whose
+// Commit/Rollback are no-ops, so a sequence of Exec calls could leave the
+// account half deleted. One statement is atomic, and PostgreSQL fires the
+// foreign-key triggers only once it finishes, so parent and child rows may be
+// removed together inside it.
+//
+// Every data-modifying CTE reads the same snapshot, so user_stories still
+// lists the stories after deleted_stories removed them. Tracking rows of
+// *other* users that point at a deleted story through fk_story_tips /
+// fk_story_sub are not deleted — those two columns are nulled instead, in a
+// single UPDATE (two CTEs touching the same row would be undefined) that skips
+// the rows deleted_tracking already claims.
+//
+// ta_user_role and ta_user_relationship cascade on delete, but they are
+// deleted explicitly so the counts below are complete.
+const DeleteUserByEmailQuery = `
+WITH target AS (
+    SELECT pk_user FROM ta_user WHERE lower(email) = lower($1::text)
+), user_stories AS (
+    SELECT pk_story FROM ta_story WHERE user_id IN (SELECT pk_user FROM target)
+), unlinked_tracking AS (
+    UPDATE ta_tracking SET
+        fk_story_tips = CASE WHEN fk_story_tips IN (SELECT pk_story FROM user_stories)
+                             THEN NULL ELSE fk_story_tips END,
+        fk_story_sub  = CASE WHEN fk_story_sub IN (SELECT pk_story FROM user_stories)
+                             THEN NULL ELSE fk_story_sub END
+    WHERE (fk_story IS NULL OR fk_story NOT IN (SELECT pk_story FROM user_stories))
+      AND (fk_story_tips IN (SELECT pk_story FROM user_stories)
+           OR fk_story_sub IN (SELECT pk_story FROM user_stories))
+    RETURNING 1
+), deleted_tracking AS (
+    DELETE FROM ta_tracking WHERE fk_story IN (SELECT pk_story FROM user_stories) RETURNING 1
+), deleted_stories AS (
+    DELETE FROM ta_story WHERE user_id IN (SELECT pk_user FROM target) RETURNING 1
+), deleted_folders AS (
+    DELETE FROM ta_folder WHERE user_id IN (SELECT pk_user FROM target) RETURNING 1
+), deleted_flows AS (
+    DELETE FROM ta_flow WHERE fk_user IN (SELECT pk_user FROM target) RETURNING 1
+), deleted_categories AS (
+    DELETE FROM ta_category WHERE user_id IN (SELECT pk_user FROM target) RETURNING 1
+), deleted_permissions AS (
+    DELETE FROM ta_permission WHERE fk_from_user IN (SELECT pk_user FROM target) RETURNING 1
+), deleted_user_policies AS (
+    DELETE FROM ta_user_policy WHERE fk_user IN (SELECT pk_user FROM target) RETURNING 1
+), deleted_user_roles AS (
+    DELETE FROM ta_user_role WHERE fk_user IN (SELECT pk_user FROM target) RETURNING 1
+), deleted_relationships AS (
+    DELETE FROM ta_user_relationship
+    WHERE fk_follower_id IN (SELECT pk_user FROM target)
+       OR fk_followed_id IN (SELECT pk_user FROM target)
+    RETURNING 1
+), deleted_sessions AS (
+    DELETE FROM ta_session WHERE fk_user IN (SELECT pk_user FROM target) RETURNING 1
+), deleted_user AS (
+    DELETE FROM ta_user WHERE pk_user IN (SELECT pk_user FROM target) RETURNING 1
+)
+SELECT json_build_object(
+    'tracking', (SELECT count(*) FROM deleted_tracking),
+    'tracking_unlinked', (SELECT count(*) FROM unlinked_tracking),
+    'stories', (SELECT count(*) FROM deleted_stories),
+    'folders', (SELECT count(*) FROM deleted_folders),
+    'flows', (SELECT count(*) FROM deleted_flows),
+    'categories', (SELECT count(*) FROM deleted_categories),
+    'permissions', (SELECT count(*) FROM deleted_permissions),
+    'user_policies', (SELECT count(*) FROM deleted_user_policies),
+    'user_roles', (SELECT count(*) FROM deleted_user_roles),
+    'relationships', (SELECT count(*) FROM deleted_relationships),
+    'sessions', (SELECT count(*) FROM deleted_sessions),
+    'user', (SELECT count(*) FROM deleted_user)
+)::text
+`
+
+// DeleteUserByEmail wipes the account identified by email: its tracking rows,
+// stories, flows, folders, sessions and the ta_user row, plus the categories,
+// permissions, policies, roles and relationships that reference the user — a
+// ta_user row cannot be removed while any of those still point at it.
+//
+// The deletion is permanent and has no undo. The response reports how many
+// rows each table lost, e.g.
+//
+//	{"email":"someone@example.com","pk_user":42,
+//	 "deleted":{"tracking":118,"stories":4,...,"user":1}}
+func DeleteUserByEmail(ctx context.Context, order string, query *database.IQuery) (string, error) {
+	fmt.Println("...order:", order)
+	var input deleteUserByEmailInput
+	err := yaml.Unmarshal([]byte(order), &input)
+	if err != nil {
+		return "", err
+	}
+	if input.Email.IsEmpty() {
+		return "", fmt.Errorf("delete_user_by_email requires email")
+	}
+
+	users, err := models.GetTaUserByEmail(*query, input.Email)
+	if err != nil {
+		return "", err
+	}
+	if len(users) == 0 {
+		return "", fmt.Errorf("delete_user_by_email no user found for %s", input.Email)
+	}
+
+	var counters scanners.String
+	_, err = (*query).QueryOne(DeleteUserByEmailQuery, &counters, input.Email)
+	if err != nil {
+		return "", err
+	}
+
+	result := deleteUserByEmailResult{Email: users[0].Email, PkUser: users[0].PkUser}
+	err = json.Unmarshal([]byte(counters.Value.String()), &result.Deleted)
+	if err != nil {
+		return "", err
+	}
+	data, err := json.Marshal(result)
 	if err != nil {
 		return "", err
 	}

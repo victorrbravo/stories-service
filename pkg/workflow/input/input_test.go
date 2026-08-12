@@ -2,6 +2,7 @@ package input
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -9,6 +10,8 @@ import (
 	db "stories/database"
 	pg "stories/generated/inputs"
 	"stories/pkg/utils"
+	"stories/scanners"
+	"stories/types"
 	"testing"
 )
 
@@ -812,12 +815,8 @@ func TestProcessShowFlowData(t *testing.T) {
 	query := pgQuery.NewQuery()
 
 	input := `
-action: show_flow_data
-ticket: 237
-filter: 
-by_day: true
-page_number: 1
-page_size: 12
+action: delete_user_by_email
+email: victorrbravo7@gmail.com
 `
 
 	order := []byte(input)
@@ -1008,6 +1007,221 @@ page_size: 20
 	}
 
 	fmt.Println("value data response: |", response, "|")
+}
+
+// Emails of the throwaway accounts TestProcessDeleteUserByEmail works on.
+// delete_user_by_email erases an account for good, so the test never points
+// it at real data: it creates both users itself and removes whatever is left
+// of them afterwards.
+const (
+	deleteMeEmailA = "delete-me-a@example.invalid"
+	deleteMeEmailB = "delete-me-b@example.invalid"
+)
+
+// seedDeleteMeUsers creates the two synthetic accounts. User A owns one row in
+// every table the action touches; user B exists only to prove that another
+// account's tracking row survives the wipe, with the fk_story_tips /
+// fk_story_sub references to A's stories nulled instead of deleted.
+const seedDeleteMeUsers = `
+BEGIN;
+INSERT INTO ta_role (name) VALUES ('delete-me-role') ON CONFLICT (name) DO NOTHING;
+INSERT INTO ta_policy (resource, name, condition)
+VALUES ('delete-me', 'delete-me-policy', '{}'::jsonb) ON CONFLICT (name, condition) DO NOTHING;
+
+INSERT INTO ta_user (firstname, lastname, email, account_type, password, activated, username)
+VALUES ('del', 'meA', 'delete-me-a@example.invalid', 'user', 'x', true, 'delete-me-a');
+INSERT INTO ta_user (firstname, lastname, email, account_type, password, activated, username)
+VALUES ('del', 'meB', 'delete-me-b@example.invalid', 'user', 'x', true, 'delete-me-b');
+
+INSERT INTO ta_flow (name, flow, fk_user)
+SELECT 'delete-me-flow-a', '{}'::jsonb, pk_user FROM ta_user WHERE email = 'delete-me-a@example.invalid';
+INSERT INTO ta_folder (name, user_id)
+SELECT 'delete-me-folder-a', pk_user FROM ta_user WHERE email = 'delete-me-a@example.invalid';
+
+INSERT INTO ta_story (name, status, user_id, fk_flow, fk_folder)
+SELECT 'delete-me-story-a1', 'Start', u.pk_user, f.pk_flow, d.pk_folder
+FROM ta_user u, ta_flow f, ta_folder d
+WHERE u.email = 'delete-me-a@example.invalid'
+  AND f.name = 'delete-me-flow-a' AND d.name = 'delete-me-folder-a';
+INSERT INTO ta_story (name, status, user_id)
+SELECT 'delete-me-story-a2', 'Start', pk_user FROM ta_user WHERE email = 'delete-me-a@example.invalid';
+INSERT INTO ta_story (name, status, user_id)
+SELECT 'delete-me-story-b1', 'Start', pk_user FROM ta_user WHERE email = 'delete-me-b@example.invalid';
+
+INSERT INTO ta_tracking (fk_status, fk_story, summary)
+SELECT 'Start', pk_story, 'delete-me-a-row-1' FROM ta_story WHERE name = 'delete-me-story-a1';
+INSERT INTO ta_tracking (fk_status, fk_story, summary)
+SELECT 'Start', pk_story, 'delete-me-a-row-2' FROM ta_story WHERE name = 'delete-me-story-a2';
+INSERT INTO ta_tracking (fk_status, fk_story, fk_story_tips, fk_story_sub, summary)
+SELECT 'Start', b.pk_story, a1.pk_story, a2.pk_story, 'delete-me-b-row'
+FROM ta_story b, ta_story a1, ta_story a2
+WHERE b.name = 'delete-me-story-b1'
+  AND a1.name = 'delete-me-story-a1' AND a2.name = 'delete-me-story-a2';
+
+INSERT INTO ta_session (token, fk_user)
+SELECT 'delete-me-token-1', pk_user FROM ta_user WHERE email = 'delete-me-a@example.invalid';
+INSERT INTO ta_session (token, fk_user)
+SELECT 'delete-me-token-2', pk_user FROM ta_user WHERE email = 'delete-me-a@example.invalid';
+
+INSERT INTO ta_category (name, user_id)
+SELECT 'delete-me-category', pk_user FROM ta_user WHERE email = 'delete-me-a@example.invalid';
+INSERT INTO ta_permission (fk_from_user, category, permission)
+SELECT pk_user, 'delete-me', '{}'::jsonb FROM ta_user WHERE email = 'delete-me-a@example.invalid';
+INSERT INTO ta_user_policy (fk_user, fk_policy)
+SELECT u.pk_user, p.pk_policy FROM ta_user u, ta_policy p
+WHERE u.email = 'delete-me-a@example.invalid' AND p.name = 'delete-me-policy';
+INSERT INTO ta_user_role (fk_user, fk_role)
+SELECT u.pk_user, r.pk_role FROM ta_user u, ta_role r
+WHERE u.email = 'delete-me-a@example.invalid' AND r.name = 'delete-me-role';
+INSERT INTO ta_user_relationship (fk_follower_id, fk_followed_id)
+SELECT a.pk_user, b.pk_user FROM ta_user a, ta_user b
+WHERE a.email = 'delete-me-a@example.invalid' AND b.email = 'delete-me-b@example.invalid';
+COMMIT;
+`
+
+// purgeDeleteMeUsers removes every seeded row, children first. It runs before
+// the seed as well, so a run that died halfway through does not poison the
+// next one.
+const purgeDeleteMeUsers = `
+BEGIN;
+DELETE FROM ta_tracking WHERE summary LIKE 'delete-me-%'
+   OR fk_story IN (SELECT pk_story FROM ta_story WHERE name LIKE 'delete-me-story-%');
+DELETE FROM ta_story WHERE name LIKE 'delete-me-story-%';
+DELETE FROM ta_folder WHERE name = 'delete-me-folder-a';
+DELETE FROM ta_flow WHERE name = 'delete-me-flow-a';
+DELETE FROM ta_category WHERE name = 'delete-me-category';
+DELETE FROM ta_permission WHERE category = 'delete-me';
+DELETE FROM ta_user_policy WHERE fk_user IN (SELECT pk_user FROM ta_user WHERE email LIKE 'delete-me-%@example.invalid');
+DELETE FROM ta_user_role WHERE fk_user IN (SELECT pk_user FROM ta_user WHERE email LIKE 'delete-me-%@example.invalid');
+DELETE FROM ta_user_relationship
+WHERE fk_follower_id IN (SELECT pk_user FROM ta_user WHERE email LIKE 'delete-me-%@example.invalid')
+   OR fk_followed_id IN (SELECT pk_user FROM ta_user WHERE email LIKE 'delete-me-%@example.invalid');
+DELETE FROM ta_session WHERE token LIKE 'delete-me-token%';
+DELETE FROM ta_user WHERE email LIKE 'delete-me-%@example.invalid';
+DELETE FROM ta_policy WHERE name = 'delete-me-policy';
+DELETE FROM ta_role WHERE name = 'delete-me-role';
+COMMIT;
+`
+
+func TestProcessDeleteUserByEmail(t *testing.T) {
+	var err error
+	config := database.DatabaseConfig{
+		Host: DB_LOCAL_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,
+		Password: DB_LOCAL_PASS,
+	}
+	var pgQuery db.PostgresQuery
+	pgQuery.Initialize(&config)
+	err = pgQuery.Connect()
+	if err != nil {
+		t.Fatal(err)
+	}
+	query := pgQuery.NewQuery()
+
+	runScript(t, &query, purgeDeleteMeUsers)
+	runScript(t, &query, seedDeleteMeUsers)
+	t.Cleanup(func() { runScript(t, &query, purgeDeleteMeUsers) })
+
+	input := `
+action: delete_user_by_email
+email: ` + deleteMeEmailA + `
+`
+
+	order := []byte(input)
+	ctx := context.Background()
+	response, err := ProcessInput(ctx, order, &query)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println("value data response: |", response, "|")
+
+	var result struct {
+		Email   string         `json:"email"`
+		PkUser  int            `json:"pk_user"`
+		Deleted map[string]int `json:"deleted"`
+	}
+	err = json.Unmarshal([]byte(response), &result)
+	if err != nil {
+		t.Fatalf("response is not the expected json: %v", err)
+	}
+	if result.Email != deleteMeEmailA {
+		t.Errorf("expected email %q, got %q", deleteMeEmailA, result.Email)
+	}
+	if result.PkUser == 0 {
+		t.Error("expected the pk_user of the deleted account")
+	}
+
+	// One row per table was seeded, except tracking (two rows of user A) and
+	// sessions (two tokens). tracking_unlinked is user B's row, kept but with
+	// its references to A's stories nulled.
+	expected := map[string]int{
+		"tracking": 2, "tracking_unlinked": 1, "stories": 2, "folders": 1,
+		"flows": 1, "categories": 1, "permissions": 1, "user_policies": 1,
+		"user_roles": 1, "relationships": 1, "sessions": 2, "user": 1,
+	}
+	for name, want := range expected {
+		if got := result.Deleted[name]; got != want {
+			t.Errorf("deleted[%s] = %d, expected %d", name, got, want)
+		}
+	}
+
+	// Nothing of user A survives, in any of the tables.
+	leftovers := []struct {
+		what      string
+		statement string
+		values    []interface{}
+	}{
+		{"users", "SELECT count(*) FROM ta_user WHERE email = $1", []interface{}{deleteMeEmailA}},
+		{"stories", "SELECT count(*) FROM ta_story WHERE user_id IN (SELECT pk_user FROM ta_user WHERE email = $1)", []interface{}{deleteMeEmailA}},
+		{"flows", "SELECT count(*) FROM ta_flow WHERE name = 'delete-me-flow-a'", nil},
+		{"folders", "SELECT count(*) FROM ta_folder WHERE name = 'delete-me-folder-a'", nil},
+		{"sessions", "SELECT count(*) FROM ta_session WHERE token LIKE 'delete-me-token%'", nil},
+		{"tracking", "SELECT count(*) FROM ta_tracking WHERE summary IN ('delete-me-a-row-1', 'delete-me-a-row-2')", nil},
+	}
+	for _, leftover := range leftovers {
+		if got := countRows(t, &query, leftover.statement, leftover.values...); got != 0 {
+			t.Errorf("%s: %d rows of %s survived the delete", leftover.what, got, deleteMeEmailA)
+		}
+	}
+
+	// User B keeps its own row and its account, with the two references to
+	// A's stories nulled rather than deleted.
+	kept := countRows(t, &query,
+		"SELECT count(*) FROM ta_tracking WHERE summary = 'delete-me-b-row' AND fk_story_tips IS NULL AND fk_story_sub IS NULL")
+	if kept != 1 {
+		t.Errorf("expected user B's tracking row to survive with nulled references, got %d", kept)
+	}
+	if got := countRows(t, &query, "SELECT count(*) FROM ta_user WHERE email = $1", deleteMeEmailB); got != 1 {
+		t.Errorf("expected user B to survive, got %d rows", got)
+	}
+
+	// A second run reports the account is gone instead of a phantom wipe.
+	_, err = ProcessInput(ctx, order, &query)
+	if err == nil {
+		t.Error("expected an error when the email no longer exists")
+	}
+	fmt.Println("second call err:", err)
+}
+
+// runScript executes a multi-statement SQL script. lib/pq only allows that
+// when no bind parameters are used, which is why the scripts above inline
+// their (constant) values.
+func runScript(t *testing.T, query *database.IQuery, script string) {
+	t.Helper()
+	err := (*query).Exec(script)
+	if err != nil {
+		t.Fatalf("script failed: %v", err)
+	}
+}
+
+func countRows(t *testing.T, query *database.IQuery, statement string, values ...interface{}) int {
+	t.Helper()
+	var counter scanners.Int
+	_, err := (*query).QueryOne(statement, &counter, values...)
+	if err != nil {
+		t.Fatalf("count failed: %v\n%s", err, statement)
+	}
+	return types.AsInt(counter.Value)
 }
 
 func TestProcessAddUserPolicy(t *testing.T) {
