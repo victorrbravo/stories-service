@@ -353,9 +353,13 @@ func DoShowWorkflowData[T db.Scanner](order string, query *db.IQuery) (string, e
 		return value, err
 	}
 	getFlow.PkFlow = types.AsInt(taStory.FkFlow)
+	// FilterField runs first so the "ctg- ..." ordering applied right
+	// after it works on the filter output (wf.Filter.IncludedWrapped),
+	// which is what every monad below — and UpdateWorkflowDataInt —
+	// reads when the sentence filtered something out.
 	wf, err := UpdateWorkflow[T](getFlow, query, []interface{}{},
-		pg.TasksOrderField[T],
 		pg.FilterField[T],
+		pg.TasksOrderField[T],
 		pg.RoleField[T],
 		pg.DistanceField[T],
 		pg.TimeField[T],

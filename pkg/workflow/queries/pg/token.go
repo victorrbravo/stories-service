@@ -463,7 +463,15 @@ func FilterField[T db.Scanner](wf *common.Workflow[T], parameters ...interface{}
 		andsLiteralWords := types.NewStringArray(p.AndLiteralTerms)
 		notWords := types.NewStringArray(p.AndNotTerms)
 		stringAndWords := andsWords.String()
-		if strings.Compare(stringAndWords, "{}") == 0 {
+		// The whole sentence is only used as a single search term when the
+		// parse yielded nothing usable at all. A sentence such as
+		// "ctg- bill,coffee,cash AND >may10" produces no AndTerms (the tags
+		// went to p.Functions and the date to p.GreaterThan), and matching
+		// the raw text by similarity would drop every row and, with it, the
+		// date bound the user did write.
+		parsedSomething := len(p.Functions) > 0 || p.LessThan != "" || p.GreaterThan != "" ||
+			len(p.AndLiteralTerms) > 0 || len(p.AndNotTerms) > 0
+		if strings.Compare(stringAndWords, "{}") == 0 && !parsedSomething {
 			andsWords = types.NewStringArray([]string{wf.Filter.Sentence})
 
 		}
@@ -1230,6 +1238,36 @@ func OrderTasksByTags[T db.Scanner](
 	return wf
 }
 
+// orderIncluded re-sorts the filter output (the statuses FilterField
+// kept in wf.Filter.IncludedWrapped) so it follows the task order
+// OrderTasksByTags just produced. Only statuses the filter let through
+// are returned; an included status missing from the ordered chain is
+// appended at the end, keeping its relative position, so no filtered
+// row is lost.
+func orderIncluded(ordered []string, included []string) []string {
+	if len(included) == 0 || len(ordered) == 0 {
+		return included
+	}
+	pending := make(map[string]int, len(included))
+	for _, name := range included {
+		pending[name]++
+	}
+	result := make([]string, 0, len(included))
+	for _, name := range ordered {
+		if pending[name] > 0 {
+			result = append(result, name)
+			pending[name]--
+		}
+	}
+	for _, name := range included {
+		if pending[name] > 0 {
+			result = append(result, name)
+			pending[name]--
+		}
+	}
+	return result
+}
+
 // TasksOrderField is a workflow Monad (same shape as FilterField) that
 // reorders wf.Tasks based on a "ctg-" function found in
 // wf.Filter.Sentence.
@@ -1294,7 +1332,18 @@ func TasksOrderField[T db.Scanner](wf *common.Workflow[T], parameters ...interfa
 
 		// Force statuses to be re-walked against the rewired chain.
 		ctx := context.Background()
-		wf.Statuses(ctx, false, true)
+		ordered, err := wf.Statuses(ctx, false, true)
+		if err != nil {
+			log.Println("TasksOrderField statuses err", err)
+		}
+		// When FilterField already ran, the filter output is what the
+		// monads downstream (RoleField, StatsField, ...) and
+		// UpdateWorkflowDataInt iterate over instead of the chain, so the
+		// ctg- order has to reach it too.
+		if len(wf.Filter.IncludedWrapped) > 0 {
+			wf.Filter.IncludedWrapped = orderIncluded(ordered, wf.Filter.IncludedWrapped)
+			log.Println("TasksOrderField ordered filter output:", wf.Filter.IncludedWrapped)
+		}
 		wf.OrderedByTags = wantedTags
 		elapsed := time.Since(start1)
 		log.Printf("TasksOrderField elapsed %s", elapsed)
