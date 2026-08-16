@@ -1,0 +1,37 @@
+### Log in and keep the token for the requests below.
+# The response handler stores it as a global variable, so {{token}} resolves
+# in this file and in any other .http file of the same IntelliJ session.
+POST https://doitall.work/auth/
+Content-Type: application/json
+
+{
+  "email": "victorrbravo@gmail.com",
+  "password": "123456"
+}
+
+> {%
+    client.test("login succeeded", function () {
+        client.assert(response.status === 200, "expected 200, got " + response.status);
+        client.assert(response.body.token !== undefined, "no token in the response body");
+    });
+    client.global.set("token", response.body.token);
+    client.global.set("refreshtoken", response.body.refreshtoken);
+%}
+
+### Erase every row of one account: its tracking, stories, flows, folders and
+# sessions, the categories, permissions, policies, roles and relationships that
+# reference it, and finally the ta_user row itself. There is no undo.
+# The response reports how many rows each table lost.
+POST https://doitall.work/new
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "action": "action: delete_user_by_email email: victorrbravo7@gmail.com"
+}
+
+> {%
+    client.test("user deleted", function () {
+        client.assert(response.status === 200, "expected 200, got " + response.status);
+    });
+%}
