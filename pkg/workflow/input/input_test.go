@@ -993,7 +993,7 @@ func TestProcessCategoryShowFlowData(t *testing.T) {
 	input := `
 action: show_flow_data
 ticket: 239
-filter: ctg- bill,coffee,cash 
+filter: >apr30 and ctg- bill,coffee,cash 
 by_day: false
 page_number: 1
 page_size: 20
