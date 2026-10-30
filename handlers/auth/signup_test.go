@@ -6,20 +6,29 @@ import (
 	"net/http/httptest"
 	"os"
 	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/internal/testenv"
 	db "github.com/victorrbravo/stories-service/database"
 	"strings"
 	"testing"
 )
 
-const DB_HOST = "doitall.work"
-const DB_LOCAL_HOST = "localhost"
-const DB_LOCAL_PASS = "stories"
-const DB_NAME = "stories"
-const DB_USER = "stories"
+// Credentials are read from the repository .env file (see .env.example)
+var (
+	DB_LOCAL_HOST string
+	DB_LOCAL_PASS string
+	DB_NAME       string
+	DB_USER       string
+)
+
+func init() {
+	testenv.Load()
+	DB_LOCAL_HOST = testenv.Get("DB_HOST", "localhost")
+	DB_LOCAL_PASS = testenv.Get("DB_PASS", "stories")
+	DB_NAME = testenv.Get("DB_NAME", "stories")
+	DB_USER = testenv.Get("DB_USER", "stories")
+}
 
 func TestSignupUserHandler_ServeHTTP_DatabaseNotInitialized(t *testing.T) {
-	// mjjset environment variable api_resend_key
-	os.Setenv("API_RESEND_KEY", "re_F2m35W5C_4csGLbUHLrU2w1rmzqv1vpYA")
 	os.Setenv("URL_VERIFY_EMAIL", "https://doitall.work/confirm/")
 	config := database.DatabaseConfig{
 		Host: DB_LOCAL_HOST, Name: DB_NAME, Port: 5432, User: DB_USER,

@@ -7,8 +7,6 @@ const (
 	ProfileNamePeriod                           = "Current Profile"
 	JWTAccessEnvironmentOSName                  = "JWT_ACCESS_SECRET"
 	JWTRefreshEnvironmentOSName                 = "JWT_REFRESH_SECRET"
-	DefaultJWT                                  = "W0M1c@1M@r1n0n3d91402314532@qweq1"
-	DefaultRefreshJWT                           = "140134602sdaf123W0M1dc@1M@r1n0n3d"
 	DefaultSubjectEmail                         = "FINVAR Message"
 	NoReplyEmail                                = "no-reply@capnote.com"
 	ReturnPathDefault                           = "help@capnote.com"

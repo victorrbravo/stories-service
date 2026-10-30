@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/internal/testenv"
 	db "github.com/victorrbravo/stories-service/database"
 	pg "github.com/victorrbravo/stories-service/generated/inputs"
 	"github.com/victorrbravo/stories-service/pkg/utils"
@@ -786,19 +787,33 @@ name: 762ED0C1-959C-400F-AABC-4E31C4BF5CD6.jpg
 	fmt.Println("response", response)
 }
 
-const DB_HOST = "doitall.work"
-const DB_LOCAL_HOST = "localhost"
-const DB_LOCAL_PASS = "stories"
-const DB_NAME = "stories"
-const DB_PASS = "3MncMarinoned9140**1020__"
+// Credentials are read from the repository .env file (see .env.example)
+var (
+	DB_HOST               string
+	DB_LOCAL_HOST         string
+	DB_LOCAL_PASS         string
+	DB_NAME               string
+	DB_PASS               string
+	DB_USER               string
+	OPEN_API_KEY          string
+	GOOGLE_API_KEY        string
+	AWS_ACCESS_KEY_ID     string
+	AWS_SECRET_ACCESS_KEY string
+)
 
-const DB_USER = "stories"
-const OPEN_API_KEY = "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"
-
-// const GOOGLE_API_KEY = "AIzaSyB14bjScN9L_jLR2XXEUCe1Z98X2ICTII4"
-const GOOGLE_API_KEY = "AQ.Ab8RN6KbZDSdsSehxGKkn4tHQqx38SnOgGPlczkYP-NKGBoaZw"
-const AWS_ACCESS_KEY_ID = "AKIAYJKDBCUA4WH5EZOK"
-const AWS_SECRET_ACCESS_KEY = "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"
+func init() {
+	testenv.Load()
+	DB_HOST = testenv.Get("REMOTE_DB_HOST", "localhost")
+	DB_LOCAL_HOST = testenv.Get("DB_HOST", "localhost")
+	DB_LOCAL_PASS = testenv.Get("DB_PASS", "stories")
+	DB_NAME = testenv.Get("DB_NAME", "stories")
+	DB_PASS = testenv.Get("REMOTE_DB_PASS", DB_LOCAL_PASS)
+	DB_USER = testenv.Get("DB_USER", "stories")
+	OPEN_API_KEY = os.Getenv("OPEN_API_KEY")
+	GOOGLE_API_KEY = os.Getenv("GOOGLE_API_KEY")
+	AWS_ACCESS_KEY_ID = os.Getenv("AWS_ACCESS_KEY_ID")
+	AWS_SECRET_ACCESS_KEY = os.Getenv("AWS_SECRET_ACCESS_KEY")
+}
 
 func TestProcessShowFlowData(t *testing.T) {
 	var err error

@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"bytes"
+	crand "crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -114,40 +115,54 @@ func CreateJWTToken(email string) (*TokenDetails, error) {
 	td.RtExpires = time.Now().Add(time.Minute * 24 * 7).Unix()
 	td.RefreshUuid = td.AccessUuid + "++" + email
 	// Creating Access Token
-	value := os.Getenv(constants.JWTAccessEnvironmentOSName)
-	if len(value) == 0 {
-		_ = os.Setenv(constants.JWTAccessEnvironmentOSName, constants.DefaultJWT) // this should be in an env file
-	}
 	atClaims := jwt.MapClaims{}
 	atClaims["authorized"] = true
 	atClaims["access_uuid"] = td.AccessUuid
 	atClaims["email"] = email
 	atClaims["exp"] = td.AtExpires
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	td.AccessToken, err = at.SignedString([]byte(os.Getenv(constants.JWTAccessEnvironmentOSName)))
+	td.AccessToken, err = at.SignedString(JWTAccessSecret())
 	if err != nil {
 		return td, err
 	}
 	// Creating Refresh Token
-	_ = os.Setenv(constants.JWTRefreshEnvironmentOSName, constants.DefaultRefreshJWT) // this should be in an env file
 	rtClaims := jwt.MapClaims{}
 	rtClaims["refresh_uuid"] = td.RefreshUuid
 	rtClaims["email"] = email
 	rtClaims["exp"] = td.RtExpires
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
-	td.RefreshToken, err = rt.SignedString([]byte(os.Getenv(constants.JWTRefreshEnvironmentOSName)))
+	td.RefreshToken, err = rt.SignedString(JWTRefreshSecret())
 	if err != nil {
 		return nil, err
 	}
 	return td, nil
 }
 
-func checkOSJWTEnvironment() {
-	value := os.Getenv(constants.JWTAccessEnvironmentOSName)
+// jwtSecret returns the secret stored in the given environment variable. When it
+// is not set, a random secret is generated for this process only, so tokens
+// will not survive a restart. Set JWT_ACCESS_SECRET and JWT_REFRESH_SECRET in .env.
+func jwtSecret(name string) []byte {
+	value := os.Getenv(name)
 	if len(value) == 0 {
-		log.Println("JWTAccessEnvironmentOSName is not set, setting it to default value")
-		_ = os.Setenv(constants.JWTAccessEnvironmentOSName, constants.DefaultJWT) // this should be in an env file
+		log.Printf("%s is not set, using a random secret for this process", name)
+		buf := make([]byte, 32)
+		if _, err := crand.Read(buf); err != nil {
+			panic(err)
+		}
+		value = hex.EncodeToString(buf)
+		_ = os.Setenv(name, value)
 	}
+	return []byte(value)
+}
+
+// JWTAccessSecret returns the secret used to sign access tokens
+func JWTAccessSecret() []byte {
+	return jwtSecret(constants.JWTAccessEnvironmentOSName)
+}
+
+// JWTRefreshSecret returns the secret used to sign refresh tokens
+func JWTRefreshSecret() []byte {
+	return jwtSecret(constants.JWTRefreshEnvironmentOSName)
 }
 
 func CreateInvitationJWTToken(email string) (*TokenDetails, error) {
@@ -158,25 +173,23 @@ func CreateInvitationJWTToken(email string) (*TokenDetails, error) {
 	td.RtExpires = time.Now().Add(time.Minute * 60 * 24 * 365 * 2).Unix()
 	td.RefreshUuid = td.AccessUuid + "++" + email
 	// Creating Access Token
-	checkOSJWTEnvironment()
 	atClaims := jwt.MapClaims{}
 	atClaims["authorized"] = true
 	atClaims["access_uuid"] = td.AccessUuid
 	atClaims["email"] = email
 	atClaims["exp"] = td.AtExpires
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	td.AccessToken, err = at.SignedString([]byte(os.Getenv(constants.JWTAccessEnvironmentOSName)))
+	td.AccessToken, err = at.SignedString(JWTAccessSecret())
 	if err != nil {
 		return td, err
 	}
 	// Creating Refresh Token
-	_ = os.Setenv(constants.JWTRefreshEnvironmentOSName, constants.DefaultRefreshJWT) // this should be in an env file
 	rtClaims := jwt.MapClaims{}
 	rtClaims["refresh_uuid"] = td.RefreshUuid
 	rtClaims["email"] = email
 	rtClaims["exp"] = td.RtExpires
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
-	td.RefreshToken, err = rt.SignedString([]byte(os.Getenv(constants.JWTRefreshEnvironmentOSName)))
+	td.RefreshToken, err = rt.SignedString(JWTRefreshSecret())
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +204,7 @@ func verifyToken(t string) (*jwt.Token, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(os.Getenv(constants.JWTAccessEnvironmentOSName)), nil
+		return JWTAccessSecret(), nil
 	})
 	if err != nil {
 		return nil, err
@@ -200,7 +213,6 @@ func verifyToken(t string) (*jwt.Token, error) {
 }
 
 func TokenValid(t string) (jwt.MapClaims, error) {
-	checkOSJWTEnvironment()
 	token, err := verifyToken(t)
 	if err != nil {
 		return nil, err
@@ -216,7 +228,7 @@ func VerifyRefreshToken(t string) (jwt.MapClaims, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(os.Getenv(constants.JWTRefreshEnvironmentOSName)), nil
+		return JWTRefreshSecret(), nil
 	})
 	if err != nil {
 		return nil, err

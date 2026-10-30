@@ -153,10 +153,19 @@ Authenticated routes expect an `Authorization: Bearer <access-token>` header.
 
 ## Configuration
 
-Configuration is read from environment variables:
+Configuration is read from environment variables. For local development,
+copy the template and fill in your own values — `cmd/auth` and the tests load
+`.env` automatically, and real environment variables take precedence:
+
+```bash
+cp .env.example .env
+```
 
 | Variable | Purpose |
 |---|---|
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | PostgreSQL connection used by `cmd/auth` and the tests |
+| `REMOTE_DB_HOST`, `REMOTE_DB_PASS` | Remote database used by some integration tests |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | AWS credentials (S3 presigned URLs) |
 | `JWT_ACCESS_SECRET` | Secret used to sign access tokens |
 | `JWT_REFRESH_SECRET` | Secret used to sign refresh tokens |
 | `API_RESEND_KEY` | Resend API key for sending email |
@@ -169,7 +178,9 @@ Configuration is read from environment variables:
 | `WORKFLOW_URL` | Base URL used by the workflow engine |
 | `SHOW_EMPTY_TASKS` | Show empty tasks in workflow output |
 
-> Always set your own JWT secrets in production. Never commit a `.env` file.
+> If `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` are not set, a random secret is
+> generated per process, so tokens are invalidated on restart. Always set them
+> in production. Never commit a `.env` file.
 
 ---
 
@@ -186,8 +197,8 @@ docker compose -f docker/docker-compose.yml up -d
 go run cmd/auth/main.go
 ```
 
-`cmd/auth/main.go` uses a hard-coded local database config — edit it to match
-your environment.
+`cmd/auth/main.go` reads the database settings from `DB_*` variables and
+defaults to the Docker Compose credentials (`stories` / `stories`).
 
 ---
 
