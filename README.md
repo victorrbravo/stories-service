@@ -119,6 +119,22 @@ var q database.IQuery = pg.NewQuery()
 err := q.Exec(`UPDATE ta_user SET firstname = $1 WHERE pk_user = $2`, "Ada", 42)
 ```
 
+### 4. Run workflow actions
+
+`input.ProcessInput` executes YAML-described workflow actions. A complete,
+runnable program lives in [examples/show-flow-data](examples/show-flow-data):
+
+```go
+order := []byte(`
+action: show_flow_data
+ticket: 243
+by_day: true
+page_number: 1
+page_size: 12
+`)
+response, err := input.ProcessInput(context.Background(), order, &query)
+```
+
 ### Main packages
 
 | Package | Purpose |
