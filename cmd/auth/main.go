@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"stories/database"
-	"stories/web"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/web"
 )
 
 //go:generate go run ../../generators/queries/main.go

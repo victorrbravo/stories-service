@@ -14,7 +14,7 @@ import (
 
 	"github.com/twinj/uuid"
 
-	"stories/generators"
+	"github.com/victorrbravo/stories-service/generators"
 )
 
 type CustomString string

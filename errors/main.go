@@ -2,7 +2,7 @@ package errors
 
 import (
 	"errors"
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 var DuplicateObjectsError = errors.New(constants.SQLErrorDuplicateKey)

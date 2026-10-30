@@ -3,8 +3,8 @@ package scanners
 import (
 	"database/sql"
 
-	"stories/database"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 // TupleStringFloat scans a (text, numeric) row, i.e. a grouping key plus its

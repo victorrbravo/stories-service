@@ -5,13 +5,13 @@ import (
 	"log"
 	"net/http"
 
-	"stories/constants"
-	"stories/database"
-	handlers "stories/generated/handlers/users"
-	"stories/generated/models"
-	"stories/handlers/auth"
-	"stories/handlers/social"
-	"stories/handlers_utils"
+	"github.com/victorrbravo/stories-service/constants"
+	"github.com/victorrbravo/stories-service/database"
+	handlers "github.com/victorrbravo/stories-service/generated/handlers/users"
+	"github.com/victorrbravo/stories-service/generated/models"
+	"github.com/victorrbravo/stories-service/handlers/auth"
+	"github.com/victorrbravo/stories-service/handlers/social"
+	"github.com/victorrbravo/stories-service/handlers_utils"
 )
 
 const (

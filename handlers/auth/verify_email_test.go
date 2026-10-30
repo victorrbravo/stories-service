@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"stories/database"
-	"stories/generated/models"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/generated/models"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 type fakeQuery struct {

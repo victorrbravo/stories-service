@@ -6,8 +6,8 @@ import (
 	"errors"
 	"log"
 	"reflect"
-	db "stories/database"
-	"stories/pkg/workflow/common"
+	db "github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/pkg/workflow/common"
 	"strings"
 
 	"github.com/alecthomas/participle/v2"

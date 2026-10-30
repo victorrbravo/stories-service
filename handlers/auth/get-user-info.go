@@ -3,8 +3,8 @@ package auth
 import (
 	"net/http"
 
-	"stories/handlers_utils"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/handlers_utils"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 type ModelUser interface {

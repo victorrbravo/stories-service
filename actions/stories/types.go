@@ -1,8 +1,8 @@
 package stories
 
 import (
-	"stories/generated/models"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/generated/models"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 type OrderInsert string

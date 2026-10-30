@@ -1,8 +1,8 @@
 package scanners
 
 import (
-	"stories/database"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 type UUID struct {

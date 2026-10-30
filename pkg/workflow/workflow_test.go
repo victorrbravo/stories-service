@@ -3,12 +3,12 @@ package workflow_test
 import (
 	"context"
 	"fmt"
-	"stories/actions/stories"
-	"stories/database"
-	"stories/generated/models"
-	"stories/pkg/workflow"
-	"stories/pkg/workflow/queries/pg"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/actions/stories"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/generated/models"
+	"github.com/victorrbravo/stories-service/pkg/workflow"
+	"github.com/victorrbravo/stories-service/pkg/workflow/queries/pg"
+	"github.com/victorrbravo/stories-service/types"
 	"testing"
 )
 

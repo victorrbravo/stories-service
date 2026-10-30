@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 // DateTime wrapper around the native `time.Time' with an special Format

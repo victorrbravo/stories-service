@@ -6,7 +6,7 @@ import (
 
 	twinj "github.com/twinj/uuid"
 
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 type UUID twinj.UUID

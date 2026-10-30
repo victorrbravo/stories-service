@@ -4,7 +4,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 // Gender a simple gender type for easier validation

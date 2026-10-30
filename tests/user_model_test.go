@@ -4,12 +4,12 @@ import (
 	"database/sql"
 	"testing"
 
-	"stories/types"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 import (
-	"stories/database"
-	"stories/generated/models"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/generated/models"
 )
 
 func TestModelUser(t *testing.T) {

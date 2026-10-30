@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"stories/database"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 const (

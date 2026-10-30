@@ -4,7 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 // String a boolean type that understands jsons `null'

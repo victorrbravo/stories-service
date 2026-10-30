@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 // Int a boolean type that understands json's `null'

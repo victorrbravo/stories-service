@@ -3,8 +3,8 @@ package scanners
 import (
 	"database/sql"
 
-	"stories/database"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 // String a special string type which understands jsons `null'

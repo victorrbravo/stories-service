@@ -12,8 +12,8 @@ import (
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 
-	"stories/constants"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/constants"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 const (

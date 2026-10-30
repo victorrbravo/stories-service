@@ -4,12 +4,12 @@ import (
 	"log"
 	"net/http"
 
-	"stories/database"
-	"stories/handlers_utils"
-	"stories/helpers"
-	"stories/social"
-	"stories/types"
-	"stories/users"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/handlers_utils"
+	"github.com/victorrbravo/stories-service/helpers"
+	"github.com/victorrbravo/stories-service/social"
+	"github.com/victorrbravo/stories-service/types"
+	"github.com/victorrbravo/stories-service/users"
 )
 
 type ReplaceStepHandler struct {

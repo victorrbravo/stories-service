@@ -1,8 +1,17 @@
 init-scripts
-.idea/
-.DS_Store
-images
 images/
 us.png
-go.sum
-generated/
+
+# Secrets / local environment
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.idea/
+.DS_Store
+
+# Build output and tooling
+bin/
+.claude/worktrees/
+node_modules/

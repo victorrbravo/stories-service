@@ -16,8 +16,8 @@ import (
 
 	"github.com/twinj/uuid"
 
-	"stories/constants"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/constants"
+	"github.com/victorrbravo/stories-service/types"
 
 	"github.com/dgrijalva/jwt-go"
 )

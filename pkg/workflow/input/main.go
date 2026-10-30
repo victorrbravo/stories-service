@@ -3,11 +3,11 @@ package input
 import (
 	"context"
 	"log"
-	"stories/actions/stories"
-	"stories/constants"
-	"stories/database"
-	pg "stories/generated/inputs"
-	"stories/pkg/utils"
+	"github.com/victorrbravo/stories-service/actions/stories"
+	"github.com/victorrbravo/stories-service/constants"
+	"github.com/victorrbravo/stories-service/database"
+	pg "github.com/victorrbravo/stories-service/generated/inputs"
+	"github.com/victorrbravo/stories-service/pkg/utils"
 	"strings"
 
 	"gopkg.in/yaml.v3"

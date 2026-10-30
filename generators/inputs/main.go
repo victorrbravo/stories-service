@@ -9,13 +9,13 @@ import (
 	"os"
 	"path"
 	"regexp"
-	"stories/pkg/workflow/common"
+	"github.com/victorrbravo/stories-service/pkg/workflow/common"
 	"strings"
 	"text/template"
 
 	"github.com/twinj/uuid"
 
-	"stories/generators"
+	"github.com/victorrbravo/stories-service/generators"
 )
 
 type CustomString string

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 // Date wrapper around the native `time.Time' that strips the time part

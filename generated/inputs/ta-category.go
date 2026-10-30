@@ -1,9 +1,9 @@
 package pg
 
 import (
-    "stories/generated/models"
-    "stories/database"
-	"stories/types"
+    "github.com/victorrbravo/stories-service/generated/models"
+    "github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 type TaCategory struct {

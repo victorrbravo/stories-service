@@ -1,7 +1,7 @@
 package scanners
 
 import (
-	"stories/database"
+	"github.com/victorrbravo/stories-service/database"
 	"strings"
 	"time"
 )

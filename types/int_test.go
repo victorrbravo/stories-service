@@ -3,7 +3,7 @@ package types_test
 import (
 	"testing"
 
-	"stories/types"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 func TestScanInt(t *testing.T) {

@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"stories/database"
-	pg "stories/generated/inputs"
-	"stories/generated/models"
-	"stories/scanners"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/database"
+	pg "github.com/victorrbravo/stories-service/generated/inputs"
+	"github.com/victorrbravo/stories-service/generated/models"
+	"github.com/victorrbravo/stories-service/scanners"
+	"github.com/victorrbravo/stories-service/types"
 
 	"gopkg.in/yaml.v3"
 )

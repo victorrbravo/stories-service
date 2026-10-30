@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"stories/types"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 func TestScanFloat(t *testing.T) {

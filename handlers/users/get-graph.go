@@ -3,8 +3,8 @@ package users
 import (
 	"net/http"
 
-	"stories/handlers/auth"
-	"stories/handlers_utils"
+	"github.com/victorrbravo/stories-service/handlers/auth"
+	"github.com/victorrbravo/stories-service/handlers_utils"
 )
 
 type GetGraph struct{}

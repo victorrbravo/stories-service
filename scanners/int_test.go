@@ -3,9 +3,9 @@ package scanners_test
 import (
 	"testing"
 
-	"stories/database"
-	"stories/scanners"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/scanners"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 func TestInt_ScanRow(t *testing.T) {

@@ -1,10 +1,10 @@
 package pg
 
 import (
-    "stories/generated/models"
-    "stories/database"
+    "github.com/victorrbravo/stories-service/generated/models"
+    "github.com/victorrbravo/stories-service/database"
 {{- if .UsesTypes }}
-	"stories/types"
+	"github.com/victorrbravo/stories-service/types"
 {{- end }}
 )
 

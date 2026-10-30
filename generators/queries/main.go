@@ -8,7 +8,7 @@ import (
 	"strings"
 	"text/template"
 
-	"stories/generators"
+	"github.com/victorrbravo/stories-service/generators"
 )
 
 const Template string = `

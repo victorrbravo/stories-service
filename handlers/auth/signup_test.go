@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"stories/database"
-	db "stories/database"
+	"github.com/victorrbravo/stories-service/database"
+	db "github.com/victorrbravo/stories-service/database"
 	"strings"
 	"testing"
 )

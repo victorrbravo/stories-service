@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"stories/types"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 func TestScanDate(t *testing.T) {

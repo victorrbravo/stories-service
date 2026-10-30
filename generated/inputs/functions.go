@@ -5,8 +5,8 @@ import (
     "context"
     "encoding/json"
     "gopkg.in/yaml.v3"
-    "stories/database"
-    "stories/generated/models"
+    "github.com/victorrbravo/stories-service/database"
+    "github.com/victorrbravo/stories-service/generated/models"
 )
 
 

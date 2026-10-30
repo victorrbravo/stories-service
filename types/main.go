@@ -3,7 +3,7 @@ package types
 import (
 	"database/sql/driver"
 	"fmt"
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 // Type of Portfolio

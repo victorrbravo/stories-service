@@ -8,9 +8,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"stories/constants"
-	"stories/crypto"
-	"stories/helpers"
+	"github.com/victorrbravo/stories-service/constants"
+	"github.com/victorrbravo/stories-service/crypto"
+	"github.com/victorrbravo/stories-service/helpers"
 )
 
 // RequestParameters an interface to validate parameters of a given request in a more controlled way

@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"stories/generated/models"
-	"stories/users"
+	"github.com/victorrbravo/stories-service/generated/models"
+	"github.com/victorrbravo/stories-service/users"
 
-	"stories/database"
-	"stories/handlers_utils"
-	"stories/helpers"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/handlers_utils"
+	"github.com/victorrbravo/stories-service/helpers"
 )
 
 type GetAllHandler struct {

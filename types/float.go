@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 // Float a floating point value that marshals to 2 decimal places

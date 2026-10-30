@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 	"strconv"
 
 	"github.com/twpayne/go-geom"

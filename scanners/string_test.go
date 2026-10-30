@@ -3,8 +3,8 @@ package scanners
 import (
 	"testing"
 
-	"stories/database"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 func TestString_ScanRow(t *testing.T) {

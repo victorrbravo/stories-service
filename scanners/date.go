@@ -3,7 +3,7 @@ package scanners
 import (
 	"time"
 
-	"stories/database"
+	"github.com/victorrbravo/stories-service/database"
 )
 
 type Date time.Time

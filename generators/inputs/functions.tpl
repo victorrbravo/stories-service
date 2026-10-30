@@ -5,8 +5,8 @@ import (
     "context"
     {{if .HasJson}}"encoding/json"{{end}}
     "gopkg.in/yaml.v3"
-    "stories/database"
-    "stories/generated/models"
+    "github.com/victorrbravo/stories-service/database"
+    "github.com/victorrbravo/stories-service/generated/models"
 )
 
 {{range .Models}}

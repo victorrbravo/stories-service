@@ -9,11 +9,11 @@ import (
 	"log"
 	"strings"
 
-	"stories/constants"
-	"stories/database"
-	"stories/scanners"
-	"stories/types"
-	"stories/users"
+	"github.com/victorrbravo/stories-service/constants"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/scanners"
+	"github.com/victorrbravo/stories-service/types"
+	"github.com/victorrbravo/stories-service/users"
 )
 
 const (

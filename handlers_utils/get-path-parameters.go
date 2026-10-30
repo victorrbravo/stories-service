@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"stories/types"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 func GetPathParameter(key string, request *http.Request) (string, error) {

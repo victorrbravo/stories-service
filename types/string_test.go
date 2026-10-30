@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"stories/constants"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/constants"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 func TestScanString(t *testing.T) {

@@ -7,9 +7,9 @@ import (
 	"path"
 	"strings"
 
-	"stories/database"
+	"github.com/victorrbravo/stories-service/database"
 
-	"stories/helpers"
+	"github.com/victorrbravo/stories-service/helpers"
 )
 
 type Route struct {

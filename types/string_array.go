@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 type state int

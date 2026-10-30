@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 // Bool a boolean type that understands json's `null'

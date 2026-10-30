@@ -3,8 +3,8 @@ package scanners
 import (
 	"testing"
 
-	"stories/database"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 func TestUUID_ScanRow(t *testing.T) {

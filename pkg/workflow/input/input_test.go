@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"stories/database"
-	db "stories/database"
-	pg "stories/generated/inputs"
-	"stories/pkg/utils"
-	"stories/scanners"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/database"
+	db "github.com/victorrbravo/stories-service/database"
+	pg "github.com/victorrbravo/stories-service/generated/inputs"
+	"github.com/victorrbravo/stories-service/pkg/utils"
+	"github.com/victorrbravo/stories-service/scanners"
+	"github.com/victorrbravo/stories-service/types"
 	"testing"
 )
 

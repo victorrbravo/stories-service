@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	st_errors "stories/errors"
+	st_errors "github.com/victorrbravo/stories-service/errors"
 
 	"github.com/lib/pq"
 
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 type PostgresQuery struct {

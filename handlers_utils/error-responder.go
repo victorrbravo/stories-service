@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"stories/helpers"
+	"github.com/victorrbravo/stories-service/helpers"
 )
 
 // RespondWithError conveniently sends an error to the client discriminating between our special

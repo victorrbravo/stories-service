@@ -3,10 +3,10 @@ package auth
 import (
 	"errors"
 	"net/http"
-	"stories/database"
-	"stories/handlers_utils"
-	"stories/helpers"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/handlers_utils"
+	"github.com/victorrbravo/stories-service/helpers"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 type RefreshTokenHandler struct {

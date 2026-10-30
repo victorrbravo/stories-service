@@ -2,8 +2,8 @@ package queries
 
 import (
 	"context"
-	db "stories/database"
-	"stories/pkg/workflow/common"
+	db "github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/pkg/workflow/common"
 )
 
 type Query[T db.Scanner] interface {

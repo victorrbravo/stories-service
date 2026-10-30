@@ -3,7 +3,7 @@ package database
 import (
 	"testing"
 
-	"stories/types"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 type User struct {

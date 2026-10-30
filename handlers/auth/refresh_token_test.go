@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"stories/constants"
-	"stories/helpers"
+	"github.com/victorrbravo/stories-service/constants"
+	"github.com/victorrbravo/stories-service/helpers"
 	"strings"
 	"testing"
 )

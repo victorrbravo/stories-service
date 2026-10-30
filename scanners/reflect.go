@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"stories/database"
+	"github.com/victorrbravo/stories-service/database"
 )
 
 type Reflect struct {

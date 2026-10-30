@@ -12,9 +12,9 @@ import (
 	"oss.terrastruct.com/d2/d2renderers/d2svg"
 	"oss.terrastruct.com/d2/d2themes/d2themescatalog"
 	"oss.terrastruct.com/d2/lib/textmeasure"
-	"stories/actions/settings"
-	db "stories/database"
-	"stories/pkg/workflow/common"
+	"github.com/victorrbravo/stories-service/actions/settings"
+	db "github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/pkg/workflow/common"
 	"strings"
 )
 

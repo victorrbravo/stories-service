@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 // Nullable is a type that can have a special `null' value

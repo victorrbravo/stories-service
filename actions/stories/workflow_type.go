@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"log"
 	"slices"
-	"stories/constants"
-	"stories/database"
-	"stories/pkg/workflow/common"
+	"github.com/victorrbravo/stories-service/constants"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/pkg/workflow/common"
 )
 
 // String a boolean type that understands jsons `null'

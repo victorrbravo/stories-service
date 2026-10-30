@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 type ContentType string

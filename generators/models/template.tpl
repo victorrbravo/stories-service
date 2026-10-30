@@ -9,12 +9,12 @@ import (
 {{- end }}
 
 {{- if .UsesEnums }}
-	"stories/enums"
+	"github.com/victorrbravo/stories-service/enums"
 {{- end }}
-	"stories/database"
-	"stories/scanners"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/scanners"
 {{- if .UsesTypes }}
-	"stories/types"
+	"github.com/victorrbravo/stories-service/types"
 {{- end }}
 )
 /*

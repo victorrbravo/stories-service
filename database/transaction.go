@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"log"
 
-	"stories/types"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 // Transaction is used to run multiple queries in a single transaction

@@ -3,7 +3,7 @@ package users
 import (
 	"time"
 
-	"stories/types"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 // UserType a special type of int useful for validation only

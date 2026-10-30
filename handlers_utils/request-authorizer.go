@@ -5,19 +5,19 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"stories/pkg/utils"
+	"github.com/victorrbravo/stories-service/pkg/utils"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 
-	"stories/database"
-	"stories/generated/models"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/generated/models"
+	"github.com/victorrbravo/stories-service/types"
 
-	"stories/constants"
-	"stories/crypto"
-	"stories/helpers"
-	"stories/users"
+	"github.com/victorrbravo/stories-service/constants"
+	"github.com/victorrbravo/stories-service/crypto"
+	"github.com/victorrbravo/stories-service/helpers"
+	"github.com/victorrbravo/stories-service/users"
 )
 
 // AuthorizedHTTPHandler an interface that adds one parameter to the built-in `ServeHTTP', namely the

@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"stories/users"
+	"github.com/victorrbravo/stories-service/users"
 
-	"stories/constants"
-	"stories/database"
-	"stories/generated/models"
-	"stories/handlers_utils"
-	"stories/helpers"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/constants"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/generated/models"
+	"github.com/victorrbravo/stories-service/handlers_utils"
+	"github.com/victorrbravo/stories-service/helpers"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 type CreateHandler struct {

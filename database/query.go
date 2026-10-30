@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 
-	"stories/types"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 // Query is used to run a single queries without transactions

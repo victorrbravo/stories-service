@@ -6,10 +6,10 @@ import (
     "time"
 {{- end }}
 
-    "stories/database"
-    "stories/models"
+    "github.com/victorrbravo/stories-service/database"
+    "github.com/victorrbravo/stories-service/models"
 {{- if .UsesTypes }}
-    "stories/types"
+    "github.com/victorrbravo/stories-service/types"
 {{- end }}
 )
 

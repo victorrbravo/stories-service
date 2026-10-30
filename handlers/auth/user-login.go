@@ -6,15 +6,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"stories/pkg/utils"
+	"github.com/victorrbravo/stories-service/pkg/utils"
 
-	"stories/constants"
-	"stories/crypto"
-	"stories/database"
-	"stories/generated/models"
-	"stories/handlers_utils"
-	"stories/helpers"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/constants"
+	"github.com/victorrbravo/stories-service/crypto"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/generated/models"
+	"github.com/victorrbravo/stories-service/handlers_utils"
+	"github.com/victorrbravo/stories-service/helpers"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 type UserLoginHandler struct {

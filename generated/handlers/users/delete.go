@@ -7,12 +7,12 @@ import (
 	"net/url"
 	"strconv"
 
-	"stories/database"
-	"stories/generated/models"
-	"stories/handlers_utils"
-	"stories/helpers"
-	"stories/types"
-	"stories/users"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/generated/models"
+	"github.com/victorrbravo/stories-service/handlers_utils"
+	"github.com/victorrbravo/stories-service/helpers"
+	"github.com/victorrbravo/stories-service/types"
+	"github.com/victorrbravo/stories-service/users"
 )
 
 type DeleteHandler struct {

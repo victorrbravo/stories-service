@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"stories/helpers"
+	"github.com/victorrbravo/stories-service/helpers"
 )
 
 // SendJSONResponse sends a json response from a generic interface also setting the

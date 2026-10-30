@@ -2,7 +2,7 @@ package workflow
 
 import (
 	"log"
-	db "stories/database"
+	db "github.com/victorrbravo/stories-service/database"
 )
 
 func GetPgQuery(config db.DatabaseConfig) (db.PostgresQuery, error) {

@@ -3,7 +3,7 @@ package pg
 import (
 	"fmt"
 	"regexp"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/types"
 	"strconv"
 	"strings"
 	"time"

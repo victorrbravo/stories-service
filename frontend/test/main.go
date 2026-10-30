@@ -1,7 +1,7 @@
 package main
 
 import (
-	f "stories/frontend"
+	f "github.com/victorrbravo/stories-service/frontend"
 )
 
 func DoubleRedText(content string, secondContent string) f.ComponentInterface {

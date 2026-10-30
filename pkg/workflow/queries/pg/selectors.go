@@ -2,9 +2,9 @@ package pg
 
 import (
 	"fmt"
-	db "stories/database"
-	"stories/pkg/workflow/common"
-	"stories/types"
+	db "github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/pkg/workflow/common"
+	"github.com/victorrbravo/stories-service/types"
 )
 
 const (

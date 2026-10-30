@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	"stories/constants"
+	"github.com/victorrbravo/stories-service/constants"
 )
 
 func outputToString(output []byte) string {

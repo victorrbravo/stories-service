@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"stories/database"
-	"stories/pkg/utils"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/pkg/utils"
+	"github.com/victorrbravo/stories-service/types"
 	"strings"
 
 	"google.golang.org/genai"

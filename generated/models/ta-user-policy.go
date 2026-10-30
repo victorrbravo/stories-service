@@ -4,9 +4,9 @@ package models
 import (
 	"database/sql"
     "errors"
-	"stories/database"
-	"stories/scanners"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/scanners"
+	"github.com/victorrbravo/stories-service/types"
 )
 /*
  * Generated queries (these can be used perfectly instead of writing them by hand

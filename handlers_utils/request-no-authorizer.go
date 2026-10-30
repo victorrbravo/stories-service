@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"stories/constants"
-	"stories/database"
-	"stories/helpers"
+	"github.com/victorrbravo/stories-service/constants"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/helpers"
 )
 
 // NoAuthorizedHTTPHandler an interface that adds one parameter to the built-in `ServeHTTP', namely the

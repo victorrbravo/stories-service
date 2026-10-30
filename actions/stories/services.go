@@ -5,7 +5,7 @@ import (
 	"fmt"
 	openai "github.com/sashabaranov/go-openai"
 	"os"
-	"stories/pkg/utils"
+	"github.com/victorrbravo/stories-service/pkg/utils"
 )
 
 func GetTwoWords(imagePath string) (string, error) {

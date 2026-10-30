@@ -5,14 +5,14 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"stories/constants"
-	"stories/database"
-	"stories/generated/models"
-	"stories/helpers"
-	"stories/pkg/utils"
-	"stories/types"
+	"github.com/victorrbravo/stories-service/constants"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/generated/models"
+	"github.com/victorrbravo/stories-service/helpers"
+	"github.com/victorrbravo/stories-service/pkg/utils"
+	"github.com/victorrbravo/stories-service/types"
 
-	"stories/handlers_utils"
+	"github.com/victorrbravo/stories-service/handlers_utils"
 )
 
 type ResendCodeHandler struct {

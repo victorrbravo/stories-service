@@ -3,8 +3,8 @@ package scanners_test
 import (
 	"testing"
 
-	"stories/database"
-	"stories/scanners"
+	"github.com/victorrbravo/stories-service/database"
+	"github.com/victorrbravo/stories-service/scanners"
 )
 
 func TestDate_ScanRow(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"stories/actions/constants"
+	"github.com/victorrbravo/stories-service/actions/constants"
 	"strings"
 )
 

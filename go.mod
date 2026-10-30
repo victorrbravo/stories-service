@@ -1,4 +1,4 @@
-module stories
+module github.com/victorrbravo/stories-service
 
 go 1.24
 
