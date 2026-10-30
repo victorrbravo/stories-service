@@ -1,0 +1,20 @@
+# Runs the auth service against the Postgres already listening on the host
+# (psql -U stories -h localhost stories).
+services:
+  auth:
+    build: .
+    container_name: stories-auth
+    ports:
+      # Only reachable from the host (nginx); set AUTH_PORT=7070 on the server.
+      - "127.0.0.1:${AUTH_PORT:-3000}:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Not DATABASE_URL: that one comes from .env for local `npm run dev` and
+      # points at localhost, which inside the container is the container itself.
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgres://stories:stories@host.docker.internal:5432/stories}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET (e.g. openssl rand -base64 32)}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
